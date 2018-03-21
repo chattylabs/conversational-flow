@@ -1,0 +1,28 @@
+plugins {
+    id "com.github.dcendents.android-maven" version "2.0"
+}
+apply plugin: 'com.android.library'
+apply from: '../buildsystem/common.gradle'
+
+group = 'com.chattylabs.module'
+def version = android.defaultConfig.versionName
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    api "com.chattylabs.module:core:$coreVersion"
+
+    dagger.each {
+        implementation it
+    }
+    daggerProcessor.each {
+        annotationProcessor it
+    }
+}
+
+install {
+    repositories.mavenInstaller {
+        pom.groupId = project.group
+        pom.version = version
+        pom.artifactId = project.name
+    }
+}
