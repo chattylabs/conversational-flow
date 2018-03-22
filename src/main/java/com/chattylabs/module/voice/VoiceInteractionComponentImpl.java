@@ -79,12 +79,23 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
     }
 
     @Override
+    public <T extends TextToSpeechListeners> void playSilence(Context context, long durationInMillis, String groupId, T... listeners) {
+        init((Application) context.getApplicationContext());
+        textToSpeechManager.playSilence(durationInMillis, groupId, listeners);
+    }
+
+    @Override
     public <T extends TextToSpeechListeners> void play(Context context, String text, T... listeners) {
         init((Application) context.getApplicationContext());
         textToSpeechManager.speak(text, listeners);
     }
 
     @Override
+    public <T extends TextToSpeechListeners> void playSilence(Context context, long durationInMillis, T... listeners) {
+        init((Application) context.getApplicationContext());
+        textToSpeechManager.playSilence(durationInMillis, listeners);
+    }
+                                                       @Override
     public <T extends VoiceRecognitionListeners> void listen(Context context, T... listeners) {
         init((Application) context.getApplicationContext());
         voiceRecognitionManager.start(listeners);
@@ -103,6 +114,12 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
     }
 
     @Override
+    public String lastSpeechGroup() {
+        Preconditions.checkNotNull(textToSpeechManager);
+        return textToSpeechManager.getLastGroup();
+    }
+
+    @Override
     public String speechGroup() {
         Preconditions.checkNotNull(textToSpeechManager);
         return textToSpeechManager.getGroupId();
@@ -111,13 +128,19 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
     @Override
     public void pauseSpeech() {
         Preconditions.checkNotNull(textToSpeechManager);
-        textToSpeechManager.pause();
+        textToSpeechManager.doPause();
+    }
+
+    @Override
+    public void releaseSpeech() {
+        Preconditions.checkNotNull(textToSpeechManager);
+        textToSpeechManager.releasePause();
     }
 
     @Override
     public void resumeSpeech() {
         Preconditions.checkNotNull(textToSpeechManager);
-        textToSpeechManager.play();
+        textToSpeechManager.resume();
     }
 
     @Override

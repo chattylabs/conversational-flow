@@ -19,7 +19,10 @@ import com.chattylabs.module.core.internal.android.AndroidHandlerImpl;
 import com.chattylabs.module.voice.VoiceInteractionComponent.SpeechRecognizerCreator;
 
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
+import static com.chattylabs.module.voice.VoiceInteractionComponent.MIN_LISTENING_TIME;
 import static com.chattylabs.module.voice.VoiceInteractionComponent.OnVoiceRecognitionErrorListener;
 import static com.chattylabs.module.voice.VoiceInteractionComponent.OnVoiceRecognitionMostConfidentResultListener;
 import static com.chattylabs.module.voice.VoiceInteractionComponent.OnVoiceRecognitionPartialResultsListener;
@@ -27,10 +30,9 @@ import static com.chattylabs.module.voice.VoiceInteractionComponent.OnVoiceRecog
 import static com.chattylabs.module.voice.VoiceInteractionComponent.OnVoiceRecognitionResultsListener;
 import static com.chattylabs.module.voice.VoiceInteractionComponent.VOICE_RECOGNITION_AFTER_PARTIALS_ERROR;
 import static com.chattylabs.module.voice.VoiceInteractionComponent.VOICE_RECOGNITION_EMPTY_RESULTS_ERROR;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.VOICE_RECOGNITION_NO_MATCH_ERROR;
 import static com.chattylabs.module.voice.VoiceInteractionComponent.VOICE_RECOGNITION_RETRY_ERROR;
+import static com.chattylabs.module.voice.VoiceInteractionComponent.VOICE_RECOGNITION_STOPPED_TOO_EARLY_ERROR;
 import static com.chattylabs.module.voice.VoiceInteractionComponent.VOICE_RECOGNITION_UNAVAILABLE_ERROR;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.VOICE_RECOGNITION_UNEXPECTED_SHORT_TIME_ERROR;
 import static com.chattylabs.module.voice.VoiceInteractionComponent.VOICE_RECOGNITION_UNKNOWN_ERROR;
 import static com.chattylabs.module.voice.VoiceInteractionComponent.VoiceRecognitionListeners;
 import static com.chattylabs.module.voice.VoiceInteractionComponent.getVoiceRecognitionErrorType;
@@ -47,7 +49,7 @@ final class VoiceRecognitionManager {
 
     private final Application application;
     private final AudioManager audioManager;
-    private final AndroidHandler handler;
+    private final AndroidHandler mainHandler;
     private final Intent speechRecognizerIntent;
     private AudioFocusRequest focusRequestExclusive;
     private SpeechRecognizer speechRecognizer;
@@ -57,6 +59,24 @@ final class VoiceRecognitionManager {
     private final RecognitionAdapter recognitionListener = new RecognitionAdapter() {
         private int intents;
         private long elapsedTime;
+        private Timer timeout;
+
+        @Override
+        public void releaseTimeout() {
+            if (timeout != null) timeout.cancel();
+        }
+
+        @Override
+        public void startTimeout() {
+            releaseTimeout();
+            timeout = new Timer();
+            timeout.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    mainHandler.post(() -> speechRecognizer.stopListening());
+                }
+            }, MIN_LISTENING_TIME * 2);
+        }
 
         @Override
         public void reset() {
@@ -69,9 +89,10 @@ final class VoiceRecognitionManager {
         public void onError(int error) {
             Log.e(TAG, "VOICE error: " + getVoiceRecognitionErrorType(error));
             // Restart the recognizer
-            speechRecognizer.cancel();
+            releaseTimeout();
+            cancel();
             // We consider 2 sec as timeout for non speech
-            boolean shortTime = (System.currentTimeMillis() - elapsedTime) < VoiceInteractionComponent.MIN_LISTENING_TIME;
+            boolean stoppedTooEarly = (System.currentTimeMillis() - elapsedTime) < VoiceInteractionComponent.MIN_LISTENING_TIME;
             // Start checking for the error
             OnVoiceRecognitionErrorListener errorListener = getOnError();
             if (errorListener != null) {
@@ -79,9 +100,9 @@ final class VoiceRecognitionManager {
                     reset();
                     errorListener.execute(VOICE_RECOGNITION_UNAVAILABLE_ERROR, error);
                 }
-                else if (shortTime) {
+                else if (stoppedTooEarly) {
                     reset();
-                    errorListener.execute(VOICE_RECOGNITION_UNEXPECTED_SHORT_TIME_ERROR, error);
+                    errorListener.execute(VOICE_RECOGNITION_STOPPED_TOO_EARLY_ERROR, error);
                 }
                 else if (intents > 0) {
                     reset();
@@ -90,7 +111,7 @@ final class VoiceRecognitionManager {
                 else if (isTryAgain()) {
                     reset();
                     errorListener.execute(error == SpeechRecognizer.ERROR_NO_MATCH ?
-                                          VOICE_RECOGNITION_NO_MATCH_ERROR :
+                                          VOICE_RECOGNITION_UNKNOWN_ERROR :
                                           VOICE_RECOGNITION_RETRY_ERROR, error);
                 }
                 else { // Restore TTS
@@ -104,15 +125,20 @@ final class VoiceRecognitionManager {
 
         @Override
         public void onResults(Bundle results) {
+            releaseTimeout();
             if (getOnResults() == null && getOnMostConfidentResult() == null) return;
             List<String> textResults = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
             float[] confidences = results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
             if (textResults != null && (textResults.size() > 1 || (textResults.size() > 0 && textResults.get(0).length() > 0))) {
-                Log.v(TAG, "VOICE results: " + textResults);
                 reset();
-                if (getOnResults() != null) getOnResults().execute(textResults, confidences);
+                if (getOnResults() != null) {
+                    Log.v(TAG, "VOICE results: " + textResults);
+                    getOnResults().execute(textResults, confidences);
+                }
                 if (getOnMostConfidentResult() != null) {
-                    getOnMostConfidentResult().execute(selectMostConfidentResult(textResults, confidences));
+                    String result = selectMostConfidentResult(textResults, confidences);
+                    Log.v(TAG, "VOICE confident result: " + result);
+                    getOnMostConfidentResult().execute(result);
                 }
             }
             else {
@@ -124,14 +150,17 @@ final class VoiceRecognitionManager {
 
         @Override
         public void onPartialResults(Bundle partialResults) {
+            releaseTimeout();
             List<String> textResults = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
             float[] confidences = partialResults.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
             intents++;
             if (getOnPartialResults() == null) return;
             if (textResults != null && (textResults.size() > 1 || (textResults.size() > 0 && textResults.get(0).length() > 0))) {
-                Log.v(TAG, "VOICE partial results: " + textResults);
                 reset();
-                if (getOnPartialResults() != null) getOnPartialResults().execute(textResults, confidences);
+                if (getOnPartialResults() != null) {
+                    Log.v(TAG, "VOICE partial results: " + textResults);
+                    getOnPartialResults().execute(textResults, confidences);
+                }
             }
         }
 
@@ -152,7 +181,7 @@ final class VoiceRecognitionManager {
         this.release();
         this.application = application;
         this.audioManager = (AudioManager) application.getSystemService(Context.AUDIO_SERVICE);
-        this.handler = new AndroidHandlerImpl(Looper.getMainLooper());
+        this.mainHandler = new AndroidHandlerImpl(Looper.getMainLooper());
         this.speechRecognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, application.getPackageName());
@@ -162,20 +191,22 @@ final class VoiceRecognitionManager {
 
     public void release() {
         Log.i(TAG, "VOICE release");
-        if (handler != null) {
-            handler.removeCallbacksAndMessages(null);
+        if (mainHandler != null) {
+            mainHandler.removeCallbacksAndMessages(null);
         }
         recognitionListener.reset();
     }
 
     public void stop() {
+        recognitionListener.releaseTimeout();
         if (speechRecognizer != null) {
             Log.w(TAG, "VOICE do stop");
-            speechRecognizer.stopListening();
+            mainHandler.post(() -> speechRecognizer.stopListening());
         }
     }
 
     public void cancel() {
+        recognitionListener.releaseTimeout();
         if (speechRecognizer != null) {
             Log.w(TAG, "VOICE do cancel");
             speechRecognizer.cancel();
@@ -184,9 +215,10 @@ final class VoiceRecognitionManager {
 
     public void shutdown() {
         Log.w(TAG, "VOICE shutdown");
+        recognitionListener.releaseTimeout();
         abandonAudioFocusExclusive();
         // Destroy current SpeechRecognizer
-        handler.post(() -> {
+        mainHandler.post(() -> {
             try {
                 if (speechRecognizer != null) {
                     speechRecognizer.destroy();
@@ -205,13 +237,15 @@ final class VoiceRecognitionManager {
     public void start(VoiceRecognitionListeners... listeners) {
         handleListeners(listeners);
         requestAudioFocusExclusive();
-        handler.post(() -> {
+        mainHandler.post(() -> {
             if (speechRecognizer == null) {
                 speechRecognizer = recognizerCreator.create();
                 speechRecognizer.setRecognitionListener(recognitionListener);
                 Log.v(TAG, "VOICE created");
             }
             Log.i(TAG, "VOICE start listening");
+            recognitionListener.reset();
+            recognitionListener.startTimeout();
             speechRecognizer.startListening(speechRecognizerIntent);
         });
     }

@@ -41,10 +41,10 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
     int VOICE_RECOGNITION_UNKNOWN_ERROR = 203;
     int VOICE_RECOGNITION_EMPTY_RESULTS_ERROR = 204;
     int VOICE_RECOGNITION_UNAVAILABLE_ERROR = 205;
-    int VOICE_RECOGNITION_UNEXPECTED_SHORT_TIME_ERROR = 206;
+    int VOICE_RECOGNITION_STOPPED_TOO_EARLY_ERROR = 206;
     int VOICE_RECOGNITION_RETRY_ERROR = 207;
     int VOICE_RECOGNITION_AFTER_PARTIALS_ERROR = 208;
-    int VOICE_RECOGNITION_NO_MATCH_ERROR = 209;
+
     int MIN_LISTENING_TIME = 2000;
 
     /**
@@ -254,7 +254,11 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
 
     <T extends TextToSpeechListeners> void play(Context context, String text, String groupId, T... listeners);
 
+    <T extends TextToSpeechListeners> void playSilence(Context context, long durationInMillis, String groupId, T... listeners);
+
     <T extends TextToSpeechListeners> void play(Context context, String text, T... listeners);
+
+    <T extends TextToSpeechListeners> void playSilence(Context context, long durationInMillis, T... listeners);
 
     <T extends VoiceRecognitionListeners> void listen(Context context, T... listeners);
 
@@ -262,9 +266,13 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
 
     boolean isSpeechPaused();
 
+    String lastSpeechGroup();
+
     String speechGroup();
 
     void pauseSpeech();
+
+    void releaseSpeech();
 
     void resumeSpeech();
 

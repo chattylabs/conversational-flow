@@ -65,6 +65,10 @@ abstract class RecognitionAdapter implements RecognitionListener {
         return this;
     }
 
+    public abstract void releaseTimeout();
+
+    public abstract void startTimeout();
+
     public abstract void reset();
 
     @Override @CallSuper
