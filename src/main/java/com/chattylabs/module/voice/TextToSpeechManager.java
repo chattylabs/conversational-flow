@@ -150,11 +150,11 @@ final class TextToSpeechManager {
         if (tts == null) {
             initTts(status -> {
                 if (status == TextToSpeech.SUCCESS) {
-                    Log.i(TAG, "TTS TextToSpeechStatus SUCCESS");
                     isReady = true;
                     playTheQueue(map);
                 }
                 else {
+                    Log.e(TAG, "TTS no group Status ERROR");
                     shutdown();
                 }
             }, null);
@@ -169,6 +169,7 @@ final class TextToSpeechManager {
     }
 
     private synchronized void speak(String text, String groupId, @Nullable UtteranceProgressListener listener, String utteranceId) {
+        Log.i(TAG, "TTS speak with group: " + groupId);
         if (listenersMap.containsKey(utteranceId)) {
             utteranceId = utteranceId + "_" + msgQueue.size();
         }
@@ -179,11 +180,11 @@ final class TextToSpeechManager {
         if (tts == null) {
             initTts(status -> {
                 if (status == TextToSpeech.SUCCESS) {
-                    Log.i(TAG, "TTS TextToSpeechStatus SUCCESS");
                     isReady = true;
                     resume();
                 }
                 else {
+                    Log.e(TAG, "TTS Status ERROR");
                     shutdown();
                 }
             }, null);
@@ -233,12 +234,12 @@ final class TextToSpeechManager {
 
     private synchronized void resume() {
         if (isPaused) {
-            Log.i(TAG, "TTS is paused");
+            Log.i(TAG, "TTS is paused. Can't resume.");
             return;
         }
         Log.i(TAG, "TTS is resuming");
         if (isGroupQueueEmpty()) {
-            Log.i(TAG, "TTS is empty");
+            Log.v(TAG, "TTS is group queue empty");
             moveToNextGroup();
         }
         if (!isGroupQueueEmpty()) {
@@ -250,7 +251,7 @@ final class TextToSpeechManager {
             abandonAudioFocusExclusive();
             stopSco();
             isSpeaking = false;
-            Log.i(TAG, "no more pending messages");
+            Log.i(TAG, "TTS Finished - no more pending messages");
         }
     }
 
@@ -269,7 +270,7 @@ final class TextToSpeechManager {
 
             @Override
             public void onDisconnected() {
-                Log.i(TAG, "Sco onDisconnected - shutdown");
+                Log.w(TAG, "Sco onDisconnected - shutdown");
                 shutdown();
             }
         };
@@ -277,10 +278,10 @@ final class TextToSpeechManager {
         registerGeneralReceivers();
         // Check whether Sco is connected or required
         if (!isBluetoothScoRequired() || audioManager.isBluetoothScoOn()) {
-            Log.i(TAG, audioManager.isBluetoothScoOn() ? "bluetooth sco is on" : "no bluetooth sco");
+            Log.v(TAG, "TTS " + (audioManager.isBluetoothScoOn() ? "bluetooth sco on" : "bluetooth sco off"));
             listener.onConnected();
         } else {
-            Log.i(TAG, "waiting for bluetooth sco");
+            Log.v(TAG, "TTS waiting for bluetooth sco");
             // Sco receivers
             registerScoReceivers(listener);
             // Start Bluetooth Sco
@@ -301,13 +302,13 @@ final class TextToSpeechManager {
     }
 
     synchronized void play() {
-        Log.i(TAG, "TTS play");
+        Log.w(TAG, "TTS do play");
         isPaused = false;
         resume();
     }
 
     synchronized void pause() {
-        Log.i(TAG, "TTS pause");
+        Log.w(TAG, "TTS do pause");
         isPaused = true;
         isSpeaking = false;
     }
@@ -318,14 +319,13 @@ final class TextToSpeechManager {
 
     synchronized void stop() {
         if (tts != null) {
-            Log.i(TAG, "TTS stop");
+            Log.w(TAG, "TTS do stop");
             tts.stop();
         }
     }
 
     synchronized void shutdown() {
-        // Release and reset all resources
-        release();
+        Log.w(TAG, "TTS shutdown");
         // Unregister all broadcast receivers
         unRegisterReceivers();
         // Stop Bluetooth Sco if required
@@ -337,10 +337,12 @@ final class TextToSpeechManager {
         if (tts != null) {
             try {
                 tts.shutdown();
+                Log.v(TAG, "TTS destroyed");
             } catch (Exception ignored) {}
             tts = null;
-            Log.i(TAG, "TTS destroyed");
         }
+        // Release and reset all resources
+        release();
     }
 
     public TextToSpeech.EngineInfo getEngineByName(TextToSpeech tts, String name) {
@@ -374,6 +376,7 @@ final class TextToSpeechManager {
     }
 
     private void release() {
+        Log.v(TAG, "TTS release");
         listenersMap = new LinkedHashMap<>();
         msgQueue = new LinkedHashMap<>();
         msgQueue.put(DEFAULT_GROUP_ID, new ConcurrentLinkedQueue<>());
@@ -389,7 +392,7 @@ final class TextToSpeechManager {
     boolean isGroupQueueEmpty() {
         boolean isEmpty = !msgQueue.containsKey(groupId) || msgQueue.get(groupId).isEmpty();
         if (isEmpty && !groupId.equals(DEFAULT_GROUP_ID)) {
-            Log.i(TAG, "remove group id: " + groupId);
+            Log.v(TAG, "TTS remove group: " + groupId);
             msgQueue.remove(groupId);
         }
         return isEmpty;
@@ -402,7 +405,7 @@ final class TextToSpeechManager {
         } else {
             groupId = DEFAULT_GROUP_ID;
         }
-        Log.i(TAG, "moved to group: " + groupId);
+        Log.v(TAG, "TTS moved to group: " + groupId);
     }
 
     boolean isBluetoothScoRequired() {
@@ -431,7 +434,7 @@ final class TextToSpeechManager {
 
     private void registerGeneralReceivers() {
         if (!isPhoneStateReceiverRegistered) {
-            Log.i(TAG, "register for phone receiver");
+            Log.v(TAG, "TTS register for phone receiver");
             IntentFilter phoneFilter = new IntentFilter();
             phoneFilter.addAction(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
             phoneFilter.addAction(Intent.ACTION_NEW_OUTGOING_CALL);
@@ -460,7 +463,7 @@ final class TextToSpeechManager {
     private void registerScoReceivers(OnScoListener onScoListener) {
         scoReceiver.setListener(onScoListener);
         if (!isScoReceiverRegistered) {
-            Log.i(TAG, "register for sco receiver");
+            Log.v(TAG, "TTS register sco receiver");
             IntentFilter scoFilter = new IntentFilter();
             scoFilter.addAction(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
             application.registerReceiver(scoReceiver, scoFilter);
@@ -485,7 +488,7 @@ final class TextToSpeechManager {
         if (audioManager.isBluetoothScoAvailableOffCall() && !audioManager.isBluetoothScoOn()) {
             audioManager.setBluetoothScoOn(true);
             audioManager.startBluetoothSco();
-            Log.i(TAG, "start bluetooth sco");
+            Log.v(TAG, "TTS start bluetooth sco");
         }
     }
 
@@ -493,13 +496,13 @@ final class TextToSpeechManager {
         if (audioManager.isBluetoothScoAvailableOffCall() && audioManager.isBluetoothScoOn()) {
             audioManager.setBluetoothScoOn(false);
             audioManager.stopBluetoothSco();
-            Log.i(TAG, "stop bluetooth sco");
+            Log.v(TAG, "TTS stop bluetooth sco");
         }
     }
 
     private boolean abandonAudioFocusMayDuck() {
         if (requestAudioFocusMayDuck && !requestAudioFocusExclusive) {
-            Log.i(TAG, "abandon Audio Focus May Duck");
+            Log.v(TAG, "TTS abandon Audio Focus May Duck");
             requestAudioFocusMayDuck = false;
             unsetAudioMode();
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
@@ -515,7 +518,7 @@ final class TextToSpeechManager {
 
     private boolean abandonAudioFocusExclusive() {
         if (requestAudioFocusExclusive) {
-            Log.i(TAG, "abandon Audio Focus Exclusive");
+            Log.v(TAG, "TTS abandon Audio Focus Exclusive");
             requestAudioFocusExclusive = false;
             unsetAudioMode();
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
@@ -531,7 +534,7 @@ final class TextToSpeechManager {
 
     private boolean requestAudioFocusMayDuck() {
         if (!requestAudioFocusMayDuck && !requestAudioFocusExclusive) {
-            Log.i(TAG, "request Audio Focus May Duck");
+            Log.v(TAG, "TTS request Audio Focus May Duck");
             requestAudioFocusMayDuck = true;
             setAudioMode();
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
@@ -556,7 +559,7 @@ final class TextToSpeechManager {
 
     private boolean requestAudioFocusExclusive() {
         if (!requestAudioFocusExclusive) {
-            Log.i(TAG, "request Audio Focus Exclusive");
+            Log.v(TAG, "TTS request Audio Focus Exclusive");
             requestAudioFocusMayDuck = false;
             requestAudioFocusExclusive = true;
             setAudioMode();
@@ -599,7 +602,7 @@ final class TextToSpeechManager {
     private void handleListener(@NonNull String utteranceId, @NonNull UtteranceProgressListener listener) {
         //Preconditions.checkNotNull(utteranceId);
         listenersMap.put(utteranceId, listener);
-        Log.i(TAG, "Added a new listener, size:  " + listenersMap.size());
+        Log.v(TAG, "TTS added utterance listener, size:  " + listenersMap.size());
     }
 
     private void addMessageToQueue(@NonNull String utteranceId, String message, HashMap<String, String> params, @NonNull String groupId) {
@@ -608,18 +611,18 @@ final class TextToSpeechManager {
         map.put(MAP_MESSAGE, message);
         map.put(MAP_PARAMS, params);
         if (!msgQueue.containsKey(groupId)) {
-            Log.i(TAG, "Added a new group: " + groupId);
+            Log.v(TAG, "TTS added group: " + groupId);
             msgQueue.put(groupId, new ConcurrentLinkedQueue<>());
         }
         msgQueue.get(groupId).add(map);
-        Log.i(TAG, "Added a message to the queue, size: " + msgQueue.size());
+        Log.v(TAG, "TTS added message to queue, size: " + msgQueue.size());
     }
 
     private HashMap<String, String> buildParams(@NonNull String utteranceId, @NonNull String audioStream) {
         HashMap<String, String> params = new LinkedHashMap<>();
         params.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, utteranceId);
         params.put(TextToSpeech.Engine.KEY_PARAM_STREAM, audioStream);
-        Log.i(TAG, "Building TTS params " + params);
+        Log.v(TAG, "TTS building params " + params);
         return params;
     }
 
@@ -640,7 +643,7 @@ final class TextToSpeechManager {
 
             @Override
             public void onStart(String utteranceId) {
-                Log.i(TAG, "on start, listener map size: " + listenersMap.size());
+                Log.v(TAG, "TTS on start, utterance listener size: " + listenersMap.size());
                 if (listenersMap.size() > 0) {
                     UtteranceProgressListener listener = listenersMap.get(utteranceId);
                     if (listener != null) {
@@ -652,15 +655,15 @@ final class TextToSpeechManager {
             @Override
             public void onDone(String utteranceId) {
                 if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
-                    Log.i(TAG, "on done, check language");
+                    Log.v(TAG, "TTS on done, check language");
                     checkLanguage(onInit, true);
                 }
                 else {
-                    Log.i(TAG, "on done, listener map size: " + listenersMap.size());
+                    Log.v(TAG, "TTS on done, utterance listener size: " + listenersMap.size());
                     if (listenersMap.size() > 0) {
                         UtteranceProgressListener listener = listenersMap.remove(utteranceId);
                         if (listener != null) {
-                            Log.i(TAG, "reading message done");
+                            Log.w(TAG, "TTS read message > done.");
                             listener.onDone(utteranceId);
                         }
                     }
@@ -670,7 +673,7 @@ final class TextToSpeechManager {
 
             @Override
             public void onError(String utteranceId) {
-                Log.i(TAG, "on error, listener map size: " + listenersMap.size());
+                Log.e(TAG, "TTS on error, utterance listener size: " + listenersMap.size());
                 if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
                     shutdown();
                     onInit.execute(TEXT_TO_SPEECH_UNKNOWN_ERROR);
@@ -690,8 +693,8 @@ final class TextToSpeechManager {
             @Override
             @TargetApi(Build.VERSION_CODES.LOLLIPOP)
             public void onError(String utteranceId, int errorCode) {
-                Log.i(TAG, "on error, listener map size: " + listenersMap.size());
-                Log.i(TAG, "on error, code: " + getTextToSpeechErrorType(errorCode));
+                Log.e(TAG, "TTS on error, utterance listener size: " + listenersMap.size());
+                Log.e(TAG, "TTS on error, code: " + getTextToSpeechErrorType(errorCode));
                 if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
                     shutdown();
                     if (errorCode == TextToSpeech.ERROR_NOT_INSTALLED_YET) {
@@ -719,19 +722,19 @@ final class TextToSpeechManager {
             if (reviewAgain && !fromUtterance) {
                 reviewAgain = false;
                 shutdown();
-                Log.i(TAG, "check again");
+                Log.v(TAG, "TTS check again");
                 check(onInit);
             }
             else {
                 reviewAgain = true;
                 shutdown();
-                Log.i(TAG, "checking error");
+                Log.v(TAG, "TTS checking error");
                 onInit.execute(TEXT_TO_SPEECH_LANGUAGE_NOT_SUPPORTED_ERROR);
             }
         }
         else {
             // Everything has gone well!
-            Log.i(TAG, "checking has passed!");
+            Log.i(TAG, "TTS checking has passed!");
             shutdown();
             onInit.execute(TEXT_TO_SPEECH_AVAILABLE);
         }
@@ -740,17 +743,18 @@ final class TextToSpeechManager {
     private void tryToDownloadTtsData(OnTextToSpeechInitialisedListener onInit) {
         if (!triedToDownloadTtsData) {
             triedToDownloadTtsData = true;
-            Log.i(TAG, "try to download audio data");
+            Log.v(TAG, "TTS try to download audio data");
             try {
                 // Try downloading data voice!
                 speak("", "DOWNLOADING_TTS_DATA", null, CHECKING_UTTERANCE_ID);
             } catch (Exception e) {
-                Log.i(TAG, "error when downloading audio data: " + e.getMessage());
+                Log.e(TAG, "error when downloading audio data: " + e.getMessage());
                 // Otherwise it reports the TextToSpeechStatus to the Callback
                 checkLanguage(onInit, false);
             }
         }
         else {
+            Log.e(TAG, "TTS try to download audio data - ERROR");
             shutdown();
             onInit.execute(TEXT_TO_SPEECH_UNKNOWN_ERROR);
         }
@@ -764,6 +768,7 @@ final class TextToSpeechManager {
         String finalText = HtmlUtils.from(text).toString();
 
         for (MessageFilter filter : filters) {
+            Log.v(TAG, "TTS apply filter: " + filter);
             finalText = filter.apply(finalText);
         }
 
@@ -778,7 +783,7 @@ final class TextToSpeechManager {
     }
 
     private void play(String utteranceId, String text, HashMap<String, String> params) {
-        Log.i(TAG, "read message: \"" + text + "\"");
+        Log.i(TAG, "TTS reading: \"" + text + "\"");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             Bundle newParams = new Bundle();
             String paramStream = params.get(TextToSpeech.Engine.KEY_PARAM_STREAM);
