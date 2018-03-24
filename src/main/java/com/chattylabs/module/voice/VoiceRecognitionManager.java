@@ -30,6 +30,8 @@ import static com.chattylabs.module.voice.VoiceInteractionComponent.OnVoiceRecog
 import static com.chattylabs.module.voice.VoiceInteractionComponent.OnVoiceRecognitionResultsListener;
 import static com.chattylabs.module.voice.VoiceInteractionComponent.VOICE_RECOGNITION_AFTER_PARTIALS_ERROR;
 import static com.chattylabs.module.voice.VoiceInteractionComponent.VOICE_RECOGNITION_EMPTY_RESULTS_ERROR;
+import static com.chattylabs.module.voice.VoiceInteractionComponent.VOICE_RECOGNITION_LOW_SOUND_ERROR;
+import static com.chattylabs.module.voice.VoiceInteractionComponent.VOICE_RECOGNITION_NO_SOUND_ERROR;
 import static com.chattylabs.module.voice.VoiceInteractionComponent.VOICE_RECOGNITION_RETRY_ERROR;
 import static com.chattylabs.module.voice.VoiceInteractionComponent.VOICE_RECOGNITION_STOPPED_TOO_EARLY_ERROR;
 import static com.chattylabs.module.voice.VoiceInteractionComponent.VOICE_RECOGNITION_UNAVAILABLE_ERROR;
@@ -60,27 +62,49 @@ final class VoiceRecognitionManager {
         private int intents;
         private long elapsedTime;
         private Timer timeout;
+        private TimerTask task;
 
         @Override
         public void releaseTimeout() {
-            if (timeout != null) timeout.cancel();
+            if (timeout != null) {
+                Log.w(TAG, "VOICE releasing previous timeout");
+                task.cancel();
+                timeout.cancel();
+                timeout = null;
+                task = null;
+            }
         }
 
         @Override
         public void startTimeout() {
             releaseTimeout();
+            Log.w(TAG, "VOICE started timeout");
             timeout = new Timer();
-            timeout.schedule(new TimerTask() {
+            task = new TimerTask() {
                 @Override
                 public void run() {
+                    Log.w(TAG, "VOICE reached timeout");
                     mainHandler.post(() -> speechRecognizer.stopListening());
                 }
-            }, MIN_LISTENING_TIME * 2);
+            };
+            timeout.schedule(task, MIN_LISTENING_TIME * 3);
         }
 
         @Override
         public void reset() {
-            Log.v(TAG, "VOICE reset listener");
+            cleanup();
+            setTryAgain(false);
+            setOnError(null);
+            setOnPartialResults(null);
+            setOnResults(null);
+            setOnMostConfidentResult(null);
+            setOnReady(null);
+            setSoundLevel(UNKNOWN);
+        }
+
+        private void cleanup() {
+            Log.v(TAG, "VOICE cleanup listener");
+            releaseTimeout();
             elapsedTime = System.currentTimeMillis();
             intents = 0;
         }
@@ -88,38 +112,38 @@ final class VoiceRecognitionManager {
         @Override
         public void onError(int error) {
             Log.e(TAG, "VOICE error: " + getVoiceRecognitionErrorType(error));
-            // Restart the recognizer
-            releaseTimeout();
-            cancel();
             // We consider 2 sec as timeout for non speech
             boolean stoppedTooEarly = (System.currentTimeMillis() - elapsedTime) < VoiceInteractionComponent.MIN_LISTENING_TIME;
             // Start checking for the error
             OnVoiceRecognitionErrorListener errorListener = getOnError();
+            int soundLevel = getSoundLevel();
+            Log.v(TAG, "Sound Level: " + soundLevel);
+            // Restart the recognizer
+            cancel();
             if (errorListener != null) {
                 if (needRetry(error)) {
-                    reset();
                     errorListener.execute(VOICE_RECOGNITION_UNAVAILABLE_ERROR, error);
                 }
                 else if (stoppedTooEarly) {
-                    reset();
                     errorListener.execute(VOICE_RECOGNITION_STOPPED_TOO_EARLY_ERROR, error);
                 }
+                else if (soundLevel == NO_SOUND) {
+                    errorListener.execute(VOICE_RECOGNITION_NO_SOUND_ERROR, error);
+                }
+                else if (soundLevel == LOW_SOUND) {
+                    errorListener.execute(VOICE_RECOGNITION_LOW_SOUND_ERROR, error);
+                }
                 else if (intents > 0) {
-                    reset();
                     errorListener.execute(VOICE_RECOGNITION_AFTER_PARTIALS_ERROR, error);
                 }
                 else if (isTryAgain()) {
-                    reset();
                     errorListener.execute(error == SpeechRecognizer.ERROR_NO_MATCH ?
                                           VOICE_RECOGNITION_UNKNOWN_ERROR :
                                           VOICE_RECOGNITION_RETRY_ERROR, error);
                 }
                 else { // Restore TTS
-                    reset();
                     errorListener.execute(VOICE_RECOGNITION_UNKNOWN_ERROR, error);
                 }
-            } else {
-                reset();
             }
         }
 
@@ -130,7 +154,7 @@ final class VoiceRecognitionManager {
             List<String> textResults = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
             float[] confidences = results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
             if (textResults != null && (textResults.size() > 1 || (textResults.size() > 0 && textResults.get(0).length() > 0))) {
-                reset();
+                cleanup();
                 if (getOnResults() != null) {
                     Log.v(TAG, "VOICE results: " + textResults);
                     getOnResults().execute(textResults, confidences);
@@ -143,7 +167,7 @@ final class VoiceRecognitionManager {
             }
             else {
                 Log.e(TAG, "VOICE NO results");
-                reset();
+                cleanup();
                 if (getOnError() != null) getOnError().execute(VOICE_RECOGNITION_EMPTY_RESULTS_ERROR, -1);
             }
         }
@@ -151,16 +175,14 @@ final class VoiceRecognitionManager {
         @Override
         public void onPartialResults(Bundle partialResults) {
             releaseTimeout();
-            List<String> textResults = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-            float[] confidences = partialResults.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
             intents++;
             if (getOnPartialResults() == null) return;
+            List<String> textResults = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+            float[] confidences = partialResults.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
             if (textResults != null && (textResults.size() > 1 || (textResults.size() > 0 && textResults.get(0).length() > 0))) {
-                reset();
-                if (getOnPartialResults() != null) {
-                    Log.v(TAG, "VOICE partial results: " + textResults);
-                    getOnPartialResults().execute(textResults, confidences);
-                }
+                cleanup();
+                Log.v(TAG, "VOICE partial results: " + textResults);
+                getOnPartialResults().execute(textResults, confidences);
             }
         }
 
@@ -185,7 +207,8 @@ final class VoiceRecognitionManager {
         this.speechRecognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, application.getPackageName());
-        this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false);
+        this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
+        this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 5000L);
         this.recognizerCreator = recognizerCreator;
     }
 
@@ -198,7 +221,7 @@ final class VoiceRecognitionManager {
     }
 
     public void stop() {
-        recognitionListener.releaseTimeout();
+        recognitionListener.reset();
         if (speechRecognizer != null) {
             Log.w(TAG, "VOICE do stop");
             mainHandler.post(() -> speechRecognizer.stopListening());
@@ -206,9 +229,10 @@ final class VoiceRecognitionManager {
     }
 
     public void cancel() {
-        recognitionListener.releaseTimeout();
+        recognitionListener.reset();
         if (speechRecognizer != null) {
             Log.w(TAG, "VOICE do cancel");
+            speechRecognizer.setRecognitionListener(null);
             speechRecognizer.cancel();
         }
     }
@@ -221,6 +245,7 @@ final class VoiceRecognitionManager {
         mainHandler.post(() -> {
             try {
                 if (speechRecognizer != null) {
+                    speechRecognizer.setRecognitionListener(null);
                     speechRecognizer.destroy();
                     speechRecognizer = null;
                     Log.v(TAG, "VOICE destroyed");
@@ -240,17 +265,17 @@ final class VoiceRecognitionManager {
         mainHandler.post(() -> {
             if (speechRecognizer == null) {
                 speechRecognizer = recognizerCreator.create();
-                speechRecognizer.setRecognitionListener(recognitionListener);
                 Log.v(TAG, "VOICE created");
             }
-            Log.i(TAG, "VOICE start listening");
-            recognitionListener.reset();
             recognitionListener.startTimeout();
+            Log.i(TAG, "VOICE start listening");
+            speechRecognizer.setRecognitionListener(recognitionListener);
             speechRecognizer.startListening(speechRecognizerIntent);
         });
     }
 
     private void handleListeners(VoiceRecognitionListeners... listeners) {
+        recognitionListener.reset();
         if (listeners != null && listeners.length > 0) {
             for (VoiceRecognitionListeners item : listeners) {
                 if (item instanceof OnVoiceRecognitionReadyListener) {

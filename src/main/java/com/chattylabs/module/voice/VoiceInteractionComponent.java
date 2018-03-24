@@ -2,7 +2,6 @@ package com.chattylabs.module.voice;
 
 import android.content.Context;
 import android.os.Bundle;
-import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -18,6 +17,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,6 +29,8 @@ import java.util.regex.Pattern;
 public interface VoiceInteractionComponent extends RequiredPermissions {
 
     String TAG = Tag.make(VoiceInteractionComponent.class);
+
+    String DEFAULT_GROUP = "default_group";
 
     int TEXT_TO_SPEECH_AVAILABLE = 101;
     int TEXT_TO_SPEECH_AVAILABLE_BUT_INACTIVE = 102;
@@ -44,6 +46,8 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
     int VOICE_RECOGNITION_STOPPED_TOO_EARLY_ERROR = 206;
     int VOICE_RECOGNITION_RETRY_ERROR = 207;
     int VOICE_RECOGNITION_AFTER_PARTIALS_ERROR = 208;
+    int VOICE_RECOGNITION_NO_SOUND_ERROR = 209;
+    int VOICE_RECOGNITION_LOW_SOUND_ERROR = 210;
 
     int MIN_LISTENING_TIME = 2000;
 
@@ -113,7 +117,7 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
     }
 
     interface SpeechRecognizerCreator {
-        SpeechRecognizer create();
+        android.speech.SpeechRecognizer create();
     }
 
     interface VoiceInteractionStatus {
@@ -124,6 +128,96 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
 
     interface MessageFilter {
         String apply(String message);
+    }
+
+    @FunctionalInterface
+    interface Consumer<T> {
+
+        /**
+         * Performs this operation on the given argument.
+         *
+         * @param t the input argument
+         */
+        void accept(@Nullable T t);
+
+        /**
+         * Returns a composed {@code Consumer} that performs, in sequence, this
+         * operation followed by the {@code after} operation. If performing either
+         * operation throws an exception, it is relayed to the caller of the
+         * composed operation.  If performing this operation throws an exception,
+         * the {@code after} operation will not be performed.
+         *
+         * @param after the operation to perform after this operation
+         * @return a composed {@code Consumer} that performs in sequence this
+         * operation followed by the {@code after} operation
+         * @throws NullPointerException if {@code after} is null
+         */
+        default Consumer<T> andThen(Consumer<? super T> after) {
+            Objects.requireNonNull(after);
+            return (@Nullable T t) -> { accept(t); after.accept(t); };
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    interface SpeechRecognizer {
+        <T extends VoiceRecognitionListeners> void listen(T... listeners);
+
+        void shutdown();
+
+        void cancel();
+    }
+
+    @SuppressWarnings("unchecked")
+    interface SpeechSynthesizer {
+        void addFilter(MessageFilter filter);
+
+        void setBluetoothScoRequired(boolean required);
+
+        <T extends TextToSpeechListeners> void play(String text, String groupId, T... listeners);
+
+        <T extends TextToSpeechListeners> void play(String text, T... listeners);
+
+        <T extends TextToSpeechListeners> void playSilence(long durationInMillis, String groupId, T... listeners);
+
+        <T extends TextToSpeechListeners> void playSilence(long durationInMillis, T... listeners);
+
+        void pause();
+
+        void release();
+
+        void resume();
+
+        void shutdown();
+
+        boolean isQueueEmpty();
+
+        boolean isPaused();
+
+        String lastGroup();
+
+        @Nullable
+        String nextGroup();
+
+        String group();
+    }
+
+    interface Conversation extends Flow.Edge {
+        SpeechSynthesizer getSpeechSynthesizer();
+
+        SpeechRecognizer getSpeechRecognizer();
+
+        void setAdviceMessageOnLowSound(String adviceMessageOnLowSound);
+
+        void addNode(@NonNull Node node);
+
+        Flow createFlow();
+
+        @Override
+        void addEdge(@NonNull Node node, @NonNull Node incomingEdge);
+
+        void start(Node root);
+
+        void next();
     }
 
     /**
@@ -199,23 +293,23 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
 
     static String getVoiceRecognitionErrorType(int error) {
         switch (error) {
-            case SpeechRecognizer.ERROR_AUDIO:
+            case android.speech.SpeechRecognizer.ERROR_AUDIO:
                 return "ERROR_AUDIO";
-            case SpeechRecognizer.ERROR_CLIENT:
+            case android.speech.SpeechRecognizer.ERROR_CLIENT:
                 return "ERROR_CLIENT";
-            case SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS:
+            case android.speech.SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS:
                 return "ERROR_INSUFFICIENT_PERMISSIONS";
-            case SpeechRecognizer.ERROR_NETWORK:
+            case android.speech.SpeechRecognizer.ERROR_NETWORK:
                 return "ERROR_NETWORK";
-            case SpeechRecognizer.ERROR_NETWORK_TIMEOUT:
+            case android.speech.SpeechRecognizer.ERROR_NETWORK_TIMEOUT:
                 return "ERROR_NETWORK_TIMEOUT";
-            case SpeechRecognizer.ERROR_NO_MATCH:
+            case android.speech.SpeechRecognizer.ERROR_NO_MATCH:
                 return "ERROR_NO_MATCH";
-            case SpeechRecognizer.ERROR_RECOGNIZER_BUSY:
+            case android.speech.SpeechRecognizer.ERROR_RECOGNIZER_BUSY:
                 return "ERROR_RECOGNIZER_BUSY";
-            case SpeechRecognizer.ERROR_SERVER:
+            case android.speech.SpeechRecognizer.ERROR_SERVER:
                 return "ERROR_SERVER";
-            case SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
+            case android.speech.SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
                 return "ERROR_SPEECH_TIMEOUT";
             default:
                 return "ERROR_UNKNOWN";
@@ -248,41 +342,13 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
 
     void setup(Context context, OnSetupListener onSetupListener);
 
-    void addSpeechFilter(Context context, MessageFilter filter);
+    SpeechSynthesizer getSpeechSynthesizer(Context context);
 
-    void setBluetoothScoRequired(Context context, boolean required);
+    SpeechRecognizer getSpeechRecognizer(Context context);
 
-    <T extends TextToSpeechListeners> void play(Context context, String text, String groupId, T... listeners);
-
-    <T extends TextToSpeechListeners> void playSilence(Context context, long durationInMillis, String groupId, T... listeners);
-
-    <T extends TextToSpeechListeners> void play(Context context, String text, T... listeners);
-
-    <T extends TextToSpeechListeners> void playSilence(Context context, long durationInMillis, T... listeners);
-
-    <T extends VoiceRecognitionListeners> void listen(Context context, T... listeners);
-
-    boolean hasNextSpeech();
-
-    boolean isSpeechPaused();
-
-    String lastSpeechGroup();
-
-    String speechGroup();
-
-    void pauseSpeech();
-
-    void releaseSpeech();
-
-    void resumeSpeech();
+    Conversation createConversation(Context context);
 
     void stop();
 
     void shutdown();
-
-    void shutdownTextToSpeech();
-
-    void shutdownVoiceRecognition();
-
-    void cancelVoiceRecognition();
 }

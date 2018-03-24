@@ -3,8 +3,19 @@ package com.chattylabs.module.voice;
 import android.os.Bundle;
 import android.speech.RecognitionListener;
 import android.support.annotation.CallSuper;
+import android.util.Log;
+
+import com.chattylabs.module.core.Tag;
 
 abstract class RecognitionAdapter implements RecognitionListener {
+    public static final float MIN_THRESHOLD = 15f;
+    public static final float THRESHOLD_SOUND = 4f;
+    private final boolean DEBUG = true;
+    public static final int UNKNOWN = -1;
+    public static final int NO_SOUND = 1;
+    public static final int LOW_SOUND = 2;
+    public static final int NORMAL_SOUND = 3;
+    private static final String TAG = Tag.make(RecognitionAdapter.class);
 
     private VoiceInteractionComponent.OnVoiceRecognitionReadyListener onReady;
     private VoiceInteractionComponent.OnVoiceRecognitionResultsListener onResults;
@@ -13,6 +24,7 @@ abstract class RecognitionAdapter implements RecognitionListener {
     private VoiceInteractionComponent.OnVoiceRecognitionErrorListener onError;
 
     private boolean tryAgain;
+    private int soundLevel = UNKNOWN;
 
     public void setOnReady(VoiceInteractionComponent.OnVoiceRecognitionReadyListener onReady) {
         this.onReady = onReady;
@@ -65,6 +77,14 @@ abstract class RecognitionAdapter implements RecognitionListener {
         return this;
     }
 
+    public int getSoundLevel() {
+        return soundLevel;
+    }
+
+    public void setSoundLevel(int soundLevel) {
+        this.soundLevel = soundLevel;
+    }
+
     public abstract void releaseTimeout();
 
     public abstract void startTimeout();
@@ -83,6 +103,18 @@ abstract class RecognitionAdapter implements RecognitionListener {
 
     @Override
     public void onRmsChanged(float rmsdB) {
+        if (DEBUG) Log.v(TAG, "RECOGNITION - Rms db: " + rmsdB);
+
+        if (rmsdB <= THRESHOLD_SOUND && soundLevel <= NO_SOUND) {
+            soundLevel = NO_SOUND;
+            // quiet
+        } else if (rmsdB > THRESHOLD_SOUND && rmsdB < MIN_THRESHOLD && soundLevel <= LOW_SOUND) {
+            soundLevel = LOW_SOUND;
+            // medium
+        } else if (rmsdB >= MIN_THRESHOLD && soundLevel <= NORMAL_SOUND) {
+            soundLevel = NORMAL_SOUND;
+            // loud
+        }
     }
 
     @Override

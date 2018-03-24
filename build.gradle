@@ -9,7 +9,7 @@ def version = android.defaultConfig.versionName
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    api "com.chattylabs.module:core:$coreVersion"
+    api "com.chattylabs.module:core:+"
 
     dagger.each {
         implementation it
