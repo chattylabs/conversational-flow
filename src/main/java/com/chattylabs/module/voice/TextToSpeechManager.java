@@ -824,16 +824,15 @@ final class TextToSpeechManager {
                 task.cancel();
                 timer.cancel();
                 if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
-                    Log.v(TAG, "TTS on done, setup language");
+                    Log.v(TAG, "TTS on done, stop timeout, go to setup language");
                     checkLanguage(onInit, true);
                 }
                 else {
                     synchronized (listenersMap) {
-                        Log.v(TAG, "TTS on done, utterance listener size: " + listenersMap.size());
+                        Log.v(TAG, "TTS on done, stop timeout, utterance listener size: " + listenersMap.size());
                         if (listenersMap.size() > 0) {
                             UtteranceProgressListener listener = listenersMap.remove(utteranceId);
                             if (listener != null) {
-                                Log.w(TAG, "TTS read message > done.");
                                 listener.onDone(utteranceId);
                             }
                         }
@@ -846,7 +845,7 @@ final class TextToSpeechManager {
             public void onError(String utteranceId) {
                 task.cancel();
                 timer.cancel();
-                Log.e(TAG, "TTS on error, utterance listener size: " + listenersMap.size());
+                Log.e(TAG, "TTS on error, stop timeout, utterance listener size: " + listenersMap.size());
                 if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
                     shutdown();
                     onInit.execute(TEXT_TO_SPEECH_UNKNOWN_ERROR);
@@ -870,8 +869,8 @@ final class TextToSpeechManager {
             public void onError(String utteranceId, int errorCode) {
                 task.cancel();
                 timer.cancel();
-                Log.e(TAG, "TTS on error, utterance listener size: " + listenersMap.size());
-                Log.e(TAG, "TTS on error, code: " + getTextToSpeechErrorType(errorCode));
+                Log.e(TAG, "TTS on error, stop timeout, utterance listener size: " + listenersMap.size());
+                Log.e(TAG, "TTS error code: " + getTextToSpeechErrorType(errorCode));
                 if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
                     shutdown();
                     if (errorCode == TextToSpeech.ERROR_NOT_INSTALLED_YET) {

@@ -287,7 +287,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                                         else next();
                                     },
                                     (OnVoiceRecognitionErrorListener) (error, originalError) -> {
-                                        Log.e(TAG, "Conversation - listening error");
+                                        Log.e(TAG, "Conversation - listening Capture error");
                                         boolean unexpected = error == VOICE_RECOGNITION_STOPPED_TOO_EARLY_ERROR;
                                         boolean isLowSound = error == VOICE_RECOGNITION_LOW_SOUND_ERROR;
                                         boolean isNoSound = error == VOICE_RECOGNITION_NO_SOUND_ERROR;
@@ -303,7 +303,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                                         processResults(results, actions, true);
                                     },
                                     (OnVoiceRecognitionErrorListener) (error, originalError) -> {
-                                        Log.e(TAG, "Conversation - listening error");
+                                        Log.e(TAG, "Conversation - listening Action error");
                                         boolean unexpected = error == VOICE_RECOGNITION_STOPPED_TOO_EARLY_ERROR;
                                         boolean isLowSound = error == VOICE_RECOGNITION_LOW_SOUND_ERROR;
                                         boolean isNoSound = error == VOICE_RECOGNITION_NO_SOUND_ERROR;
@@ -346,18 +346,18 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
             private void noMatch(VoiceNoMatchAction noMatchAction, boolean isUnexpected, boolean isLowSound, boolean isNoSound,
                                  @Nullable List<String> results) {
                 if (noMatchAction.retry > 0) {
-                    Log.v(TAG, "Conversation - retry: " + noMatchAction.retry);
                     noMatchAction.retry--;
+                    Log.v(TAG, "Conversation - pending retry: " + noMatchAction.retry);
                     if (isUnexpected && noMatchAction.unexpectedErrorMessage != null) {
                         Log.v(TAG, "Conversation - unexpected error");
-                        play(noMatchAction.unexpectedErrorMessage, () -> start(current));
+                        play(noMatchAction.unexpectedErrorMessage, this::next);
                     } else if (isLowSound && noMatchAction.lowSoundErrorMessage != null) {
                         Log.v(TAG, "Conversation - low sound");
-                        play(noMatchAction.lowSoundErrorMessage, () -> start(current));
+                        play(noMatchAction.lowSoundErrorMessage, this::next);
                     } else if (!isNoSound && noMatchAction.listeningErrorMessage != null) {
-                        play(noMatchAction.listeningErrorMessage, () -> start(current));
+                        play(noMatchAction.listeningErrorMessage, this::next);
                     } else if (!isNoSound) {
-                        start(current);
+                        next();
                     } else {
                         Log.v(TAG, "Conversation - no sound at all");
                         // No repeat
@@ -366,9 +366,8 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                         else next(); // TODO: throw new Missing not matched?
                     }
                 } else {
-                    if (noMatchAction.onNotMatched != null) {
-                        noMatchAction.onNotMatched.accept(results);
-                    } else next(); // TODO: throw new Missing not matched?
+                    if (noMatchAction.onNotMatched != null) noMatchAction.onNotMatched.accept(results);
+                    else next(); // TODO: throw new Missing not matched?
                 }
             }
 
