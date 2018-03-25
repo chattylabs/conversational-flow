@@ -165,6 +165,8 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
         void shutdown();
 
         void cancel();
+
+        void setRmsDebug(boolean debug);
     }
 
     @SuppressWarnings("unchecked")
@@ -206,11 +208,9 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
 
         SpeechRecognizer getSpeechRecognizer();
 
-        void setAdviceMessageOnLowSound(String adviceMessageOnLowSound);
-
         void addNode(@NonNull Node node);
 
-        Flow createFlow();
+        EdgeSource prepare();
 
         @Override
         void addEdge(@NonNull Node node, @NonNull Node incomingEdge);

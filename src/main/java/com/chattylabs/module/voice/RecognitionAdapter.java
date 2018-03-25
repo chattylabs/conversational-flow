@@ -8,14 +8,14 @@ import android.util.Log;
 import com.chattylabs.module.core.Tag;
 
 abstract class RecognitionAdapter implements RecognitionListener {
-    public static final float MIN_THRESHOLD = 15f;
-    public static final float THRESHOLD_SOUND = 4f;
-    private final boolean DEBUG = true;
+    private static final String TAG = Tag.make(RecognitionAdapter.class);
+
+    private static final float MIN_THRESHOLD = 7f;
+    private static final float THRESHOLD_SOUND = 4f;
     public static final int UNKNOWN = -1;
     public static final int NO_SOUND = 1;
     public static final int LOW_SOUND = 2;
     public static final int NORMAL_SOUND = 3;
-    private static final String TAG = Tag.make(RecognitionAdapter.class);
 
     private VoiceInteractionComponent.OnVoiceRecognitionReadyListener onReady;
     private VoiceInteractionComponent.OnVoiceRecognitionResultsListener onResults;
@@ -25,6 +25,7 @@ abstract class RecognitionAdapter implements RecognitionListener {
 
     private boolean tryAgain;
     private int soundLevel = UNKNOWN;
+    private boolean rmsDebug;
 
     public void setOnReady(VoiceInteractionComponent.OnVoiceRecognitionReadyListener onReady) {
         this.onReady = onReady;
@@ -77,6 +78,10 @@ abstract class RecognitionAdapter implements RecognitionListener {
         return this;
     }
 
+    public void setRmsDebug(boolean rmsDebug) {
+        this.rmsDebug = rmsDebug;
+    }
+
     public int getSoundLevel() {
         return soundLevel;
     }
@@ -103,7 +108,7 @@ abstract class RecognitionAdapter implements RecognitionListener {
 
     @Override
     public void onRmsChanged(float rmsdB) {
-        if (DEBUG) Log.v(TAG, "RECOGNITION - Rms db: " + rmsdB);
+        if (rmsDebug) Log.v(TAG, "RECOGNITION - Rms db: " + rmsdB);
 
         if (rmsdB <= THRESHOLD_SOUND && soundLevel <= NO_SOUND) {
             soundLevel = NO_SOUND;

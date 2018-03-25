@@ -420,6 +420,12 @@ final class TextToSpeechManager {
         Log.w(TAG, "TTS shutdown");
         // Unregister all broadcast receivers
         unRegisterReceivers();
+        forceStop();
+        // Release and reset all resources
+        release();
+    }
+
+    private void forceStop() {
         // Stop Bluetooth Sco if required
         stopSco();
         // Audio focus
@@ -433,8 +439,9 @@ final class TextToSpeechManager {
             } catch (Exception ignored) {}
             tts = null;
         }
-        // Release and reset all resources
-        release();
+        isReady = false;
+        isPaused = false;
+        isSpeaking = false;
     }
 
     TextToSpeech.EngineInfo getEngineByName(TextToSpeech tts, String name) {
@@ -478,9 +485,9 @@ final class TextToSpeechManager {
         }
         groupId = DEFAULT_GROUP;
         bluetoothScoRequired = false;
-        isReady = false;
         reviewAgain = true;
         triedToDownloadTtsData = false;
+        isReady = false;
         isPaused = false;
         isSpeaking = false;
     }
@@ -768,22 +775,31 @@ final class TextToSpeechManager {
     private UtteranceProgressListener initUtterancesListener(OnTextToSpeechInitialisedListener onInit) {
         return new UtteranceProgressListener() {
 
+            private long timestamp;
+            private TimerTask task;
             private Timer timer;
 
             private void startTimeout(String utteranceId) {
+                Log.i(TAG, "TTS started timeout!");
                 timer = new Timer();
-                timer.schedule(new TimerTask() {
+                task = new TimerTask() {
                     @Override
                     public void run() {
                         if (!tts.isSpeaking()) {
                             Log.e(TAG, "TTS reached timeout!");
-                            tts.stop();
+                            forceStop();
                             onDone(utteranceId);
-                        } else {
-                            startTimeout(utteranceId);
+                        }
+                        else {
+                            if (System.currentTimeMillis() - timestamp > TimeUnit.SECONDS.toMillis(30)) {
+                                Log.e(TAG, "TTS over 30 sec!");
+                                forceStop();
+                                onDone(utteranceId);
+                            } else startTimeout(utteranceId);
                         }
                     }
-                }, TimeUnit.SECONDS.toMillis(5));
+                };
+                timer.schedule(task, TimeUnit.SECONDS.toMillis(5));
             }
 
             @Override
@@ -791,6 +807,7 @@ final class TextToSpeechManager {
                 Log.v(TAG, "TTS on start, utterance listener size: " + listenersMap.size());
 
                 startTimeout(utteranceId);
+                timestamp = System.currentTimeMillis();
 
                 synchronized (listenersMap) {
                     if (listenersMap.size() > 0) {
@@ -804,6 +821,7 @@ final class TextToSpeechManager {
 
             @Override
             public void onDone(String utteranceId) {
+                task.cancel();
                 timer.cancel();
                 if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
                     Log.v(TAG, "TTS on done, setup language");
@@ -826,6 +844,7 @@ final class TextToSpeechManager {
 
             @Override
             public void onError(String utteranceId) {
+                task.cancel();
                 timer.cancel();
                 Log.e(TAG, "TTS on error, utterance listener size: " + listenersMap.size());
                 if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
@@ -849,6 +868,7 @@ final class TextToSpeechManager {
             @Override
             @TargetApi(Build.VERSION_CODES.LOLLIPOP)
             public void onError(String utteranceId, int errorCode) {
+                task.cancel();
                 timer.cancel();
                 Log.e(TAG, "TTS on error, utterance listener size: " + listenersMap.size());
                 Log.e(TAG, "TTS on error, code: " + getTextToSpeechErrorType(errorCode));

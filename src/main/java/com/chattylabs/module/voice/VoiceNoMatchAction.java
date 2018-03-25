@@ -4,12 +4,14 @@ import java.util.List;
 
 public class VoiceNoMatchAction implements IAction {
     public int retry;
+    public final String lowSoundErrorMessage;
     public final String listeningErrorMessage;
     public final String unexpectedErrorMessage;
     public final VoiceInteractionComponent.Consumer<List<String>> onNotMatched;
 
     private VoiceNoMatchAction(Builder builder) {
         retry = builder.retry;
+        lowSoundErrorMessage = builder.lowSoundErrorMessage;
         listeningErrorMessage = builder.listeningErrorMessage;
         unexpectedErrorMessage = builder.unexpectedErrorMessage;
         onNotMatched = builder.onNotMatched;
@@ -21,6 +23,7 @@ public class VoiceNoMatchAction implements IAction {
 
     public static final class Builder {
         private int retry;
+        private String lowSoundErrorMessage;
         private String listeningErrorMessage;
         private String unexpectedErrorMessage;
         private VoiceInteractionComponent.Consumer<List<String>> onNotMatched;
@@ -29,6 +32,11 @@ public class VoiceNoMatchAction implements IAction {
 
         public Builder setRetry(int retry) {
             this.retry = retry;
+            return this;
+        }
+
+        public Builder setLowSoundErrorMessage(String lowSoundErrorMessage) {
+            this.lowSoundErrorMessage = lowSoundErrorMessage;
             return this;
         }
 

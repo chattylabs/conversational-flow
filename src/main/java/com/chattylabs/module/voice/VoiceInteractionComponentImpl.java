@@ -72,7 +72,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
     @Override
     public VoiceInteractionComponent.SpeechSynthesizer getSpeechSynthesizer(Context context) {
         if (speechSynthesizer == null) {
-            Log.w(TAG, "VoiceInteraction - create new Synthesizer object");
+            Log.w(TAG, "Synthesizer - create new object");
             init((Application) context.getApplicationContext());
             speechSynthesizer = new VoiceInteractionComponent.SpeechSynthesizer() {
                 @Override
@@ -162,7 +162,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
     @Override
     public VoiceInteractionComponent.SpeechRecognizer getSpeechRecognizer(Context context) {
         if (speechRecognizer == null) {
-            Log.w(TAG, "VoiceInteraction - create new Recognizer object");
+            Log.w(TAG, "Recognizer - create new object");
             init((Application) context.getApplicationContext());
             speechRecognizer = new VoiceInteractionComponent.SpeechRecognizer() {
                 @SafeVarargs
@@ -180,6 +180,11 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                 public void cancel() {
                     voiceRecognitionManager.cancel();
                 }
+
+                @Override
+                public void setRmsDebug(boolean debug) {
+                    voiceRecognitionManager.setRmsDebug(debug);
+                }
             };
         }
         return speechRecognizer;
@@ -193,7 +198,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
             private final Pools.Pool<ArrayList<Node>> mListPool = new Pools.SimplePool<>(10);
             private final SimpleArrayMap<Node, ArrayList<Node>> graph = new SimpleArrayMap<>();
 
-            private String adviceMessageOnLowSound;
+            private Flow flow;
             private Node current;
 
             @Override
@@ -207,11 +212,6 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
             }
 
             @Override
-            public void setAdviceMessageOnLowSound(String adviceMessageOnLowSound) {
-                this.adviceMessageOnLowSound = adviceMessageOnLowSound;
-            }
-
-            @Override
             public void addNode(@NonNull Node node) {
                 if (!graph.containsKey(node)) {
                     graph.put(node, null);
@@ -219,8 +219,9 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
             }
 
             @Override
-            public Flow createFlow() {
-                return new Flow(this);
+            public EdgeSource prepare() {
+                if (flow == null) flow = new Flow(this);
+                return flow;
             }
 
             @Override
@@ -246,7 +247,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
 
             @Override
             public void next() {
-                Log.v(TAG, "Conversation - Running next()");
+                Log.v(TAG, "Conversation - running next");
                 next(getNext());
             }
 
@@ -350,9 +351,9 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                     if (isUnexpected && noMatchAction.unexpectedErrorMessage != null) {
                         Log.v(TAG, "Conversation - unexpected error");
                         play(noMatchAction.unexpectedErrorMessage, () -> start(current));
-                    } else if (isLowSound && adviceMessageOnLowSound != null) {
+                    } else if (isLowSound && noMatchAction.lowSoundErrorMessage != null) {
                         Log.v(TAG, "Conversation - low sound");
-                        play(adviceMessageOnLowSound, () -> start(current));
+                        play(noMatchAction.lowSoundErrorMessage, () -> start(current));
                     } else if (!isNoSound && noMatchAction.listeningErrorMessage != null) {
                         play(noMatchAction.listeningErrorMessage, () -> start(current));
                     } else if (!isNoSound) {

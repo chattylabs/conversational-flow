@@ -2,7 +2,7 @@ package com.chattylabs.module.voice;
 
 import android.support.annotation.NonNull;
 
-public class Flow {
+class Flow implements EdgeSource, EdgeTarget {
     private Node from;
     private Edge edge;
 
@@ -10,13 +10,16 @@ public class Flow {
         this.edge = edge;
     }
 
-    public Flow from(Node node) {
+    @Override
+    public EdgeTarget from(@NonNull Node node) {
         from = node;
         return this;
     }
 
-    public void to(Node node) {
+    @Override
+    public void to(@NonNull Node node, Node... optNodes) {
         edge.addEdge(node, from);
+        for (Node n : optNodes) edge.addEdge(n, from);
     }
 
     interface Edge {

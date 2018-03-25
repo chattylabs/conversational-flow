@@ -43,11 +43,10 @@ import static com.chattylabs.module.voice.VoiceInteractionComponent.selectMostCo
 final class VoiceRecognitionManager {
     private static final String TAG = Tag.make(VoiceRecognitionManager.class);
     private int audioMode;
-
     private boolean bluetoothScoRequired;
-
     private boolean requestAudioFocusExclusive;
     private boolean speakerphoneOn;
+    private boolean rmsDebug;
 
     private final Application application;
     private final AudioManager audioManager;
@@ -260,6 +259,7 @@ final class VoiceRecognitionManager {
     }
 
     public void start(VoiceRecognitionListeners... listeners) {
+        Log.i(TAG, "VOICE - start conversation");
         handleListeners(listeners);
         requestAudioFocusExclusive();
         mainHandler.post(() -> {
@@ -268,6 +268,7 @@ final class VoiceRecognitionManager {
                 Log.v(TAG, "VOICE created");
             }
             recognitionListener.startTimeout();
+            recognitionListener.setRmsDebug(rmsDebug);
             Log.i(TAG, "VOICE start listening");
             speechRecognizer.setRecognitionListener(recognitionListener);
             speechRecognizer.startListening(speechRecognizerIntent);
@@ -311,6 +312,10 @@ final class VoiceRecognitionManager {
 
     public void setPartialResults(boolean partial) {
         this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, partial);
+    }
+
+    public void setRmsDebug(boolean rmsDebug) {
+        this.rmsDebug = rmsDebug;
     }
 
     private void setAudioMode() {
