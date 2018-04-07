@@ -1,9 +1,9 @@
-package com.chattylabs.module.voice;
+package com.chattylabs.sdk.android.voice;
 
 import android.net.Uri;
 import android.util.Patterns;
 
-import com.chattylabs.module.core.StringUtils;
+import com.chattylabs.sdk.android.core.StringUtils;
 
 import java.util.List;
 

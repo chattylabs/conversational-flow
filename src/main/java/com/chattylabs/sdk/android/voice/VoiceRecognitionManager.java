@@ -1,4 +1,4 @@
-package com.chattylabs.module.voice;
+package com.chattylabs.sdk.android.voice;
 
 import android.app.Application;
 import android.content.Context;
@@ -13,32 +13,32 @@ import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.util.Log;
 
-import com.chattylabs.module.core.Tag;
-import com.chattylabs.module.core.internal.android.AndroidHandler;
-import com.chattylabs.module.core.internal.android.AndroidHandlerImpl;
-import com.chattylabs.module.voice.VoiceInteractionComponent.SpeechRecognizerCreator;
+import com.chattylabs.sdk.android.core.Tag;
+import com.chattylabs.sdk.android.core.internal.android.AndroidHandler;
+import com.chattylabs.sdk.android.core.internal.android.AndroidHandlerImpl;
+import com.chattylabs.sdk.android.voice.VoiceInteractionComponent.SpeechRecognizerCreator;
 
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static com.chattylabs.module.voice.VoiceInteractionComponent.MIN_LISTENING_TIME;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.OnVoiceRecognitionErrorListener;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.OnVoiceRecognitionMostConfidentResultListener;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.OnVoiceRecognitionPartialResultsListener;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.OnVoiceRecognitionReadyListener;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.OnVoiceRecognitionResultsListener;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.VOICE_RECOGNITION_AFTER_PARTIALS_ERROR;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.VOICE_RECOGNITION_EMPTY_RESULTS_ERROR;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.VOICE_RECOGNITION_LOW_SOUND_ERROR;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.VOICE_RECOGNITION_NO_SOUND_ERROR;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.VOICE_RECOGNITION_RETRY_ERROR;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.VOICE_RECOGNITION_STOPPED_TOO_EARLY_ERROR;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.VOICE_RECOGNITION_UNAVAILABLE_ERROR;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.VOICE_RECOGNITION_UNKNOWN_ERROR;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.VoiceRecognitionListeners;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.getVoiceRecognitionErrorType;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.selectMostConfidentResult;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.MIN_LISTENING_TIME;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnVoiceRecognitionErrorListener;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnVoiceRecognitionMostConfidentResultListener;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnVoiceRecognitionPartialResultsListener;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnVoiceRecognitionReadyListener;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnVoiceRecognitionResultsListener;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.VOICE_RECOGNITION_AFTER_PARTIALS_ERROR;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.VOICE_RECOGNITION_EMPTY_RESULTS_ERROR;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.VOICE_RECOGNITION_LOW_SOUND_ERROR;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.VOICE_RECOGNITION_NO_SOUND_ERROR;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.VOICE_RECOGNITION_RETRY_ERROR;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.VOICE_RECOGNITION_STOPPED_TOO_EARLY_ERROR;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.VOICE_RECOGNITION_UNAVAILABLE_ERROR;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.VOICE_RECOGNITION_UNKNOWN_ERROR;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.VoiceRecognitionListeners;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.getVoiceRecognitionErrorType;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.selectMostConfidentResult;
 
 final class VoiceRecognitionManager {
     private static final String TAG = Tag.make(VoiceRecognitionManager.class);

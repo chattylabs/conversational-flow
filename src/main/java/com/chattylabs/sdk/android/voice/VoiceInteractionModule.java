@@ -1,4 +1,4 @@
-package com.chattylabs.module.voice;
+package com.chattylabs.sdk.android.voice;
 
 @dagger.Module
 public abstract class VoiceInteractionModule {

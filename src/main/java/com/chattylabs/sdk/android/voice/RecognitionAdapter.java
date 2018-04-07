@@ -1,11 +1,12 @@
-package com.chattylabs.module.voice;
+package com.chattylabs.sdk.android.voice;
 
 import android.os.Bundle;
 import android.speech.RecognitionListener;
 import android.support.annotation.CallSuper;
 import android.util.Log;
 
-import com.chattylabs.module.core.Tag;
+import com.chattylabs.sdk.android.core.Tag;
+
 
 abstract class RecognitionAdapter implements RecognitionListener {
     private static final String TAG = Tag.make(RecognitionAdapter.class);

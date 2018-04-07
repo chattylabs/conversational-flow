@@ -1,8 +1,8 @@
-package com.chattylabs.module.voice;
+package com.chattylabs.sdk.android.voice;
 
 import android.speech.tts.UtteranceProgressListener;
 
-public class UtteranceAdapter extends UtteranceProgressListener {
+public abstract class UtteranceAdapter extends UtteranceProgressListener {
     private VoiceInteractionComponent.OnTextToSpeechStartedListener onStartedListener;
     private VoiceInteractionComponent.OnTextToSpeechDoneListener onDoneListener;
     private VoiceInteractionComponent.OnTextToSpeechErrorListener onErrorListener;
@@ -32,6 +32,12 @@ public class UtteranceAdapter extends UtteranceProgressListener {
     public UtteranceAdapter setOnErrorListener(VoiceInteractionComponent.OnTextToSpeechErrorListener onErrorListener) {
         this.onErrorListener = onErrorListener;
         return this;
+    }
+
+    protected void clearTimeout() {
+    }
+
+    protected void startTimeout(String utteranceId) {
     }
 
     /**

@@ -1,4 +1,4 @@
-package com.chattylabs.module.voice;
+package com.chattylabs.sdk.android.voice;
 
 public class VoiceCaptureAction implements IAction {
     public final String id;

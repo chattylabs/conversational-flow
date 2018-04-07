@@ -1,4 +1,4 @@
-package com.chattylabs.module.voice;
+package com.chattylabs.sdk.android.voice;
 
 public class VoiceMessage implements Node {
     public final String id;

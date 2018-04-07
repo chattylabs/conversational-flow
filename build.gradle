@@ -4,12 +4,12 @@ plugins {
 apply plugin: 'com.android.library'
 apply from: '../buildsystem/common.gradle'
 
-group = 'com.chattylabs.module'
+group = 'com.chattylabs.sdk.android'
 def version = android.defaultConfig.versionName
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    api "com.chattylabs.module:core:+"
+    api "com.chattylabs.sdk.android:core:+"
 
     dagger.each {
         implementation it

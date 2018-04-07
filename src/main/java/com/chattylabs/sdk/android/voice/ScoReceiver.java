@@ -1,4 +1,4 @@
-package com.chattylabs.module.voice;
+package com.chattylabs.sdk.android.voice;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

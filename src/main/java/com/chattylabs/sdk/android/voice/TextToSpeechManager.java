@@ -1,4 +1,4 @@
-package com.chattylabs.module.voice;
+package com.chattylabs.sdk.android.voice;
 
 import android.annotation.TargetApi;
 import android.app.Application;
@@ -17,14 +17,13 @@ import android.support.annotation.Nullable;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
-import com.chattylabs.module.core.HtmlUtils;
-import com.chattylabs.module.core.StringUtils;
-import com.chattylabs.module.core.Tag;
-import com.chattylabs.module.voice.VoiceInteractionComponent.OnTextToSpeechDoneListener;
-import com.chattylabs.module.voice.VoiceInteractionComponent.OnTextToSpeechErrorListener;
-import com.chattylabs.module.voice.VoiceInteractionComponent.OnTextToSpeechInitialisedListener;
-import com.chattylabs.module.voice.VoiceInteractionComponent.OnTextToSpeechStartedListener;
-import com.chattylabs.module.voice.interaction.BuildConfig;
+import com.chattylabs.sdk.android.core.HtmlUtils;
+import com.chattylabs.sdk.android.core.StringUtils;
+import com.chattylabs.sdk.android.core.Tag;
+import com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnTextToSpeechDoneListener;
+import com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnTextToSpeechErrorListener;
+import com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnTextToSpeechInitialisedListener;
+import com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnTextToSpeechStartedListener;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -41,15 +40,15 @@ import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
-import static com.chattylabs.module.voice.VoiceInteractionComponent.DEFAULT_GROUP;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.MessageFilter;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.TEXT_TO_SPEECH_AVAILABLE;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.TEXT_TO_SPEECH_AVAILABLE_BUT_INACTIVE;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.TEXT_TO_SPEECH_LANGUAGE_NOT_SUPPORTED_ERROR;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.TEXT_TO_SPEECH_NOT_AVAILABLE_ERROR;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.TEXT_TO_SPEECH_UNKNOWN_ERROR;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.TextToSpeechListeners;
-import static com.chattylabs.module.voice.VoiceInteractionComponent.getTextToSpeechErrorType;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.DEFAULT_GROUP;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.MessageFilter;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.TEXT_TO_SPEECH_AVAILABLE;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.TEXT_TO_SPEECH_AVAILABLE_BUT_INACTIVE;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.TEXT_TO_SPEECH_LANGUAGE_NOT_SUPPORTED_ERROR;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.TEXT_TO_SPEECH_NOT_AVAILABLE_ERROR;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.TEXT_TO_SPEECH_UNKNOWN_ERROR;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.TextToSpeechListeners;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.getTextToSpeechErrorType;
 
 final class TextToSpeechManager {
     private static final String TAG = Tag.make(TextToSpeechManager.class);
@@ -87,6 +86,7 @@ final class TextToSpeechManager {
     private AudioFocusRequest focusRequestExclusive;
     private Application application;
     private TextToSpeech tts;
+    private UtteranceAdapter utterance;
 
     TextToSpeechManager(Application application) {
         this.listenersMap = new LinkedHashMap<>();
@@ -414,6 +414,7 @@ final class TextToSpeechManager {
             Log.w(TAG, "TTS do stop");
             tts.stop();
         }
+        utterance.clearTimeout();
     }
 
     synchronized void shutdown() {
@@ -439,6 +440,7 @@ final class TextToSpeechManager {
             } catch (Exception ignored) {}
             tts = null;
         }
+        utterance.clearTimeout();
         isReady = false;
         isPaused = false;
         isSpeaking = false;
@@ -764,7 +766,8 @@ final class TextToSpeechManager {
         if (tts == null) {
             isReady = false;
             tts = createTextToSpeech(application, onInitListener);
-            tts.setOnUtteranceProgressListener(initUtterancesListener(onInit));
+            utterance = initUtterancesListener(onInit);
+            tts.setOnUtteranceProgressListener(utterance);
             Log.i(TAG, "TTS created");
         }
         else if (isReady) {
@@ -772,14 +775,21 @@ final class TextToSpeechManager {
         }
     }
 
-    private UtteranceProgressListener initUtterancesListener(OnTextToSpeechInitialisedListener onInit) {
-        return new UtteranceProgressListener() {
+    private UtteranceAdapter initUtterancesListener(OnTextToSpeechInitialisedListener onInit) {
+        return new UtteranceAdapter() {
 
             private long timestamp;
             private TimerTask task;
             private Timer timer;
 
-            private void startTimeout(String utteranceId) {
+            @Override
+            protected void clearTimeout() {
+                task.cancel();
+                timer.cancel();
+            }
+
+            @Override
+            protected void startTimeout(String utteranceId) {
                 Log.i(TAG, "TTS started timeout!");
                 timer = new Timer();
                 task = new TimerTask() {
@@ -821,8 +831,7 @@ final class TextToSpeechManager {
 
             @Override
             public void onDone(String utteranceId) {
-                task.cancel();
-                timer.cancel();
+                clearTimeout();
                 if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
                     Log.v(TAG, "TTS on done, stop timeout, go to setup language");
                     checkLanguage(onInit, true);
@@ -842,33 +851,9 @@ final class TextToSpeechManager {
             }
 
             @Override
-            public void onError(String utteranceId) {
-                task.cancel();
-                timer.cancel();
-                Log.e(TAG, "TTS on error, stop timeout, utterance listener size: " + listenersMap.size());
-                if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
-                    shutdown();
-                    onInit.execute(TEXT_TO_SPEECH_UNKNOWN_ERROR);
-                }
-                else {
-                    synchronized (listenersMap) {
-                        if (listenersMap.size() > 0) {
-                            UtteranceProgressListener listener = listenersMap.remove(utteranceId);
-                            if (listener != null) {
-                                //noinspection deprecation
-                                listener.onError(utteranceId, -1);
-                            }
-                        }
-                        resume(true);
-                    }
-                }
-            }
-
-            @Override
             @TargetApi(Build.VERSION_CODES.LOLLIPOP)
             public void onError(String utteranceId, int errorCode) {
-                task.cancel();
-                timer.cancel();
+                clearTimeout();
                 Log.e(TAG, "TTS on error, stop timeout, utterance listener size: " + listenersMap.size());
                 Log.e(TAG, "TTS error code: " + getTextToSpeechErrorType(errorCode));
                 if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {

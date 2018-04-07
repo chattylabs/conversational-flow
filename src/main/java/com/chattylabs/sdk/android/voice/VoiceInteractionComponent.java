@@ -1,4 +1,4 @@
-package com.chattylabs.module.voice;
+package com.chattylabs.sdk.android.voice;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -9,8 +9,8 @@ import android.support.annotation.RestrictTo;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.chattylabs.module.core.RequiredPermissions;
-import com.chattylabs.module.core.Tag;
+import com.chattylabs.sdk.android.core.RequiredPermissions;
+import com.chattylabs.sdk.android.core.Tag;
 
 import java.lang.ref.SoftReference;
 import java.text.SimpleDateFormat;
@@ -235,6 +235,7 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
                 return instanceOf.get();
             }
         }
+        private Instance(){}
     }
 
     /**

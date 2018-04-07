@@ -1,4 +1,4 @@
-package com.chattylabs.module.voice;
+package com.chattylabs.sdk.android.voice;
 
 import android.Manifest;
 import android.app.Application;
@@ -9,7 +9,7 @@ import android.support.v4.util.Pools;
 import android.support.v4.util.SimpleArrayMap;
 import android.util.Log;
 
-import com.chattylabs.module.core.Tag;
+import com.chattylabs.sdk.android.core.Tag;
 
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
