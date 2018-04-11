@@ -447,7 +447,13 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
 
     @Override
     public void shutdown() {
-        if (textToSpeechManager != null) textToSpeechManager.shutdown();
-        if (voiceRecognitionManager != null) voiceRecognitionManager.shutdown();
+        if (textToSpeechManager != null) {
+            textToSpeechManager.shutdown();
+            textToSpeechManager = null;
+        }
+        if (voiceRecognitionManager != null) {
+            voiceRecognitionManager.shutdown();
+            voiceRecognitionManager = null;
+        }
     }
 }
