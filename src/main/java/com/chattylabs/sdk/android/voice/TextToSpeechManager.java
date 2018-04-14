@@ -61,36 +61,39 @@ final class TextToSpeechManager {
     private static final String MAP_MESSAGE = "message";
     private static final String MAP_PARAMS = "params";
 
+    // States
+    private boolean isReady; // released
+    private boolean isPaused; // released
+    private boolean isSpeaking; // released
+    private boolean reviewAgain; // released
+    private boolean triedToDownloadTtsData; // released
+    private boolean bluetoothScoRequired; // released
+    private boolean requestAudioFocusMayDuck; // released
+    private boolean requestAudioFocusExclusive; // released
+    private boolean isPhoneStateReceiverRegistered; // released
+    private boolean isScoReceiverRegistered; // released
+    private boolean speakerphoneOn; // released
+    private boolean requestAudioExclusive; // released
+    private boolean isBluetoothScoOn;
+    private int audioMode = AudioManager.MODE_CURRENT; // released
+    private String groupId = DEFAULT_GROUP; // released
+
+    // Objects
     private final Map<String, UtteranceProgressListener> listenersMap;
     private final Map<String, ConcurrentLinkedQueue<Map<String, Object>>> queue;
-    private List<MessageFilter> filters = new LinkedList<>();
-
-    private boolean isReady;
-    private boolean isPaused;
-    private boolean isSpeaking;
-    private boolean reviewAgain;
-    private boolean triedToDownloadTtsData;
-    private boolean bluetoothScoRequired;
-    private boolean requestAudioFocusMayDuck;
-    private boolean requestAudioFocusExclusive;
-    private boolean isPhoneStateReceiverRegistered;
-    private boolean isScoReceiverRegistered;
-    private boolean speakerphoneOn;
-    private boolean requestAudioExclusive;
-
-    private String groupId = DEFAULT_GROUP;
+    private final List<MessageFilter> filters;
     private String lastGroup;
-    private int audioMode;
     private AudioManager audioManager;
     private AudioFocusRequest focusRequestMayDuck;
     private AudioFocusRequest focusRequestExclusive;
     private Application application;
-    private TextToSpeech tts;
-    private UtteranceAdapter utterance;
+    private TextToSpeech tts; // released
+    private UtteranceAdapter utterance; // released
 
     TextToSpeechManager(Application application) {
         this.listenersMap = new LinkedHashMap<>();
         this.queue = new LinkedHashMap<>();
+        this.filters = new LinkedList<>();
         this.release();
         this.application = application;
         this.audioManager = (AudioManager) application.getSystemService(Context.AUDIO_SERVICE);
@@ -100,8 +103,9 @@ final class TextToSpeechManager {
         return new TextToSpeech(application, listener);
     }
 
-    synchronized void setup(OnTextToSpeechInitialisedListener onInit) {
+    synchronized void setup(Application application, OnTextToSpeechInitialisedListener onInit) {
         Log.i(TAG, "TTS checking");
+        this.application = application;
         try {
             initTts(status -> {
                 if (status == TextToSpeech.SUCCESS) {
@@ -414,7 +418,7 @@ final class TextToSpeechManager {
             Log.w(TAG, "TTS do stop");
             tts.stop();
         }
-        utterance.clearTimeout();
+        if (utterance != null) utterance.clearTimeout();
     }
 
     synchronized void shutdown() {
@@ -440,7 +444,7 @@ final class TextToSpeechManager {
             } catch (Exception ignored) {}
             tts = null;
         }
-        utterance.clearTimeout();
+        if (utterance != null) utterance.clearTimeout();
         isReady = false;
         isPaused = false;
         isSpeaking = false;
@@ -485,6 +489,9 @@ final class TextToSpeechManager {
             queue.clear();
             queue.put(DEFAULT_GROUP, new ConcurrentLinkedQueue<>());
         }
+        synchronized (filters) {
+            filters.clear();
+        }
         groupId = DEFAULT_GROUP;
         bluetoothScoRequired = false;
         reviewAgain = true;
@@ -492,6 +499,7 @@ final class TextToSpeechManager {
         isReady = false;
         isPaused = false;
         isSpeaking = false;
+        requestAudioExclusive = false;
     }
 
     boolean isBluetoothScoRequired() {
@@ -615,6 +623,7 @@ final class TextToSpeechManager {
         if (audioManager.isBluetoothScoAvailableOffCall() && !audioManager.isBluetoothScoOn()) {
             audioManager.setBluetoothScoOn(true);
             audioManager.startBluetoothSco();
+            isBluetoothScoOn = true;
             Log.v(TAG, "TTS start bluetooth sco");
         }
     }
@@ -623,50 +632,47 @@ final class TextToSpeechManager {
         if (audioManager.isBluetoothScoAvailableOffCall() && audioManager.isBluetoothScoOn()) {
             audioManager.setBluetoothScoOn(false);
             audioManager.stopBluetoothSco();
+            isBluetoothScoOn = false;
             Log.v(TAG, "TTS stop bluetooth sco");
         }
     }
 
-    private boolean abandonAudioFocusMayDuck() {
-        if (requestAudioFocusMayDuck && !requestAudioFocusExclusive) {
+    private void abandonAudioFocusMayDuck() {
+        if (requestAudioFocusMayDuck) {
             Log.v(TAG, "TTS abandon Audio Focus May Duck");
             requestAudioFocusMayDuck = false;
             unsetAudioMode();
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
                 //noinspection deprecation
-                return AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.abandonAudioFocus(null);
+                requestAudioFocusMayDuck = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.abandonAudioFocus(null);
             } else {
-                return focusRequestMayDuck == null || AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager
+                requestAudioFocusMayDuck = focusRequestMayDuck == null || AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager
                         .abandonAudioFocusRequest(focusRequestMayDuck);
             }
         }
-        return true;
     }
 
-    private boolean abandonAudioFocusExclusive() {
+    private void abandonAudioFocusExclusive() {
         if (requestAudioFocusExclusive) {
             Log.v(TAG, "TTS abandon Audio Focus Exclusive");
-            requestAudioFocusExclusive = false;
             unsetAudioMode();
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
                 //noinspection deprecation
-                return AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.abandonAudioFocus(null);
+                requestAudioFocusExclusive = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.abandonAudioFocus(null);
             } else {
-                return focusRequestExclusive == null || AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager
+                requestAudioFocusExclusive = focusRequestExclusive == null || AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager
                         .abandonAudioFocusRequest(focusRequestExclusive);
             }
         }
-        return true;
     }
 
-    private boolean requestAudioFocusMayDuck() {
-        if (!requestAudioFocusMayDuck && !requestAudioFocusExclusive) {
+    private void requestAudioFocusMayDuck() {
+        if (!requestAudioFocusMayDuck) {
             Log.v(TAG, "TTS request Audio Focus May Duck");
-            requestAudioFocusMayDuck = true;
             setAudioMode();
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
                 //noinspection deprecation
-                return AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(
+                requestAudioFocusMayDuck = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(
                         null,
                         getMainStreamType(),
                         AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
@@ -678,21 +684,18 @@ final class TextToSpeechManager {
                                                     .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
                                                     .setLegacyStreamType(getMainStreamType())
                                                     .build()).build();
-                return AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(focusRequestMayDuck);
+                requestAudioFocusMayDuck = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(focusRequestMayDuck);
             }
         }
-        return true;
     }
 
-    private boolean requestAudioFocusExclusive() {
+    private void requestAudioFocusExclusive() {
         if (!requestAudioFocusExclusive) {
             Log.v(TAG, "TTS request Audio Focus Exclusive");
-            requestAudioFocusMayDuck = false;
-            requestAudioFocusExclusive = true;
             setAudioMode();
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
                 //noinspection deprecation
-                return AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(
+                requestAudioFocusExclusive = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(
                         null,
                         getMainStreamType(),
                         AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE);
@@ -708,10 +711,9 @@ final class TextToSpeechManager {
                                                     )
                                                     .setLegacyStreamType(getMainStreamType())
                                                     .build()).build();
-                return AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(focusRequestExclusive);
+                requestAudioFocusExclusive = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(focusRequestExclusive);
             }
         }
-        return true;
     }
 
     private void setAudioMode() {
@@ -886,7 +888,7 @@ final class TextToSpeechManager {
                 reviewAgain = false;
                 shutdown();
                 Log.v(TAG, "TTS double checking!");
-                setup(onInit);
+                setup(application, onInit);
             }
             else {
                 reviewAgain = true;

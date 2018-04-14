@@ -46,7 +46,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
     public void setup(Context context, OnSetupListener onSetupListener) {
         Application application = (Application) context.getApplicationContext();
         init(application);
-        textToSpeechManager.setup(textToSpeechStatus -> {
+        textToSpeechManager.setup(application, textToSpeechStatus -> {
             int speechRecognizerStatus = android.speech.SpeechRecognizer.isRecognitionAvailable(application) ?
                                          VOICE_RECOGNITION_AVAILABLE : VOICE_RECOGNITION_NOT_AVAILABLE;
             onSetupListener.execute(new VoiceInteractionStatus() {
@@ -70,8 +70,14 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
     }
 
     @Override
+    public void setBluetoothScoRequired(Context context, boolean required) {
+        getSpeechSynthesizer(context).setBluetoothScoRequired(required);
+        getSpeechRecognizer(context).setBluetoothScoRequired(required);
+    }
+
+    @Override
     public VoiceInteractionComponent.SpeechSynthesizer getSpeechSynthesizer(Context context) {
-        if (speechSynthesizer == null) {
+        if (speechSynthesizer == null || textToSpeechManager == null) {
             Log.w(TAG, "Synthesizer - create new object");
             init((Application) context.getApplicationContext());
             speechSynthesizer = new VoiceInteractionComponent.SpeechSynthesizer() {
@@ -161,7 +167,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
 
     @Override
     public VoiceInteractionComponent.SpeechRecognizer getSpeechRecognizer(Context context) {
-        if (speechRecognizer == null) {
+        if (speechRecognizer == null || voiceRecognitionManager == null) {
             Log.w(TAG, "Recognizer - create new object");
             init((Application) context.getApplicationContext());
             speechRecognizer = new VoiceInteractionComponent.SpeechRecognizer() {
@@ -169,6 +175,11 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                 @Override
                 public final <T extends VoiceRecognitionListeners> void listen(T... listeners) {
                     voiceRecognitionManager.start(listeners);
+                }
+
+                @Override
+                public void setBluetoothScoRequired(boolean required) {
+                    voiceRecognitionManager.setBluetoothScoRequired(required);
                 }
 
                 @Override

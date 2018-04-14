@@ -42,13 +42,16 @@ import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.selectM
 
 final class VoiceRecognitionManager {
     private static final String TAG = Tag.make(VoiceRecognitionManager.class);
-    private int audioMode;
-    private boolean bluetoothScoRequired;
-    private boolean requestAudioFocusExclusive;
-    private boolean speakerphoneOn;
-    private boolean rmsDebug;
 
-    private final Application application;
+    // States
+    private int audioMode = AudioManager.MODE_CURRENT; // released
+    private boolean bluetoothScoRequired; // released
+    private boolean requestAudioFocusExclusive; // released
+    private boolean speakerphoneOn; // released
+    private boolean rmsDebug; // released
+
+
+    //private final Application application;
     private final AudioManager audioManager;
     private final AndroidHandler mainHandler;
     private final Intent speechRecognizerIntent;
@@ -200,7 +203,7 @@ final class VoiceRecognitionManager {
 
     VoiceRecognitionManager(Application application, SpeechRecognizerCreator recognizerCreator) {
         this.release();
-        this.application = application;
+        //this.application = application;
         this.audioManager = (AudioManager) application.getSystemService(Context.AUDIO_SERVICE);
         this.mainHandler = new AndroidHandlerImpl(Looper.getMainLooper());
         this.speechRecognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
@@ -217,6 +220,8 @@ final class VoiceRecognitionManager {
             mainHandler.removeCallbacksAndMessages(null);
         }
         recognitionListener.reset();
+        setRmsDebug(false);
+        setBluetoothScoRequired(false);
     }
 
     public void stop() {
@@ -330,30 +335,28 @@ final class VoiceRecognitionManager {
         audioManager.setSpeakerphoneOn(speakerphoneOn);
     }
 
-    private boolean abandonAudioFocusExclusive() {
+    private void abandonAudioFocusExclusive() {
         if (requestAudioFocusExclusive) {
             Log.v(TAG, "VOICE abandon Audio Focus Exclusive");
             requestAudioFocusExclusive = false;
             unsetAudioMode();
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
                 //noinspection deprecation
-                return AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.abandonAudioFocus(null);
+                requestAudioFocusExclusive = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.abandonAudioFocus(null);
             } else {
-                return focusRequestExclusive == null || AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager
+                requestAudioFocusExclusive = focusRequestExclusive == null || AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager
                         .abandonAudioFocusRequest(focusRequestExclusive);
             }
         }
-        return true;
     }
 
-    private boolean requestAudioFocusExclusive() {
+    private void requestAudioFocusExclusive() {
         if (!requestAudioFocusExclusive) {
             Log.v(TAG, "VOICE request Audio Focus Exclusive");
-            requestAudioFocusExclusive = true;
             setAudioMode();
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
                 //noinspection deprecation
-                return AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(
+                requestAudioFocusExclusive = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(
                         null,
                         getMainStreamType(),
                         AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE);
@@ -364,18 +367,19 @@ final class VoiceRecognitionManager {
                         .setAudioAttributes(new AudioAttributes.Builder()
                                                     .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                                                     .setUsage(
-                                                            isBluetoothScoRequired() ? AudioAttributes.USAGE_VOICE_COMMUNICATION
-                                                                                     : AudioAttributes.USAGE_MEDIA
+//                                                            isBluetoothScoRequired() ? AudioAttributes.USAGE_VOICE_COMMUNICATION
+//                                                                                     : AudioAttributes.USAGE_MEDIA
+                                                            AudioAttributes.USAGE_VOICE_COMMUNICATION
                                                     )
                                                     .setLegacyStreamType(getMainStreamType())
                                                     .build()).build();
-                return AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(focusRequestExclusive);
+                requestAudioFocusExclusive = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(focusRequestExclusive);
             }
         }
-        return true;
     }
 
     private int getMainStreamType() {
-        return isBluetoothScoRequired() ? AudioManager.STREAM_VOICE_CALL : AudioManager.STREAM_MUSIC;
+        //return isBluetoothScoRequired() ? AudioManager.STREAM_VOICE_CALL : AudioManager.STREAM_MUSIC;
+        return AudioManager.STREAM_VOICE_CALL;
     }
 }

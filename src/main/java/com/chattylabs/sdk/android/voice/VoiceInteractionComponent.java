@@ -162,6 +162,8 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
     interface SpeechRecognizer {
         <T extends VoiceRecognitionListeners> void listen(T... listeners);
 
+        void setBluetoothScoRequired(boolean required);
+
         void shutdown();
 
         void cancel();
@@ -342,6 +344,8 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
      */
 
     void setup(Context context, OnSetupListener onSetupListener);
+
+    void setBluetoothScoRequired(Context context, boolean required);
 
     SpeechSynthesizer getSpeechSynthesizer(Context context);
 
