@@ -121,8 +121,8 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                 }
 
                 @Override
-                public void release() {
-                    textToSpeechManager.releasePause();
+                public void unPause() {
+                    textToSpeechManager.unPause();
                 }
 
                 @Override
@@ -132,7 +132,10 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
 
                 @Override
                 public void shutdown() {
-                    textToSpeechManager.shutdown();
+                    if (textToSpeechManager != null) {
+                        textToSpeechManager.shutdown();
+                        textToSpeechManager = null;
+                    }
                 }
 
                 @Override
@@ -184,7 +187,10 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
 
                 @Override
                 public void shutdown() {
-                    voiceRecognitionManager.shutdown();
+                    if (voiceRecognitionManager != null) {
+                        voiceRecognitionManager.shutdown();
+                        voiceRecognitionManager = null;
+                    }
                 }
 
                 @Override
@@ -458,13 +464,13 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
 
     @Override
     public void shutdown() {
-        if (textToSpeechManager != null) {
-            textToSpeechManager.shutdown();
-            textToSpeechManager = null;
+        if (speechSynthesizer != null) {
+            speechSynthesizer.shutdown();
+            speechSynthesizer = null;
         }
-        if (voiceRecognitionManager != null) {
-            voiceRecognitionManager.shutdown();
-            voiceRecognitionManager = null;
+        if (speechRecognizer != null) {
+            speechRecognizer.shutdown();
+            speechRecognizer = null;
         }
     }
 }

@@ -69,7 +69,7 @@ final class VoiceRecognitionManager {
         @Override
         public void releaseTimeout() {
             if (timeout != null) {
-                Log.w(TAG, "VOICE releasing previous timeout");
+                Log.w(TAG, "VOICE - releasing previous timeout");
                 task.cancel();
                 timeout.cancel();
                 timeout = null;
@@ -80,12 +80,12 @@ final class VoiceRecognitionManager {
         @Override
         public void startTimeout() {
             releaseTimeout();
-            Log.w(TAG, "VOICE started timeout");
+            Log.w(TAG, "VOICE - started timeout");
             timeout = new Timer();
             task = new TimerTask() {
                 @Override
                 public void run() {
-                    Log.w(TAG, "VOICE reached timeout");
+                    Log.w(TAG, "VOICE - reached timeout");
                     mainHandler.post(() -> speechRecognizer.stopListening());
                 }
             };
@@ -105,7 +105,7 @@ final class VoiceRecognitionManager {
         }
 
         private void cleanup() {
-            Log.v(TAG, "VOICE cleanup listener");
+            Log.v(TAG, "VOICE - cleanup listener");
             releaseTimeout();
             elapsedTime = System.currentTimeMillis();
             intents = 0;
@@ -113,7 +113,7 @@ final class VoiceRecognitionManager {
 
         @Override
         public void onError(int error) {
-            Log.e(TAG, "VOICE error: " + getVoiceRecognitionErrorType(error));
+            Log.e(TAG, "VOICE - error: " + getVoiceRecognitionErrorType(error));
             // We consider 2 sec as timeout for non speech
             boolean stoppedTooEarly = (System.currentTimeMillis() - elapsedTime) < VoiceInteractionComponent.MIN_LISTENING_TIME;
             // Start checking for the error
@@ -158,17 +158,17 @@ final class VoiceRecognitionManager {
             if (textResults != null && (textResults.size() > 1 || (textResults.size() > 0 && textResults.get(0).length() > 0))) {
                 cleanup();
                 if (getOnResults() != null) {
-                    Log.v(TAG, "VOICE results: " + textResults);
+                    Log.v(TAG, "VOICE - results: " + textResults);
                     getOnResults().execute(textResults, confidences);
                 }
                 if (getOnMostConfidentResult() != null) {
                     String result = selectMostConfidentResult(textResults, confidences);
-                    Log.v(TAG, "VOICE confident result: " + result);
+                    Log.v(TAG, "VOICE - confident result: " + result);
                     getOnMostConfidentResult().execute(result);
                 }
             }
             else {
-                Log.e(TAG, "VOICE NO results");
+                Log.e(TAG, "VOICE - NO results");
                 cleanup();
                 if (getOnError() != null) getOnError().execute(VOICE_RECOGNITION_EMPTY_RESULTS_ERROR, -1);
             }
@@ -183,7 +183,7 @@ final class VoiceRecognitionManager {
             float[] confidences = partialResults.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
             if (textResults != null && (textResults.size() > 1 || (textResults.size() > 0 && textResults.get(0).length() > 0))) {
                 cleanup();
-                Log.v(TAG, "VOICE partial results: " + textResults);
+                Log.v(TAG, "VOICE - partial results: " + textResults);
                 getOnPartialResults().execute(textResults, confidences);
             }
         }
@@ -215,19 +215,19 @@ final class VoiceRecognitionManager {
     }
 
     public void release() {
-        Log.i(TAG, "VOICE release");
         if (mainHandler != null) {
             mainHandler.removeCallbacksAndMessages(null);
         }
         recognitionListener.reset();
         setRmsDebug(false);
         setBluetoothScoRequired(false);
+        Log.i(TAG, "VOICE - released");
     }
 
     public void stop() {
         recognitionListener.reset();
         if (speechRecognizer != null) {
-            Log.w(TAG, "VOICE do stop");
+            Log.w(TAG, "VOICE - do stop");
             mainHandler.post(() -> speechRecognizer.stopListening());
         }
     }
@@ -235,14 +235,14 @@ final class VoiceRecognitionManager {
     public void cancel() {
         recognitionListener.reset();
         if (speechRecognizer != null) {
-            Log.w(TAG, "VOICE do cancel");
+            Log.w(TAG, "VOICE - do cancel");
             speechRecognizer.setRecognitionListener(null);
             speechRecognizer.cancel();
         }
     }
 
     public void shutdown() {
-        Log.w(TAG, "VOICE shutdown");
+        Log.w(TAG, "VOICE - shutting down");
         recognitionListener.releaseTimeout();
         abandonAudioFocusExclusive();
         // Destroy current SpeechRecognizer
@@ -252,7 +252,7 @@ final class VoiceRecognitionManager {
                     speechRecognizer.setRecognitionListener(null);
                     speechRecognizer.destroy();
                     speechRecognizer = null;
-                    Log.v(TAG, "VOICE destroyed");
+                    Log.v(TAG, "VOICE - speechRecognizer destroyed");
                 }
             }
             catch (Exception ignored) {}
@@ -270,11 +270,11 @@ final class VoiceRecognitionManager {
         mainHandler.post(() -> {
             if (speechRecognizer == null) {
                 speechRecognizer = recognizerCreator.create();
-                Log.v(TAG, "VOICE created");
+                Log.v(TAG, "VOICE - created");
             }
             recognitionListener.startTimeout();
             recognitionListener.setRmsDebug(rmsDebug);
-            Log.i(TAG, "VOICE start listening");
+            Log.i(TAG, "VOICE - start listening");
             speechRecognizer.setRecognitionListener(recognitionListener);
             speechRecognizer.startListening(speechRecognizerIntent);
         });
@@ -337,7 +337,7 @@ final class VoiceRecognitionManager {
 
     private void abandonAudioFocusExclusive() {
         if (requestAudioFocusExclusive) {
-            Log.v(TAG, "VOICE abandon Audio Focus Exclusive");
+            Log.v(TAG, "VOICE - abandon Audio Focus Exclusive");
             requestAudioFocusExclusive = false;
             unsetAudioMode();
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
@@ -352,7 +352,7 @@ final class VoiceRecognitionManager {
 
     private void requestAudioFocusExclusive() {
         if (!requestAudioFocusExclusive) {
-            Log.v(TAG, "VOICE request Audio Focus Exclusive");
+            Log.v(TAG, "VOICE - request Audio Focus Exclusive");
             setAudioMode();
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
                 //noinspection deprecation

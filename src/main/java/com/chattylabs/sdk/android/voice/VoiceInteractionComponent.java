@@ -187,7 +187,7 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
 
         void pause();
 
-        void release();
+        void unPause();
 
         void resume();
 
