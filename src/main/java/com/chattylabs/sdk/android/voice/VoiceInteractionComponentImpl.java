@@ -15,6 +15,7 @@ import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 import javax.inject.Inject;
 
@@ -139,7 +140,12 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                 }
 
                 @Override
-                public boolean isQueueEmpty() {
+                public boolean isEmpty() {
+                    return textToSpeechManager.isEmpty();
+                }
+
+                @Override
+                public boolean isGroupQueueEmpty() {
                     return textToSpeechManager.isGroupQueueEmpty();
                 }
 
@@ -162,6 +168,11 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                 @Override
                 public String group() {
                     return textToSpeechManager.getGroupId();
+                }
+
+                @Override
+                public Set<String> groupQueue() {
+                    return textToSpeechManager.getGroupQueue();
                 }
             };
         }

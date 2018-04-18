@@ -550,6 +550,16 @@ final class TextToSpeechManager {
         }
     }
 
+    boolean isEmpty() {
+        synchronized (queue) {
+            return queue.isEmpty() || (queue.containsKey(DEFAULT_GROUP) && queue.size() == 1 && queue.get(DEFAULT_GROUP).isEmpty());
+        }
+    }
+
+    Set<String> getGroupQueue() {
+        return queue.keySet();
+    }
+
     private void moveToNextGroup() {
         // is empty, still contains the group id and it's not the default one
         if (queue.containsKey(groupId) && !DEFAULT_GROUP.equals(groupId)) {

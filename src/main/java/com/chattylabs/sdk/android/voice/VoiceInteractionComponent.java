@@ -21,6 +21,7 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -196,7 +197,9 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
 
         void shutdown();
 
-        boolean isQueueEmpty();
+        boolean isEmpty();
+
+        boolean isGroupQueueEmpty();
 
         boolean isPaused();
 
@@ -206,6 +209,8 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
         String nextGroup();
 
         String group();
+
+        Set<String> groupQueue();
     }
 
     interface Conversation extends Flow.Edge {
