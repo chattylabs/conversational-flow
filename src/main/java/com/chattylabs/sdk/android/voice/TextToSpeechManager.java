@@ -85,6 +85,7 @@ final class TextToSpeechManager {
     private final List<MessageFilter> filters;
     private String lastGroup;
     private AudioManager audioManager;
+    private Peripheral peripheral;
     private AudioFocusRequest focusRequestMayDuck;
     private AudioFocusRequest focusRequestExclusive;
     private Application application;
@@ -98,6 +99,7 @@ final class TextToSpeechManager {
         this.release();
         this.application = application;
         this.audioManager = (AudioManager) application.getSystemService(Context.AUDIO_SERVICE);
+        this.peripheral = new Peripheral(audioManager);
     }
 
     private TextToSpeech createTextToSpeech(Application application, TextToSpeech.OnInitListener listener) {
@@ -391,7 +393,8 @@ final class TextToSpeechManager {
         // Register for incoming calls and others
         registerGeneralReceivers();
         // Check whether Sco is connected or required
-        if (!isBluetoothScoRequired() || isScoConnected) {
+        if (peripheral.get(Peripheral.Type.HEADSET).isConnected() ||
+                !isBluetoothScoRequired() || isScoConnected) {
             Log.v(TAG, "TTS - " + (audioManager.isBluetoothScoOn() ? "bluetooth sco on" : "bluetooth sco off"));
             listener.onConnected();
         } else {
@@ -658,20 +661,6 @@ final class TextToSpeechManager {
         }
     }
 
-    private void abandonAudioFocusExclusive() {
-        if (requestAudioFocusExclusive) {
-            Log.v(TAG, "TTS - abandon Audio Focus Exclusive");
-            unsetAudioMode();
-            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
-                //noinspection deprecation
-                requestAudioFocusExclusive = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.abandonAudioFocus(null);
-            } else {
-                requestAudioFocusExclusive = focusRequestExclusive == null || AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager
-                        .abandonAudioFocusRequest(focusRequestExclusive);
-            }
-        }
-    }
-
     private void requestAudioFocusMayDuck() {
         if (!requestAudioFocusMayDuck) {
             Log.v(TAG, "TTS - request Audio Focus May Duck");
@@ -722,16 +711,38 @@ final class TextToSpeechManager {
         }
     }
 
+    private void abandonAudioFocusExclusive() {
+        if (requestAudioFocusExclusive) {
+            Log.v(TAG, "TTS - abandon Audio Focus Exclusive");
+            unsetAudioMode();
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
+                //noinspection deprecation
+                requestAudioFocusExclusive = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.abandonAudioFocus(null);
+            } else {
+                requestAudioFocusExclusive = focusRequestExclusive == null || AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager
+                        .abandonAudioFocusRequest(focusRequestExclusive);
+            }
+        }
+    }
+
     private void setAudioMode() {
         audioMode = audioManager.getMode();
-        speakerphoneOn = audioManager.isSpeakerphoneOn();
         audioManager.setMode(isBluetoothScoRequired() ? AudioManager.MODE_IN_CALL : AudioManager.MODE_NORMAL);
-        audioManager.setSpeakerphoneOn(!isBluetoothScoRequired());
+
+        // Enabling this option, the audio is not rooted to the speakers if the sco is activated
+        // Meaning that we can force bluetooth sco even with speakers connected
+        // Nice to have feature!
+        //speakerphoneOn = audioManager.isSpeakerphoneOn();
+        //audioManager.setSpeakerphoneOn(!isBluetoothScoRequired());
     }
 
     private void unsetAudioMode() {
         audioManager.setMode(audioMode);
-        audioManager.setSpeakerphoneOn(speakerphoneOn);
+
+        // Enabling this option, the audio is not rooted to the speakers if the sco is activated
+        // Meaning that we can force bluetooth sco even with speakers connected
+        // Nice to have feature!
+        //audioManager.setSpeakerphoneOn(speakerphoneOn);
     }
 
     private void handleListener(@NonNull String utteranceId, @NonNull UtteranceProgressListener listener) {

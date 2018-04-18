@@ -325,14 +325,22 @@ final class VoiceRecognitionManager {
 
     private void setAudioMode() {
         audioMode = audioManager.getMode();
-        speakerphoneOn = audioManager.isSpeakerphoneOn();
         audioManager.setMode(isBluetoothScoRequired() ? AudioManager.MODE_IN_CALL : AudioManager.MODE_NORMAL);
-        audioManager.setSpeakerphoneOn(!isBluetoothScoRequired());
+
+        // Enabling this option, the audio is not rooted to the speakers if the sco is activated
+        // Meaning that we can force bluetooth sco even with speakers connected
+        // Nice to have feature!
+        //speakerphoneOn = audioManager.isSpeakerphoneOn();
+        //audioManager.setSpeakerphoneOn(!isBluetoothScoRequired());
     }
 
     private void unsetAudioMode() {
         audioManager.setMode(audioMode);
-        audioManager.setSpeakerphoneOn(speakerphoneOn);
+
+        // Enabling this option, the audio is not rooted to the speakers if the sco is activated
+        // Meaning that we can force bluetooth sco even with speakers connected
+        // Nice to have feature!
+        //audioManager.setSpeakerphoneOn(speakerphoneOn);
     }
 
     private void abandonAudioFocusExclusive() {
@@ -367,8 +375,6 @@ final class VoiceRecognitionManager {
                         .setAudioAttributes(new AudioAttributes.Builder()
                                                     .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                                                     .setUsage(
-//                                                            isBluetoothScoRequired() ? AudioAttributes.USAGE_VOICE_COMMUNICATION
-//                                                                                     : AudioAttributes.USAGE_MEDIA
                                                             AudioAttributes.USAGE_VOICE_COMMUNICATION
                                                     )
                                                     .setLegacyStreamType(getMainStreamType())
@@ -379,7 +385,6 @@ final class VoiceRecognitionManager {
     }
 
     private int getMainStreamType() {
-        //return isBluetoothScoRequired() ? AudioManager.STREAM_VOICE_CALL : AudioManager.STREAM_MUSIC;
-        return AudioManager.STREAM_VOICE_CALL;
+        return isBluetoothScoRequired() ? AudioManager.STREAM_VOICE_CALL : AudioManager.STREAM_MUSIC;
     }
 }
