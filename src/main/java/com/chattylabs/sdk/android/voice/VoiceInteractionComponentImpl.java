@@ -217,6 +217,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
 
             private Flow flow;
             private Node current;
+            private int flags;
 
             @Override
             public VoiceInteractionComponent.SpeechSynthesizer getSpeechSynthesizer() {
@@ -226,6 +227,24 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
             @Override
             public VoiceInteractionComponent.SpeechRecognizer getSpeechRecognizer() {
                 return VoiceInteractionComponentImpl.this.getSpeechRecognizer(context);
+            }
+
+            @Override
+            public void addFlag(@Flag int flag) {
+                if (this.flags > 0)
+                    this.flags |= flag;
+                else this.flags = flag;
+            }
+
+            @Override
+            public void removeFlag(@Flag int flag) {
+                if (this.flags > 0)
+                    this.flags = this.flags & (~flag);
+            }
+
+            @Override
+            public boolean hasFlag(@Flag int flag) {
+                return (this.flags > 0) && (this.flags & flag) == flag;
             }
 
             @Override
@@ -368,7 +387,8 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                     if (isUnexpected && noMatchAction.unexpectedErrorMessage != null) {
                         Log.v(TAG, "Conversation - unexpected error");
                         play(noMatchAction.unexpectedErrorMessage, this::next);
-                    } else if (isLowSound && noMatchAction.lowSoundErrorMessage != null) {
+                    } else if (hasFlag(FLAG_ENABLE_ON_LOW_SOUND_ERROR_MESSAGE) &&
+                            isLowSound && noMatchAction.lowSoundErrorMessage != null) {
                         Log.v(TAG, "Conversation - low sound");
                         play(noMatchAction.lowSoundErrorMessage, this::next);
                     } else if (!isNoSound && noMatchAction.listeningErrorMessage != null) {

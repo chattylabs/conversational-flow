@@ -3,6 +3,7 @@ package com.chattylabs.sdk.android.voice;
 import android.content.Context;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
+import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RestrictTo;
@@ -12,6 +13,8 @@ import android.util.Log;
 import com.chattylabs.sdk.android.core.RequiredPermissions;
 import com.chattylabs.sdk.android.core.Tag;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.SoftReference;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -206,9 +209,22 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
     }
 
     interface Conversation extends Flow.Edge {
+
+        int FLAG_ENABLE_ON_LOW_SOUND_ERROR_MESSAGE = 0x8F4E00;
+
+        @IntDef({FLAG_ENABLE_ON_LOW_SOUND_ERROR_MESSAGE})
+        @Retention(RetentionPolicy.SOURCE)
+        @interface Flag {}
+
         SpeechSynthesizer getSpeechSynthesizer();
 
         SpeechRecognizer getSpeechRecognizer();
+
+        void addFlag(@Flag int flag);
+
+        void removeFlag(@Flag int flag);
+
+        boolean hasFlag(@Flag int flag);
 
         void addNode(@NonNull Node node);
 

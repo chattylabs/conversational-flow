@@ -56,6 +56,7 @@ final class TextToSpeechManager {
     private static final String CHECKING_UTTERANCE_ID = BuildConfig.APPLICATION_ID + ".checking";
     private static final String DEFAULT_UTTERANCE_ID = BuildConfig.APPLICATION_ID + ".utterance:";
 
+    private static final String TESTING_STRING = "<TESTING_STRING>";
     private static final String MAP_UTTERANCE_ID = "utteranceId";
     private static final String MAP_SILENCE = "silence";
     private static final String MAP_MESSAGE = "message";
@@ -791,8 +792,8 @@ final class TextToSpeechManager {
 
             @Override
             protected void clearTimeout() {
-                task.cancel();
-                timer.cancel();
+                if (task != null) task.cancel();
+                if (timer != null) timer.cancel();
             }
 
             @Override
@@ -916,7 +917,7 @@ final class TextToSpeechManager {
             Log.v(TAG, "TTS - try to download audio data");
             try {
                 // Try downloading data voice!
-                speak("", "DOWNLOADING_TTS_DATA", null, CHECKING_UTTERANCE_ID);
+                speak(TESTING_STRING, "DOWNLOADING_TTS_DATA", null, CHECKING_UTTERANCE_ID);
             } catch (Exception e) {
                 Log.e(TAG, "error when downloading audio data: " + e.getMessage());
                 // Otherwise it reports the TextToSpeechStatus to the Callback
@@ -940,6 +941,10 @@ final class TextToSpeechManager {
         for (MessageFilter filter : filters) {
             Log.v(TAG, "TTS - apply filter: " + filter);
             finalText = filter.apply(finalText);
+        }
+
+        if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
+            finalText = " ";
         }
 
         if (finalText.length() > TextToSpeech.getMaxSpeechInputLength()) {
