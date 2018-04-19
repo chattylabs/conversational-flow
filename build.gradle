@@ -23,6 +23,6 @@ install {
     repositories.mavenInstaller {
         pom.groupId = project.group
         pom.version = version
-        pom.artifactId = project.name
+        pom.artifactId = project.name.replace("sdk-","")
     }
 }
