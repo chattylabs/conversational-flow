@@ -13,9 +13,9 @@ import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.util.Log;
 
-import com.chattylabs.sdk.android.core.Tag;
-import com.chattylabs.sdk.android.core.internal.android.AndroidHandler;
-import com.chattylabs.sdk.android.core.internal.android.AndroidHandlerImpl;
+import com.chattylabs.sdk.android.common.Tag;
+import com.chattylabs.sdk.android.common.internal.android.AndroidHandler;
+import com.chattylabs.sdk.android.common.internal.android.AndroidHandlerImpl;
 import com.chattylabs.sdk.android.voice.VoiceInteractionComponent.SpeechRecognizerCreator;
 
 import java.util.List;

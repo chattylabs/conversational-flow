@@ -9,7 +9,7 @@ import android.support.v4.util.Pools;
 import android.support.v4.util.SimpleArrayMap;
 import android.util.Log;
 
-import com.chattylabs.sdk.android.core.Tag;
+import com.chattylabs.sdk.android.common.Tag;
 
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;

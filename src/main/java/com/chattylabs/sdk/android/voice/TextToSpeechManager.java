@@ -17,9 +17,9 @@ import android.support.annotation.Nullable;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
-import com.chattylabs.sdk.android.core.HtmlUtils;
-import com.chattylabs.sdk.android.core.StringUtils;
-import com.chattylabs.sdk.android.core.Tag;
+import com.chattylabs.sdk.android.common.HtmlUtils;
+import com.chattylabs.sdk.android.common.StringUtils;
+import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnTextToSpeechDoneListener;
 import com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnTextToSpeechErrorListener;
 import com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnTextToSpeechInitialisedListener;
@@ -386,8 +386,11 @@ final class TextToSpeechManager {
 
             @Override
             public void onDisconnected() {
-                Log.w(TAG, "TTS - Sco onDisconnected - shutdown");
-                shutdown();
+                Log.w(TAG, "TTS - Sco onDisconnected");
+                if (isScoConnected) {
+                    Log.w(TAG, "TTS - Sco shutdown");
+                    shutdown();
+                }
             }
         };
         // Register for incoming calls and others
@@ -395,7 +398,7 @@ final class TextToSpeechManager {
         // Check whether Sco is connected or required
         if (peripheral.get(Peripheral.Type.HEADSET).isConnected() ||
                 !isBluetoothScoRequired() || isScoConnected) {
-            Log.v(TAG, "TTS - " + (audioManager.isBluetoothScoOn() ? "bluetooth sco on" : "bluetooth sco off"));
+            Log.v(TAG, "TTS - " + (isScoConnected ? "bluetooth sco on" : "bluetooth sco off"));
             listener.onConnected();
         } else {
             Log.v(TAG, "TTS - waiting for bluetooth sco");
@@ -786,8 +789,8 @@ final class TextToSpeechManager {
         params.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, utteranceId);
         params.put(TextToSpeech.Engine.KEY_PARAM_STREAM, audioStream);
         params.put(TextToSpeech.Engine.KEY_FEATURE_NETWORK_TIMEOUT_MS, "5000");
-        params.put(TextToSpeech.Engine.KEY_FEATURE_NETWORK_RETRIES_COUNT, "3");
-        Log.v(TAG, "TTS - building params " + params);
+        params.put(TextToSpeech.Engine.KEY_FEATURE_NETWORK_RETRIES_COUNT, "2");
+        Log.v(TAG, "TTS - building params");
         return params;
     }
 

@@ -2,6 +2,8 @@ plugins {
     id "com.github.dcendents.android-maven" version "2.0"
 }
 apply plugin: 'com.android.library'
+apply from: 'buildsystem/dependencies.gradle'
+apply from: 'buildsystem/versioning.gradle'
 apply from: 'buildsystem/android.gradle'
 
 group = 'com.chattylabs.sdk.android'
@@ -9,7 +11,7 @@ def version = android.defaultConfig.versionName
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    api "com.chattylabs.sdk.android:core:+"
+    api "com.chattylabs.sdk.android:common:+"
 
     dagger.each {
         implementation it

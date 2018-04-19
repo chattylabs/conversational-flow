@@ -3,7 +3,7 @@ package com.chattylabs.sdk.android.voice;
 import android.net.Uri;
 import android.util.Patterns;
 
-import com.chattylabs.sdk.android.core.StringUtils;
+import com.chattylabs.sdk.android.common.StringUtils;
 
 import java.util.List;
 

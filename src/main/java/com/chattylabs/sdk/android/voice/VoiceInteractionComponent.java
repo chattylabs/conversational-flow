@@ -10,8 +10,8 @@ import android.support.annotation.RestrictTo;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.chattylabs.sdk.android.core.RequiredPermissions;
-import com.chattylabs.sdk.android.core.Tag;
+import com.chattylabs.sdk.android.common.RequiredPermissions;
+import com.chattylabs.sdk.android.common.Tag;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

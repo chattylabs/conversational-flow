@@ -5,7 +5,7 @@ import android.speech.RecognitionListener;
 import android.support.annotation.CallSuper;
 import android.util.Log;
 
-import com.chattylabs.sdk.android.core.Tag;
+import com.chattylabs.sdk.android.common.Tag;
 
 
 abstract class RecognitionAdapter implements RecognitionListener {
