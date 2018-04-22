@@ -14,6 +14,7 @@ import com.chattylabs.sdk.android.common.Tag;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -122,8 +123,8 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                 }
 
                 @Override
-                public void unPause() {
-                    textToSpeechManager.unPause();
+                public void undoPause() {
+                    textToSpeechManager.undoPause();
                 }
 
                 @Override
@@ -212,6 +213,16 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                 @Override
                 public void setRmsDebug(boolean debug) {
                     voiceRecognitionManager.setRmsDebug(debug);
+                }
+
+                @Override
+                public void setNoSoundThreshold(float maxValue) {
+                    voiceRecognitionManager.setNoSoundThreshold(maxValue);
+                }
+
+                @Override
+                public void setLowSoundThreshold(float maxValue) {
+                    voiceRecognitionManager.setLowSoundThreshold(maxValue);
                 }
             };
         }
@@ -344,10 +355,12 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                             Log.v(TAG, "Conversation - running Actions");
                             getSpeechRecognizer().listen(
                                     (OnVoiceRecognitionResultsListener) (results, confidences) -> {
-                                        processResults(results, actions, false);
+                                        String result = VoiceInteractionComponent.selectMostConfidentResult(results, confidences);
+                                        processResults(Collections.singletonList(result), actions, false);
                                     },
                                     (OnVoiceRecognitionPartialResultsListener) (results, confidences) -> {
-                                        processResults(results, actions, true);
+                                        String result = VoiceInteractionComponent.selectMostConfidentResult(results, confidences);
+                                        processResults(Collections.singletonList(result), actions, true);
                                     },
                                     (OnVoiceRecognitionErrorListener) (error, originalError) -> {
                                         Log.e(TAG, "Conversation - listening Action error");
@@ -402,12 +415,12 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                             isLowSound && noMatchAction.lowSoundErrorMessage != null) {
                         Log.v(TAG, "Conversation - low sound");
                         play(noMatchAction.lowSoundErrorMessage, this::next);
-                    } else if (!isNoSound && noMatchAction.listeningErrorMessage != null) {
+                    } else if (!isNoSound && !isLowSound && noMatchAction.listeningErrorMessage != null) {
                         play(noMatchAction.listeningErrorMessage, this::next);
                     } else if (!isNoSound) {
                         next();
                     } else {
-                        Log.v(TAG, "Conversation - no sound at all");
+                        Log.v(TAG, "Conversation - no sound at all!!");
                         // No repeat
                         noMatchAction.retry = 0;
                         if (noMatchAction.onNotMatched != null) noMatchAction.onNotMatched.accept(results);
@@ -490,7 +503,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
     @Override
     public void stop() {
         if (textToSpeechManager != null) textToSpeechManager.stop();
-        if (voiceRecognitionManager != null) voiceRecognitionManager.cancel();
+        if (voiceRecognitionManager != null) voiceRecognitionManager.stopAndSendCapturedSpeech();
     }
 
     @Override

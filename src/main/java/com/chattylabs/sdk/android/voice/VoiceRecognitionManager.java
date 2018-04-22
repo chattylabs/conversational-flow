@@ -3,6 +3,7 @@ package com.chattylabs.sdk.android.voice;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
@@ -11,6 +12,7 @@ import android.os.Bundle;
 import android.os.Looper;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.chattylabs.sdk.android.common.Tag;
@@ -21,6 +23,7 @@ import com.chattylabs.sdk.android.voice.VoiceInteractionComponent.SpeechRecogniz
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.MIN_LISTENING_TIME;
 import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnVoiceRecognitionErrorListener;
@@ -42,23 +45,38 @@ import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.selectM
 
 final class VoiceRecognitionManager {
     private static final String TAG = Tag.make(VoiceRecognitionManager.class);
-
-    // States
-    private int audioMode = AudioManager.MODE_CURRENT; // released
-    private boolean bluetoothScoRequired; // released
-    private boolean requestAudioFocusExclusive; // released
-    private boolean speakerphoneOn; // released
-    private boolean rmsDebug; // released
-
-
-    //private final Application application;
+    private static final long LOCK_TIMEOUT = TimeUnit.SECONDS.toMillis(3);
+    private final Object lock = new Object();
+    private final Application application;
     private final AudioManager audioManager;
     private final AndroidHandler mainHandler;
     private final Intent speechRecognizerIntent;
+    // States
+    private int audioMode = AudioManager.MODE_CURRENT; // released
+    private int dtmfVolume;
+    private int systemVolume;
+    private int ringVolume;
+    private int alarmVolume;
+    private int notifVolume;
+    private int musicVolume;
+    private int callVolume;
+    private boolean bluetoothScoRequired; // released
+    private boolean isScoReceiverRegistered; // released
+    private boolean requestAudioFocusExclusive; // released
+    private boolean speakerphoneOn; // released
+    private boolean rmsDebug; // released
+    private boolean isPhoneStateReceiverRegistered; // released
+    private float noSoundThreshold; // released
+    private float lowSoundThreshold; // released
     private AudioFocusRequest focusRequestExclusive;
     private SpeechRecognizer speechRecognizer;
     private SpeechRecognizerCreator recognizerCreator;
-
+    private PhoneStateReceiver phoneStateReceiver = new PhoneStateReceiver();
+    private ScoReceiver scoReceiver = new ScoReceiver();
+    private AudioAttributes.Builder audioAttributes = new AudioAttributes.Builder()
+            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+            .setUsage(AudioAttributes.USAGE_MEDIA)
+            .setLegacyStreamType(AudioManager.STREAM_MUSIC);
     // Listener
     private final RecognitionAdapter recognitionListener = new RecognitionAdapter() {
         private int intents;
@@ -66,10 +84,9 @@ final class VoiceRecognitionManager {
         private Timer timeout;
         private TimerTask task;
 
-        @Override
-        public void releaseTimeout() {
+        private void releaseTimeout() {
             if (timeout != null) {
-                Log.w(TAG, "VOICE - releasing previous timeout");
+                Log.w(TAG, "VOICE - releasing previous timeout - RecognitionAdapter");
                 task.cancel();
                 timeout.cancel();
                 timeout = null;
@@ -80,20 +97,33 @@ final class VoiceRecognitionManager {
         @Override
         public void startTimeout() {
             releaseTimeout();
-            Log.w(TAG, "VOICE - started timeout");
+            Log.w(TAG, "VOICE - started timeout - RecognitionAdapter");
             timeout = new Timer();
             task = new TimerTask() {
                 @Override
                 public void run() {
-                    Log.w(TAG, "VOICE - reached timeout");
-                    mainHandler.post(() -> speechRecognizer.stopListening());
+                    Log.w(TAG, "VOICE - reached timeout - RecognitionAdapter");
+                    mainHandler.post(() -> {
+                        unlock();
+                        speechRecognizer.stopListening();
+                    });
+                    lock(VoiceRecognitionManager.this::shutdown);
                 }
             };
             timeout.schedule(task, MIN_LISTENING_TIME * 3);
         }
 
+        private void cleanup() {
+            elapsedTime = System.currentTimeMillis();
+            intents = 0;
+            Log.v(TAG, "VOICE - cleanup elapsedTime & partial intents - RecognitionAdapter");
+        }
+
         @Override
         public void reset() {
+            releaseTimeout();
+            abandonAudioFocusExclusive();
+            unregisterReceivers();
             cleanup();
             setTryAgain(false);
             setOnError(null);
@@ -104,11 +134,11 @@ final class VoiceRecognitionManager {
             setSoundLevel(UNKNOWN);
         }
 
-        private void cleanup() {
-            Log.v(TAG, "VOICE - cleanup listener");
-            releaseTimeout();
-            elapsedTime = System.currentTimeMillis();
-            intents = 0;
+        @Override
+        public void onReadyForSpeech(Bundle params) {
+            if (!audioManager.isBluetoothScoOn()) requestAudioFocusExclusive();
+            //resetVolumeForBeep();
+            super.onReadyForSpeech(params);
         }
 
         @Override
@@ -119,7 +149,7 @@ final class VoiceRecognitionManager {
             // Start checking for the error
             OnVoiceRecognitionErrorListener errorListener = getOnError();
             int soundLevel = getSoundLevel();
-            Log.v(TAG, "Sound Level: " + soundLevel);
+            Log.v(TAG, "VOICE - Sound Level: " + getSoundLevelAsString(soundLevel));
             // Restart the recognizer
             cancel();
             if (errorListener != null) {
@@ -143,7 +173,7 @@ final class VoiceRecognitionManager {
                                           VOICE_RECOGNITION_UNKNOWN_ERROR :
                                           VOICE_RECOGNITION_RETRY_ERROR, error);
                 }
-                else { // Restore TTS
+                else { // Restore VOICE
                     errorListener.execute(VOICE_RECOGNITION_UNKNOWN_ERROR, error);
                 }
             }
@@ -156,21 +186,24 @@ final class VoiceRecognitionManager {
             List<String> textResults = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
             float[] confidences = results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
             if (textResults != null && (textResults.size() > 1 || (textResults.size() > 0 && textResults.get(0).length() > 0))) {
-                cleanup();
-                if (getOnResults() != null) {
+                OnVoiceRecognitionResultsListener resultsListener = getOnResults();
+                OnVoiceRecognitionMostConfidentResultListener mostConfidentResult = getOnMostConfidentResult();
+                reset();
+                if (resultsListener != null) {
                     Log.v(TAG, "VOICE - results: " + textResults);
-                    getOnResults().execute(textResults, confidences);
+                    resultsListener.execute(textResults, confidences);
                 }
-                if (getOnMostConfidentResult() != null) {
+                if (mostConfidentResult != null) {
                     String result = selectMostConfidentResult(textResults, confidences);
                     Log.v(TAG, "VOICE - confident result: " + result);
-                    getOnMostConfidentResult().execute(result);
+                    mostConfidentResult.execute(result);
                 }
             }
             else {
                 Log.e(TAG, "VOICE - NO results");
-                cleanup();
-                if (getOnError() != null) getOnError().execute(VOICE_RECOGNITION_EMPTY_RESULTS_ERROR, -1);
+                OnVoiceRecognitionErrorListener listener = getOnError();
+                reset();
+                if (listener != null) listener.execute(VOICE_RECOGNITION_EMPTY_RESULTS_ERROR, -1);
             }
         }
 
@@ -178,13 +211,13 @@ final class VoiceRecognitionManager {
         public void onPartialResults(Bundle partialResults) {
             releaseTimeout();
             intents++;
-            if (getOnPartialResults() == null) return;
+            OnVoiceRecognitionPartialResultsListener listener = getOnPartialResults();
+            if (listener == null) return;
             List<String> textResults = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
             float[] confidences = partialResults.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
             if (textResults != null && (textResults.size() > 1 || (textResults.size() > 0 && textResults.get(0).length() > 0))) {
-                cleanup();
                 Log.v(TAG, "VOICE - partial results: " + textResults);
-                getOnPartialResults().execute(textResults, confidences);
+                listener.execute(textResults, confidences);
             }
         }
 
@@ -203,7 +236,7 @@ final class VoiceRecognitionManager {
 
     VoiceRecognitionManager(Application application, SpeechRecognizerCreator recognizerCreator) {
         this.release();
-        //this.application = application;
+        this.application = application;
         this.audioManager = (AudioManager) application.getSystemService(Context.AUDIO_SERVICE);
         this.mainHandler = new AndroidHandlerImpl(Looper.getMainLooper());
         this.speechRecognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
@@ -216,19 +249,26 @@ final class VoiceRecognitionManager {
 
     public void release() {
         if (mainHandler != null) {
+            unlock();
             mainHandler.removeCallbacksAndMessages(null);
         }
-        recognitionListener.reset();
         setRmsDebug(false);
+        setNoSoundThreshold(0);
+        setLowSoundThreshold(0);
         setBluetoothScoRequired(false);
         Log.i(TAG, "VOICE - released");
     }
 
-    public void stop() {
+    public void stopAndSendCapturedSpeech() {
         recognitionListener.reset();
+        stopSco();
         if (speechRecognizer != null) {
             Log.w(TAG, "VOICE - do stop");
-            mainHandler.post(() -> speechRecognizer.stopListening());
+            mainHandler.post(() -> {
+                unlock();
+                speechRecognizer.stopListening();
+            });
+            lock(this::shutdown);
         }
     }
 
@@ -243,10 +283,11 @@ final class VoiceRecognitionManager {
 
     public void shutdown() {
         Log.w(TAG, "VOICE - shutting down");
-        recognitionListener.releaseTimeout();
-        abandonAudioFocusExclusive();
+        recognitionListener.reset();
+        stopSco();
         // Destroy current SpeechRecognizer
         mainHandler.post(() -> {
+            unlock();
             try {
                 if (speechRecognizer != null) {
                     speechRecognizer.setRecognitionListener(null);
@@ -254,30 +295,132 @@ final class VoiceRecognitionManager {
                     speechRecognizer = null;
                     Log.v(TAG, "VOICE - speechRecognizer destroyed");
                 }
-            }
-            catch (Exception ignored) {}
-            finally {
+            } catch (Exception ignored) {} finally {
                 // Release and reset all resources
                 release();
             }
         });
+        lock(this::shutdown);
     }
 
     public void start(VoiceRecognitionListeners... listeners) {
         Log.i(TAG, "VOICE - start conversation");
         handleListeners(listeners);
-        requestAudioFocusExclusive();
+        // Register for incoming calls
+        registerPhoneStateReceiver();
+        if (isBluetoothScoRequired() && !audioManager.isBluetoothScoOn()) {
+            // Sco Listener
+            OnScoListener listener = new OnScoListener() {
+                @Override
+                public void onConnected() {
+                    if (audioManager.isBluetoothScoOn()) {
+                        Log.w(TAG, "VOICE - Sco onConnected");
+                    }
+                    startListening();
+                }
+
+                @Override
+                public void onDisconnected() {
+                    Log.w(TAG, "VOICE - Sco onDisconnected");
+                    if (audioManager.isBluetoothScoOn()) {
+                        Log.w(TAG, "VOICE - shutdown from Sco");
+                        shutdown();
+                    }
+                }
+            };
+            registerScoReceiver(listener);
+            startSco();
+        }
+        else {
+            startListening();
+        }
+    }
+
+    private void startListening() {
         mainHandler.post(() -> {
+            unlock();
             if (speechRecognizer == null) {
                 speechRecognizer = recognizerCreator.create();
                 Log.v(TAG, "VOICE - created");
             }
             recognitionListener.startTimeout();
             recognitionListener.setRmsDebug(rmsDebug);
+            if (noSoundThreshold > 0) recognitionListener.setNoSoundThreshold(noSoundThreshold);
+            if (lowSoundThreshold > 0) recognitionListener.setLowSoundThreshold(lowSoundThreshold);
             Log.i(TAG, "VOICE - start listening");
             speechRecognizer.setRecognitionListener(recognitionListener);
+            //adjustVolumeForBeep();
             speechRecognizer.startListening(speechRecognizerIntent);
         });
+        lock(this::shutdown);
+    }
+
+    private void registerPhoneStateReceiver() {
+        if (!isPhoneStateReceiverRegistered) {
+            Log.v(TAG, "VOICE - register for phone receiver");
+            IntentFilter phoneFilter = new IntentFilter();
+            phoneFilter.addAction(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
+            phoneFilter.addAction(Intent.ACTION_NEW_OUTGOING_CALL);
+            phoneStateReceiver.setListener(new OnPhoneListener() {
+                @Override
+                public void onOutgoingCallStarts() {
+                    shutdown();
+                }
+
+                @Override
+                public void onIncomingCallRinging() {
+                    shutdown();
+                }
+
+                @Override
+                public void onOutgoingCallEnds() {}
+
+                @Override
+                public void onIncomingCallEnds() {}
+            });
+            application.registerReceiver(phoneStateReceiver, phoneFilter);
+            isPhoneStateReceiverRegistered = true;
+        }
+    }
+
+    private void registerScoReceiver(OnScoListener onScoListener) {
+        scoReceiver.setListener(onScoListener);
+        if (!isScoReceiverRegistered) {
+            Log.v(TAG, "VOICE - register sco receiver");
+            IntentFilter scoFilter = new IntentFilter();
+            scoFilter.addAction(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
+            application.registerReceiver(scoReceiver, scoFilter);
+            isScoReceiverRegistered = true;
+        }
+    }
+
+    private void unregisterReceivers() {
+        // Phone State
+        if (isPhoneStateReceiverRegistered) {
+            application.unregisterReceiver(phoneStateReceiver);
+            isPhoneStateReceiverRegistered = false;
+        }
+        // Bluetooth Sco
+        if (isScoReceiverRegistered) {
+            application.unregisterReceiver(scoReceiver);
+            isScoReceiverRegistered = false;
+        }
+    }
+
+    private void startSco() {
+        if (audioManager.isBluetoothScoAvailableOffCall() && !audioManager.isBluetoothScoOn()) {
+            audioManager.setBluetoothScoOn(true);
+            audioManager.startBluetoothSco();
+            Log.v(TAG, "VOICE - start bluetooth sco");
+        }
+    }
+
+    private void stopSco() {
+        if (audioManager.isBluetoothScoAvailableOffCall() && audioManager.isBluetoothScoOn()) {
+            audioManager.setBluetoothScoOn(false);
+            audioManager.stopBluetoothSco();
+            Log.v(TAG, "VOICE - stop bluetooth sco");
+        }
     }
 
     private void handleListeners(VoiceRecognitionListeners... listeners) {
@@ -303,7 +446,7 @@ final class VoiceRecognitionManager {
         }
     }
 
-    public boolean isBluetoothScoRequired() {
+    private boolean isBluetoothScoRequired() {
         return bluetoothScoRequired;
     }
 
@@ -323,38 +466,63 @@ final class VoiceRecognitionManager {
         this.rmsDebug = rmsDebug;
     }
 
+    public void setNoSoundThreshold(float maxValue) {
+        this.noSoundThreshold = maxValue;
+    }
+
+    public void setLowSoundThreshold(float maxValue) {
+        this.lowSoundThreshold = maxValue;
+    }
+
+    private void adjustVolumeForBeep() {
+        // Volume
+        dtmfVolume = audioManager.getStreamVolume(AudioManager.STREAM_DTMF);
+        audioManager.setStreamVolume(AudioManager.STREAM_DTMF, audioManager.getStreamMaxVolume(AudioManager.STREAM_DTMF), 0);
+        systemVolume = audioManager.getStreamVolume(AudioManager.STREAM_SYSTEM);
+        audioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, audioManager.getStreamMaxVolume(AudioManager.STREAM_SYSTEM), 0);
+        ringVolume = audioManager.getStreamVolume(AudioManager.STREAM_RING);
+        audioManager.setStreamVolume(AudioManager.STREAM_RING, audioManager.getStreamMaxVolume(AudioManager.STREAM_RING), 0);
+        alarmVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM);
+        audioManager.setStreamVolume(AudioManager.STREAM_ALARM, audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM), 0);
+        notifVolume = audioManager.getStreamVolume(AudioManager.STREAM_NOTIFICATION);
+        audioManager.setStreamVolume(AudioManager.STREAM_NOTIFICATION, audioManager.getStreamMaxVolume(AudioManager.STREAM_NOTIFICATION), 0);
+        musicVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC), 0);
+        callVolume = audioManager.getStreamVolume(AudioManager.STREAM_VOICE_CALL);
+        audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL, audioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL), 0);
+    }
+
+    private void resetVolumeForBeep() {
+        // Volume
+        audioManager.setStreamVolume(AudioManager.STREAM_DTMF, dtmfVolume, 0);
+        audioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, systemVolume, 0);
+        audioManager.setStreamVolume(AudioManager.STREAM_RING, ringVolume, 0);
+        audioManager.setStreamVolume(AudioManager.STREAM_ALARM, alarmVolume, 0);
+        audioManager.setStreamVolume(AudioManager.STREAM_NOTIFICATION, notifVolume, 0);
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, musicVolume, 0);
+        audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL, callVolume, 0);
+    }
+
     private void setAudioMode() {
         audioMode = audioManager.getMode();
-        audioManager.setMode(isBluetoothScoRequired() ? AudioManager.MODE_IN_CALL : AudioManager.MODE_NORMAL);
-
-        // Enabling this option, the audio is not rooted to the speakers if the sco is activated
-        // Meaning that we can force bluetooth sco even with speakers connected
-        // Nice to have feature!
-        //speakerphoneOn = audioManager.isSpeakerphoneOn();
-        //audioManager.setSpeakerphoneOn(!isBluetoothScoRequired());
+        audioManager.setMode(AudioManager.MODE_NORMAL); // We put this mode because when over Sco we never gain focus!
     }
 
     private void unsetAudioMode() {
         audioManager.setMode(audioMode);
-
-        // Enabling this option, the audio is not rooted to the speakers if the sco is activated
-        // Meaning that we can force bluetooth sco even with speakers connected
-        // Nice to have feature!
-        //audioManager.setSpeakerphoneOn(speakerphoneOn);
     }
 
     private void abandonAudioFocusExclusive() {
         if (requestAudioFocusExclusive) {
             Log.v(TAG, "VOICE - abandon Audio Focus Exclusive");
-            requestAudioFocusExclusive = false;
-            unsetAudioMode();
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
-                //noinspection deprecation
-                requestAudioFocusExclusive = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.abandonAudioFocus(null);
-            } else {
-                requestAudioFocusExclusive = focusRequestExclusive == null || AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager
-                        .abandonAudioFocusRequest(focusRequestExclusive);
+                audioManager.abandonAudioFocus(null);
             }
+            else {
+                audioManager.abandonAudioFocusRequest(focusRequestExclusive);
+            }
+            unsetAudioMode();
+            requestAudioFocusExclusive = false;
         }
     }
 
@@ -364,27 +532,35 @@ final class VoiceRecognitionManager {
             setAudioMode();
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
                 //noinspection deprecation
-                requestAudioFocusExclusive = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(
-                        null,
-                        getMainStreamType(),
-                        AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE);
+                requestAudioFocusExclusive = AudioManager.AUDIOFOCUS_REQUEST_GRANTED ==
+                                             audioManager.requestAudioFocus(
+                                                     null,
+                                                     AudioManager.STREAM_MUSIC,
+                                                     AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE);
 
-            } else {
+            }
+            else {
                 focusRequestExclusive = new AudioFocusRequest
                         .Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
-                        .setAudioAttributes(new AudioAttributes.Builder()
-                                                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                                                    .setUsage(
-                                                            AudioAttributes.USAGE_VOICE_COMMUNICATION
-                                                    )
-                                                    .setLegacyStreamType(getMainStreamType())
-                                                    .build()).build();
+                        .setAudioAttributes(audioAttributes.build()).build();
                 requestAudioFocusExclusive = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(focusRequestExclusive);
             }
         }
     }
 
-    private int getMainStreamType() {
-        return isBluetoothScoRequired() ? AudioManager.STREAM_VOICE_CALL : AudioManager.STREAM_MUSIC;
+    private void lock(Runnable otherwise) {
+        synchronized (lock) {
+            try {
+                lock.wait(LOCK_TIMEOUT);
+            } catch (InterruptedException ignored) {
+                otherwise.run();
+            }
+        }
+    }
+
+    private void unlock() {
+        synchronized (lock) {
+            lock.notify();
+        }
     }
 }

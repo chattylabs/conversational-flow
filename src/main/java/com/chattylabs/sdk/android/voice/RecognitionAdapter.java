@@ -17,6 +17,7 @@ abstract class RecognitionAdapter implements RecognitionListener {
     public static final int NO_SOUND = 1;
     public static final int LOW_SOUND = 2;
     public static final int NORMAL_SOUND = 3;
+    public static final int MIN_INTENTS = 4;
 
     private VoiceInteractionComponent.OnVoiceRecognitionReadyListener onReady;
     private VoiceInteractionComponent.OnVoiceRecognitionResultsListener onResults;
@@ -27,6 +28,10 @@ abstract class RecognitionAdapter implements RecognitionListener {
     private boolean tryAgain;
     private int soundLevel = UNKNOWN;
     private boolean rmsDebug;
+    private float noSoundThreshold = THRESHOLD_SOUND;
+    private float lowSoundThreshold = MIN_THRESHOLD;
+    private int lowSoundIntents;
+    private int normalSoundIntents;
 
     public void setOnReady(VoiceInteractionComponent.OnVoiceRecognitionReadyListener onReady) {
         this.onReady = onReady;
@@ -70,6 +75,16 @@ abstract class RecognitionAdapter implements RecognitionListener {
         return this;
     }
 
+    public RecognitionAdapter setNoSoundThreshold(float noSoundThreshold) {
+        this.noSoundThreshold = noSoundThreshold;
+        return this;
+    }
+
+    public RecognitionAdapter setLowSoundThreshold(float lowSoundThreshold) {
+        this.lowSoundThreshold = lowSoundThreshold;
+        return this;
+    }
+
     public boolean isTryAgain() {
         return tryAgain;
     }
@@ -91,11 +106,22 @@ abstract class RecognitionAdapter implements RecognitionListener {
         this.soundLevel = soundLevel;
     }
 
-    public abstract void releaseTimeout();
-
     public abstract void startTimeout();
 
     public abstract void reset();
+
+    String getSoundLevelAsString(int level) {
+        switch (level) {
+            case NO_SOUND:
+                return "NO_SOUND";
+            case LOW_SOUND:
+                return "LOW_SOUND";
+            case NORMAL_SOUND:
+                return "NORMAL_SOUND";
+            default:
+                return "UNKNOWN";
+        }
+    }
 
     @Override @CallSuper
     public void onReadyForSpeech(Bundle params) {
@@ -109,16 +135,24 @@ abstract class RecognitionAdapter implements RecognitionListener {
 
     @Override
     public void onRmsChanged(float rmsdB) {
+        if (rmsdB % 1 == 0) return;
         if (rmsDebug) Log.v(TAG, "RECOGNITION - Rms db: " + rmsdB);
 
-        if (rmsdB <= THRESHOLD_SOUND && soundLevel <= NO_SOUND) {
+        if (rmsdB <= noSoundThreshold && soundLevel <= NO_SOUND) {
             soundLevel = NO_SOUND;
             // quiet
-        } else if (rmsdB > THRESHOLD_SOUND && rmsdB < MIN_THRESHOLD && soundLevel <= LOW_SOUND) {
-            soundLevel = LOW_SOUND;
+        } else if (rmsdB > noSoundThreshold && rmsdB < lowSoundThreshold && soundLevel <= LOW_SOUND) {
+            lowSoundIntents++;
+            if (lowSoundIntents > MIN_INTENTS)
+                soundLevel = LOW_SOUND;
             // medium
-        } else if (rmsdB >= MIN_THRESHOLD && soundLevel <= NORMAL_SOUND) {
-            soundLevel = NORMAL_SOUND;
+        } else if (rmsdB >= lowSoundThreshold && soundLevel <= NORMAL_SOUND) {
+            lowSoundIntents++;
+            if (lowSoundIntents > MIN_INTENTS && soundLevel <= LOW_SOUND)
+                soundLevel = LOW_SOUND;
+            normalSoundIntents++;
+            if (normalSoundIntents > MIN_INTENTS)
+                soundLevel = NORMAL_SOUND;
             // loud
         }
     }

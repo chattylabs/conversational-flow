@@ -173,6 +173,10 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
         void cancel();
 
         void setRmsDebug(boolean debug);
+
+        void setNoSoundThreshold(float maxValue);
+
+        void setLowSoundThreshold(float maxValue);
     }
 
     @SuppressWarnings("unchecked")
@@ -191,7 +195,7 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
 
         void pause();
 
-        void unPause();
+        void undoPause();
 
         void resume();
 
@@ -281,7 +285,7 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
     }
 
     static boolean matches(@NonNull String str, @NonNull String patternStr) {
-        Pattern pattern = Pattern.compile("^.*?(" + patternStr + ").*$", Pattern.CASE_INSENSITIVE);
+        Pattern pattern = Pattern.compile("\\b(" + patternStr + ")\\b", Pattern.CASE_INSENSITIVE);
         Matcher matcher = pattern.matcher(str);
         return matcher.find();
     }
