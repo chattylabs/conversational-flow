@@ -27,6 +27,7 @@ import com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnTextToSpeech
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -100,8 +101,8 @@ final class TextToSpeechManager {
     private ScoReceiver scoReceiver = new ScoReceiver();
 
     TextToSpeechManager(Application application) {
-        this.listenersMap = new LinkedHashMap<>();
-        this.queue = new LinkedHashMap<>();
+        this.listenersMap = Collections.synchronizedMap(new LinkedHashMap<>());
+        this.queue = Collections.synchronizedMap(new LinkedHashMap<>());
         this.filters = new LinkedList<>();
         this.release();
         this.application = application;
@@ -167,10 +168,8 @@ final class TextToSpeechManager {
 
     private synchronized void speak(String text, String groupId, @Nullable UtteranceProgressListener listener, String utteranceId) {
         Log.i(TAG, "TTS - prepare to speak \"" + text + "\" with Group: <" + groupId + ">");
-        synchronized (listenersMap) {
-            if (listenersMap.containsKey(utteranceId)) {
-                utteranceId = utteranceId + "_" + listenersMap.size();
-            }
+        if (listenersMap.containsKey(utteranceId)) {
+            utteranceId = utteranceId + "_" + listenersMap.size();
         }
         HashMap<String, String> params = buildParams(utteranceId, String.valueOf(getMainStreamType()));
         if (listener != null) handleListener(utteranceId, listener);
@@ -197,10 +196,8 @@ final class TextToSpeechManager {
         Log.i(TAG, "TTS - prepare to speak \"" + text + "\" with no Group");
         UtteranceAdapter listener = generateUtteranceListener(listeners);
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
-        synchronized (listenersMap) {
-            if (listenersMap.containsKey(utteranceId)) {
-                utteranceId = utteranceId + "_" + listenersMap.size();
-            }
+        if (listenersMap.containsKey(utteranceId)) {
+            utteranceId = utteranceId + "_" + listenersMap.size();
         }
         HashMap<String, String> params = buildParams(utteranceId, String.valueOf(getMainStreamType()));
         handleListener(utteranceId, listener);
@@ -231,10 +228,8 @@ final class TextToSpeechManager {
         Log.i(TAG, "TTS - play silence with Group: <" + groupId + ">");
         UtteranceAdapter listener = generateUtteranceListener(listeners);
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
-        synchronized (listenersMap) {
-            if (listenersMap.containsKey(utteranceId)) {
-                utteranceId = utteranceId + "_" + listenersMap.size();
-            }
+        if (listenersMap.containsKey(utteranceId)) {
+            utteranceId = utteranceId + "_" + listenersMap.size();
         }
         handleListener(utteranceId, listener);
         // Silence doesn't need params
@@ -262,10 +257,8 @@ final class TextToSpeechManager {
         Log.i(TAG, "TTS - play silence with no Group");
         UtteranceAdapter listener = generateUtteranceListener(listeners);
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
-        synchronized (listenersMap) {
-            if (listenersMap.containsKey(utteranceId)) {
-                utteranceId = utteranceId + "_" + listenersMap.size();
-            }
+        if (listenersMap.containsKey(utteranceId)) {
+            utteranceId = utteranceId + "_" + listenersMap.size();
         }
         handleListener(utteranceId, listener);
         Map<String, Object> map = new HashMap<>();
@@ -333,7 +326,8 @@ final class TextToSpeechManager {
     }
 
     private synchronized void resume(boolean isFromUtterance) {
-        if (isPaused /*|| isSpeaking*/) {
+        if (isPaused || tts.isSpeaking()) {
+            Log.i(TAG, "TTS - on resume - " + (isPaused ? "is paused" : "tts is speaking"));
             if (isFromUtterance) {
                 Log.i(TAG, "TTS - came from Utterance and is paused -> stop playing the queue! (stop resume)");
                 isSpeaking = false;
@@ -539,14 +533,12 @@ final class TextToSpeechManager {
 
     @Nullable
     String getNextGroup() {
-        synchronized (queue) {
-            Set<String> keys = queue.keySet();
-            if (keys.size() > 1) {
-                return (String) keys.toArray()[1];
-            }
-            else {
-                return null;
-            }
+        Set<String> keys = getGroupQueue();
+        if (keys.size() > 1) {
+            return (String) keys.toArray()[1];
+        }
+        else {
+            return null;
         }
     }
 
@@ -563,14 +555,16 @@ final class TextToSpeechManager {
     }
 
     Set<String> getGroupQueue() {
-        return queue.keySet();
+            return queue.keySet();
     }
 
     private void moveToNextGroup() {
-        // is empty, still contains the group id and it's not the default one
-        if (queue.containsKey(groupId) && !DEFAULT_GROUP.equals(groupId)) {
-            Log.v(TAG, "TTS - remove empty group: <" + groupId + ">");
-            queue.remove(groupId);
+        synchronized (queue) {
+            // is empty, still contains the group id and it's not the default one
+            if (queue.containsKey(groupId) && !DEFAULT_GROUP.equals(groupId)) {
+                Log.v(TAG, "TTS - remove empty group: <" + groupId + ">");
+                queue.remove(groupId);
+            }
         }
         boolean isLastGroupEquals = Objects.equals(lastGroup, groupId);
         groupId = getNextGroup();
@@ -847,12 +841,10 @@ final class TextToSpeechManager {
                 startTimeout(utteranceId);
                 timestamp = System.currentTimeMillis();
 
-                synchronized (listenersMap) {
-                    if (listenersMap.size() > 0) {
-                        UtteranceProgressListener listener = listenersMap.get(utteranceId);
-                        if (listener != null) {
-                            listener.onStart(utteranceId);
-                        }
+                if (listenersMap.size() > 0) {
+                    UtteranceProgressListener listener = listenersMap.get(utteranceId);
+                    if (listener != null) {
+                        listener.onStart(utteranceId);
                     }
                 }
             }
