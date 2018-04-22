@@ -193,10 +193,6 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
 
         <T extends TextToSpeechListeners> void playSilenceNow(long durationInMillis, T... listeners);
 
-        void pause();
-
-        void undoPause();
-
         void resume();
 
         void shutdown();
@@ -204,8 +200,6 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
         boolean isEmpty();
 
         boolean isGroupQueueEmpty();
-
-        boolean isPaused();
 
         String lastGroup();
 

@@ -11,13 +11,16 @@ import com.chattylabs.sdk.android.common.Tag;
 abstract class RecognitionAdapter implements RecognitionListener {
     private static final String TAG = Tag.make(RecognitionAdapter.class);
 
-    private static final float MIN_THRESHOLD = 7f;
-    private static final float THRESHOLD_SOUND = 4f;
-    public static final int UNKNOWN = -1;
-    public static final int NO_SOUND = 1;
-    public static final int LOW_SOUND = 2;
-    public static final int NORMAL_SOUND = 3;
-    public static final int MIN_INTENTS = 4;
+    // Settings
+    private static final int MINIMUM_REACHED_LEVEL_INTENTS = 3;
+    private static final float DEFAULT_THRESHOLD_LOW_SOUND = 5f;
+    private static final float DEFAULT_THRESHOLD_NO_SOUND = 3f;
+
+    // Sound states
+    static final int UNKNOWN = -1;
+    static final int NO_SOUND = 1;
+    static final int LOW_SOUND = 2;
+    static final int NORMAL_SOUND = 3;
 
     private VoiceInteractionComponent.OnVoiceRecognitionReadyListener onReady;
     private VoiceInteractionComponent.OnVoiceRecognitionResultsListener onResults;
@@ -28,8 +31,8 @@ abstract class RecognitionAdapter implements RecognitionListener {
     private boolean tryAgain;
     private int soundLevel = UNKNOWN;
     private boolean rmsDebug;
-    private float noSoundThreshold = THRESHOLD_SOUND;
-    private float lowSoundThreshold = MIN_THRESHOLD;
+    private float noSoundThreshold = DEFAULT_THRESHOLD_NO_SOUND;
+    private float lowSoundThreshold = DEFAULT_THRESHOLD_LOW_SOUND;
     private int lowSoundIntents;
     private int normalSoundIntents;
 
@@ -143,15 +146,15 @@ abstract class RecognitionAdapter implements RecognitionListener {
             // quiet
         } else if (rmsdB > noSoundThreshold && rmsdB < lowSoundThreshold && soundLevel <= LOW_SOUND) {
             lowSoundIntents++;
-            if (lowSoundIntents > MIN_INTENTS)
+            if (lowSoundIntents > MINIMUM_REACHED_LEVEL_INTENTS)
                 soundLevel = LOW_SOUND;
             // medium
         } else if (rmsdB >= lowSoundThreshold && soundLevel <= NORMAL_SOUND) {
             lowSoundIntents++;
-            if (lowSoundIntents > MIN_INTENTS && soundLevel <= LOW_SOUND)
+            if (lowSoundIntents > MINIMUM_REACHED_LEVEL_INTENTS && soundLevel <= LOW_SOUND)
                 soundLevel = LOW_SOUND;
             normalSoundIntents++;
-            if (normalSoundIntents > MIN_INTENTS)
+            if (normalSoundIntents > MINIMUM_REACHED_LEVEL_INTENTS)
                 soundLevel = NORMAL_SOUND;
             // loud
         }

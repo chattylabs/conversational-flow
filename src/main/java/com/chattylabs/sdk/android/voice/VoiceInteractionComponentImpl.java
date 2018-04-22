@@ -118,16 +118,6 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                 }
 
                 @Override
-                public void pause() {
-                    textToSpeechManager.doPause();
-                }
-
-                @Override
-                public void undoPause() {
-                    textToSpeechManager.undoPause();
-                }
-
-                @Override
                 public void resume() {
                     textToSpeechManager.resume();
                 }
@@ -148,11 +138,6 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                 @Override
                 public boolean isGroupQueueEmpty() {
                     return textToSpeechManager.isGroupQueueEmpty();
-                }
-
-                @Override
-                public boolean isPaused() {
-                    return textToSpeechManager.isPaused();
                 }
 
                 @Override
@@ -320,7 +305,6 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                         speechSynthesizer.playNow(
                                 message.text,
                                 (OnTextToSpeechDoneListener) utteranceId -> {
-                                    speechSynthesizer.pause(); // Just in case
                                     if (message.onSuccess != null) {
                                         message.onSuccess.run();
                                     }
@@ -441,9 +425,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
 
             private void play(String text, Runnable runnable) {
                 SpeechSynthesizer speechSynthesizer = getSpeechSynthesizer();
-                speechSynthesizer.playNow(text, (OnTextToSpeechDoneListener) utteranceId -> {
-                    speechSynthesizer.pause();
-                    runnable.run();}); // TODO: onError
+                speechSynthesizer.playNow(text, (OnTextToSpeechDoneListener) utteranceId -> runnable.run()); // TODO: onError
             }
 
             @NonNull

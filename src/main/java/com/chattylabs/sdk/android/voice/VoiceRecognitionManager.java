@@ -23,7 +23,10 @@ import com.chattylabs.sdk.android.voice.VoiceInteractionComponent.SpeechRecogniz
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.MIN_LISTENING_TIME;
 import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnVoiceRecognitionErrorListener;
@@ -46,11 +49,12 @@ import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.selectM
 final class VoiceRecognitionManager {
     private static final String TAG = Tag.make(VoiceRecognitionManager.class);
     private static final long LOCK_TIMEOUT = TimeUnit.SECONDS.toMillis(3);
-    private final Object lock = new Object();
+
     private final Application application;
     private final AudioManager audioManager;
     private final AndroidHandler mainHandler;
     private final Intent speechRecognizerIntent;
+    private final ReentrantLock lock = new ReentrantLock();
     // States
     private int audioMode = AudioManager.MODE_CURRENT; // released
     private int dtmfVolume;
@@ -68,11 +72,13 @@ final class VoiceRecognitionManager {
     private boolean isPhoneStateReceiverRegistered; // released
     private float noSoundThreshold; // released
     private float lowSoundThreshold; // released
+    // Objects
     private AudioFocusRequest focusRequestExclusive;
     private SpeechRecognizer speechRecognizer;
     private SpeechRecognizerCreator recognizerCreator;
     private PhoneStateReceiver phoneStateReceiver = new PhoneStateReceiver();
     private ScoReceiver scoReceiver = new ScoReceiver();
+    private ExecutorService executorService;
     private AudioAttributes.Builder audioAttributes = new AudioAttributes.Builder()
             .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
             .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -103,11 +109,17 @@ final class VoiceRecognitionManager {
                 @Override
                 public void run() {
                     Log.w(TAG, "VOICE - reached timeout - RecognitionAdapter");
-                    mainHandler.post(() -> {
-                        unlock();
-                        speechRecognizer.stopListening();
+                    executorService.submit(() -> {
+                        lock.lock();
+                        try {
+                            mainHandler.post(() -> {
+                                speechRecognizer.stopListening();
+                                executorService.submit(lock::unlock);
+                            });
+                        } catch (Exception e) {
+                            lock.unlock();
+                        }
                     });
-                    lock(VoiceRecognitionManager.this::shutdown);
                 }
             };
             timeout.schedule(task, MIN_LISTENING_TIME * 3);
@@ -236,6 +248,7 @@ final class VoiceRecognitionManager {
 
     VoiceRecognitionManager(Application application, SpeechRecognizerCreator recognizerCreator) {
         this.release();
+        this.executorService = Executors.newSingleThreadExecutor();
         this.application = application;
         this.audioManager = (AudioManager) application.getSystemService(Context.AUDIO_SERVICE);
         this.mainHandler = new AndroidHandlerImpl(Looper.getMainLooper());
@@ -249,8 +262,8 @@ final class VoiceRecognitionManager {
 
     public void release() {
         if (mainHandler != null) {
-            unlock();
             mainHandler.removeCallbacksAndMessages(null);
+            executorService.submit(lock::unlock);
         }
         setRmsDebug(false);
         setNoSoundThreshold(0);
@@ -260,16 +273,22 @@ final class VoiceRecognitionManager {
     }
 
     public void stopAndSendCapturedSpeech() {
-        recognitionListener.reset();
-        stopSco();
-        if (speechRecognizer != null) {
-            Log.w(TAG, "VOICE - do stop");
-            mainHandler.post(() -> {
-                unlock();
-                speechRecognizer.stopListening();
-            });
-            lock(this::shutdown);
-        }
+        executorService.submit(() -> {
+            recognitionListener.reset();
+            stopSco();
+            if (speechRecognizer != null) {
+                Log.w(TAG, "VOICE - do stop");
+                lock.lock();
+                try {
+                    mainHandler.post(() -> {
+                        speechRecognizer.stopListening();
+                        executorService.submit(lock::unlock);
+                    });
+                } catch (Exception e) {
+                    lock.unlock();
+                }
+            }
+        });
     }
 
     public void cancel() {
@@ -282,25 +301,30 @@ final class VoiceRecognitionManager {
     }
 
     public void shutdown() {
-        Log.w(TAG, "VOICE - shutting down");
-        recognitionListener.reset();
-        stopSco();
-        // Destroy current SpeechRecognizer
-        mainHandler.post(() -> {
-            unlock();
+        executorService.submit(() -> {
+            Log.w(TAG, "VOICE - shutting down");
+            recognitionListener.reset();
+            stopSco();
+            // Destroy current SpeechRecognizer
+            lock.lock();
             try {
-                if (speechRecognizer != null) {
-                    speechRecognizer.setRecognitionListener(null);
-                    speechRecognizer.destroy();
-                    speechRecognizer = null;
-                    Log.v(TAG, "VOICE - speechRecognizer destroyed");
-                }
-            } catch (Exception ignored) {} finally {
-                // Release and reset all resources
-                release();
+                mainHandler.post(() -> {
+                    try {
+                        if (speechRecognizer != null) {
+                            speechRecognizer.setRecognitionListener(null);
+                            speechRecognizer.destroy();
+                            speechRecognizer = null;
+                            Log.v(TAG, "VOICE - speechRecognizer destroyed");
+                        }
+                    } catch (Exception ignore) {} finally {
+                        // Release and reset all resources & lock
+                        release();
+                    }
+                });
+            } catch (Exception e) {
+                lock.unlock();
             }
         });
-        lock(this::shutdown);
     }
 
     public void start(VoiceRecognitionListeners... listeners) {
@@ -337,22 +361,28 @@ final class VoiceRecognitionManager {
     }
 
     private void startListening() {
-        mainHandler.post(() -> {
-            unlock();
-            if (speechRecognizer == null) {
-                speechRecognizer = recognizerCreator.create();
-                Log.v(TAG, "VOICE - created");
+        executorService.submit(() -> {
+            lock.lock();
+            try {
+                mainHandler.post(() -> {
+                    if (speechRecognizer == null) {
+                        speechRecognizer = recognizerCreator.create();
+                        Log.v(TAG, "VOICE - created");
+                    }
+                    recognitionListener.startTimeout();
+                    recognitionListener.setRmsDebug(rmsDebug);
+                    if (noSoundThreshold > 0) recognitionListener.setNoSoundThreshold(noSoundThreshold);
+                    if (lowSoundThreshold > 0) recognitionListener.setLowSoundThreshold(lowSoundThreshold);
+                    Log.i(TAG, "VOICE - start listening");
+                    speechRecognizer.setRecognitionListener(recognitionListener);
+                    //adjustVolumeForBeep();
+                    speechRecognizer.startListening(speechRecognizerIntent);
+                    executorService.submit(lock::unlock);
+                });
+            } catch (Exception e) {
+                lock.unlock();
             }
-            recognitionListener.startTimeout();
-            recognitionListener.setRmsDebug(rmsDebug);
-            if (noSoundThreshold > 0) recognitionListener.setNoSoundThreshold(noSoundThreshold);
-            if (lowSoundThreshold > 0) recognitionListener.setLowSoundThreshold(lowSoundThreshold);
-            Log.i(TAG, "VOICE - start listening");
-            speechRecognizer.setRecognitionListener(recognitionListener);
-            //adjustVolumeForBeep();
-            speechRecognizer.startListening(speechRecognizerIntent);
         });
-        lock(this::shutdown);
     }
 
     private void registerPhoneStateReceiver() {
@@ -545,22 +575,6 @@ final class VoiceRecognitionManager {
                         .setAudioAttributes(audioAttributes.build()).build();
                 requestAudioFocusExclusive = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(focusRequestExclusive);
             }
-        }
-    }
-
-    private void lock(Runnable otherwise) {
-        synchronized (lock) {
-            try {
-                lock.wait(LOCK_TIMEOUT);
-            } catch (InterruptedException ignored) {
-                otherwise.run();
-            }
-        }
-    }
-
-    private void unlock() {
-        synchronized (lock) {
-            lock.notify();
         }
     }
 }
