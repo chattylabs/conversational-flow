@@ -414,15 +414,19 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                     if (isUnexpected && noMatchAction.unexpectedErrorMessage != null) {
                         Log.v(TAG, "Conversation - unexpected error");
                         play(noMatchAction.unexpectedErrorMessage, this::next);
-                    } else if (hasFlag(FLAG_ENABLE_ON_LOW_SOUND_ERROR_MESSAGE) &&
+                    }
+                    else if (hasFlag(FLAG_ENABLE_ON_LOW_SOUND_ERROR_MESSAGE) &&
                             isLowSound && noMatchAction.lowSoundErrorMessage != null) {
                         Log.v(TAG, "Conversation - low sound");
                         play(noMatchAction.lowSoundErrorMessage, this::next);
-                    } else if (!isNoSound && !isLowSound && noMatchAction.listeningErrorMessage != null) {
+                    }
+                    else if (!isNoSound && !isLowSound && noMatchAction.listeningErrorMessage != null) {
                         play(noMatchAction.listeningErrorMessage, this::next);
-                    } else if (!isNoSound) {
-                        next();
-                    } else {
+                    }
+                    //else if (!isNoSound) {
+                    //    next();
+                    //}
+                    else {
                         Log.v(TAG, "Conversation - no sound at all!!");
                         // No repeat
                         noMatchAction.retry = 0;

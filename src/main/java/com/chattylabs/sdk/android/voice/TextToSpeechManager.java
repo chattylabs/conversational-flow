@@ -333,7 +333,7 @@ final class TextToSpeechManager {
     }
 
     private synchronized void resume(boolean isFromUtterance) {
-        if (isPaused) {
+        if (isPaused /*|| isSpeaking*/) {
             if (isFromUtterance) {
                 Log.i(TAG, "TTS - came from Utterance and is paused -> stop playing the queue! (stop resume)");
                 isSpeaking = false;
@@ -413,7 +413,6 @@ final class TextToSpeechManager {
     synchronized void undoPause() {
         Log.w(TAG, "TTS - undo Pause");
         isPaused = false;
-        isSpeaking = false;
     }
 
     synchronized void doPause() {
@@ -808,6 +807,7 @@ final class TextToSpeechManager {
 
             @Override
             protected void clearTimeout() {
+                Log.i(TAG, "TTS - timeout cleared!");
                 if (task != null) task.cancel();
                 if (timer != null) timer.cancel();
             }
