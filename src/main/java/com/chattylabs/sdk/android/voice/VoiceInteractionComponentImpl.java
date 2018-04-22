@@ -101,8 +101,8 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
 
                 @SafeVarargs
                 @Override
-                public final <T extends TextToSpeechListeners> void play(String text, T... listeners) {
-                    textToSpeechManager.speak(text, listeners);
+                public final <T extends TextToSpeechListeners> void playNow(String text, T... listeners) {
+                    textToSpeechManager.speakNow(text, listeners);
                 }
 
                 @SafeVarargs
@@ -113,8 +113,8 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
 
                 @SafeVarargs
                 @Override
-                public final <T extends TextToSpeechListeners> void playSilence(long durationInMillis, T... listeners) {
-                    textToSpeechManager.playSilence(durationInMillis, listeners);
+                public final <T extends TextToSpeechListeners> void playSilenceNow(long durationInMillis, T... listeners) {
+                    textToSpeechManager.playSilenceNow(durationInMillis, listeners);
                 }
 
                 @Override
@@ -316,8 +316,11 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                         VoiceMessage message = (VoiceMessage) node;
                         Log.v(TAG, "Conversation - running Message: " + message.text);
                         current = message;
-                        getSpeechSynthesizer().play(
-                                message.text, (OnTextToSpeechDoneListener) utteranceId -> {
+                        SpeechSynthesizer speechSynthesizer = getSpeechSynthesizer();
+                        speechSynthesizer.playNow(
+                                message.text,
+                                (OnTextToSpeechDoneListener) utteranceId -> {
+                                    speechSynthesizer.pause(); // Just in case
                                     if (message.onSuccess != null) {
                                         message.onSuccess.run();
                                     }
@@ -433,7 +436,10 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
             }
 
             private void play(String text, Runnable runnable) {
-                getSpeechSynthesizer().play(text, (OnTextToSpeechDoneListener) utteranceId -> runnable.run()); // TODO: onError
+                SpeechSynthesizer speechSynthesizer = getSpeechSynthesizer();
+                speechSynthesizer.playNow(text, (OnTextToSpeechDoneListener) utteranceId -> {
+                    speechSynthesizer.pause();
+                    runnable.run();}); // TODO: onError
             }
 
             @NonNull

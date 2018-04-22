@@ -187,11 +187,11 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
 
         <T extends TextToSpeechListeners> void play(String text, String groupId, T... listeners);
 
-        <T extends TextToSpeechListeners> void play(String text, T... listeners);
+        <T extends TextToSpeechListeners> void playNow(String text, T... listeners);
 
         <T extends TextToSpeechListeners> void playSilence(long durationInMillis, String groupId, T... listeners);
 
-        <T extends TextToSpeechListeners> void playSilence(long durationInMillis, T... listeners);
+        <T extends TextToSpeechListeners> void playSilenceNow(long durationInMillis, T... listeners);
 
         void pause();
 

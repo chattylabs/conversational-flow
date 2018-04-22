@@ -161,7 +161,39 @@ final class TextToSpeechManager {
         speak(text, groupId, generateUtteranceListener(listeners));
     }
 
-    synchronized void speak(String text, TextToSpeechListeners... listeners) {
+    private synchronized void speak(String text, String groupId, @Nullable UtteranceProgressListener listener) {
+        speak(text, groupId, listener, DEFAULT_UTTERANCE_ID + System.nanoTime());
+    }
+
+    private synchronized void speak(String text, String groupId, @Nullable UtteranceProgressListener listener, String utteranceId) {
+        Log.i(TAG, "TTS - prepare to speak \"" + text + "\" with Group: <" + groupId + ">");
+        synchronized (listenersMap) {
+            if (listenersMap.containsKey(utteranceId)) {
+                utteranceId = utteranceId + "_" + listenersMap.size();
+            }
+        }
+        HashMap<String, String> params = buildParams(utteranceId, String.valueOf(getMainStreamType()));
+        if (listener != null) handleListener(utteranceId, listener);
+        addToQueue(utteranceId, text, -1, params, groupId);
+        Log.i(TAG, "TTS - ready: " + b(isReady) + " | speaking: " + b(isSpeaking) + " | pause: " + b(isPaused));
+        if (tts == null) {
+            initTts(status -> {
+                if (status == TextToSpeech.SUCCESS) {
+                    isReady = true;
+                    resume();
+                }
+                else {
+                    Log.e(TAG, "TTS - Status ERROR");
+                    shutdown();
+                }
+            }, null);
+        }
+        else if (isReady && !isSpeaking) {
+            resume();
+        }
+    }
+
+    synchronized void speakNow(String text, TextToSpeechListeners... listeners) {
         Log.i(TAG, "TTS - prepare to speak \"" + text + "\" with no Group");
         UtteranceAdapter listener = generateUtteranceListener(listeners);
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
@@ -194,7 +226,38 @@ final class TextToSpeechManager {
         }
     }
 
-    synchronized void playSilence(long durationInMillis, TextToSpeechListeners... listeners) {
+    synchronized void playSilence(long durationInMillis, String groupId, TextToSpeechListeners... listeners) {
+        if (durationInMillis <= 0) throw new IllegalArgumentException("Silence duration must be greater than 0");
+        Log.i(TAG, "TTS - play silence with Group: <" + groupId + ">");
+        UtteranceAdapter listener = generateUtteranceListener(listeners);
+        String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
+        synchronized (listenersMap) {
+            if (listenersMap.containsKey(utteranceId)) {
+                utteranceId = utteranceId + "_" + listenersMap.size();
+            }
+        }
+        handleListener(utteranceId, listener);
+        // Silence doesn't need params
+        addToQueue(utteranceId, null, durationInMillis, null, groupId);
+        Log.i(TAG, "TTS - ready: " + b(isReady) + " | speaking: " + b(isSpeaking) + " | pause: " + b(isPaused));
+        if (tts == null) {
+            initTts(status -> {
+                if (status == TextToSpeech.SUCCESS) {
+                    isReady = true;
+                    resume();
+                }
+                else {
+                    Log.e(TAG, "TTS - Status ERROR");
+                    shutdown();
+                }
+            }, null);
+        }
+        else if (isReady && !isSpeaking) {
+            resume();
+        }
+    }
+
+    synchronized void playSilenceNow(long durationInMillis, TextToSpeechListeners... listeners) {
         if (durationInMillis <= 0) throw new IllegalArgumentException("Silence duration must be greater than 0");
         Log.i(TAG, "TTS - play silence with no Group");
         UtteranceAdapter listener = generateUtteranceListener(listeners);
@@ -204,12 +267,10 @@ final class TextToSpeechManager {
                 utteranceId = utteranceId + "_" + listenersMap.size();
             }
         }
-        HashMap<String, String> params = buildParams(utteranceId, String.valueOf(getMainStreamType()));
         handleListener(utteranceId, listener);
         Map<String, Object> map = new HashMap<>();
         map.put(MAP_UTTERANCE_ID, utteranceId);
         map.put(MAP_SILENCE, durationInMillis);
-        map.put(MAP_PARAMS, params);
         Log.i(TAG, "TTS - ready: " + b(isReady) + " | speaking: " + b(isSpeaking) + " | pause: " + b(isPaused));
         if (tts == null) {
             initTts(status -> {
@@ -225,69 +286,6 @@ final class TextToSpeechManager {
         }
         else if (isReady && !isSpeaking) {
             playTheQueue(map);
-        }
-    }
-
-    synchronized void playSilence(long durationInMillis, String groupId, TextToSpeechListeners... listeners) {
-        if (durationInMillis <= 0) throw new IllegalArgumentException("Silence duration must be greater than 0");
-        Log.i(TAG, "TTS - play silence with Group: <" + groupId + ">");
-        UtteranceAdapter listener = generateUtteranceListener(listeners);
-        String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
-        synchronized (listenersMap) {
-            if (listenersMap.containsKey(utteranceId)) {
-                utteranceId = utteranceId + "_" + listenersMap.size();
-            }
-        }
-        HashMap<String, String> params = buildParams(utteranceId, String.valueOf(getMainStreamType()));
-        handleListener(utteranceId, listener);
-        addToQueue(utteranceId, null, durationInMillis, params, groupId);
-        Log.i(TAG, "TTS - ready: " + b(isReady) + " | speaking: " + b(isSpeaking) + " | pause: " + b(isPaused));
-        if (tts == null) {
-            initTts(status -> {
-                if (status == TextToSpeech.SUCCESS) {
-                    isReady = true;
-                    resume();
-                }
-                else {
-                    Log.e(TAG, "TTS - Status ERROR");
-                    shutdown();
-                }
-            }, null);
-        }
-        else if (isReady && !isSpeaking) {
-            resume();
-        }
-    }
-
-    private synchronized void speak(String text, String groupId, @Nullable UtteranceProgressListener listener) {
-        speak(text, groupId, listener, DEFAULT_UTTERANCE_ID + System.nanoTime());
-    }
-
-    private synchronized void speak(String text, String groupId, @Nullable UtteranceProgressListener listener, String utteranceId) {
-        Log.i(TAG, "TTS - prepare to speak \"" + text + "\" with Group: <" + groupId + ">");
-        synchronized (listenersMap) {
-            if (listenersMap.containsKey(utteranceId)) {
-                utteranceId = utteranceId + "_" + listenersMap.size();
-            }
-        }
-        HashMap<String, String> params = buildParams(utteranceId, String.valueOf(getMainStreamType()));
-        if (listener != null) handleListener(utteranceId, listener);
-        addToQueue(utteranceId, text, -1, params, groupId);
-        Log.i(TAG, "TTS - ready: " + b(isReady) + " | speaking: " + b(isSpeaking) + " | pause: " + b(isPaused));
-        if (tts == null) {
-            initTts(status -> {
-                if (status == TextToSpeech.SUCCESS) {
-                    isReady = true;
-                    resume();
-                }
-                else {
-                    Log.e(TAG, "TTS - Status ERROR");
-                    shutdown();
-                }
-            }, null);
-        }
-        else if (isReady && !isSpeaking) {
-            resume();
         }
     }
 
@@ -337,7 +335,7 @@ final class TextToSpeechManager {
     private synchronized void resume(boolean isFromUtterance) {
         if (isPaused) {
             if (isFromUtterance) {
-                Log.i(TAG, "TTS - From Utterance - stopped speaking");
+                Log.i(TAG, "TTS - came from Utterance and is paused -> stop playing the queue! (stop resume)");
                 isSpeaking = false;
             }
             return;
@@ -382,9 +380,7 @@ final class TextToSpeechManager {
                 }
                 else {
                     //noinspection unchecked
-                    playSilence((String) map.get(MAP_UTTERANCE_ID),
-                                (long) map.get(MAP_SILENCE),
-                                (HashMap<String, String>) map.get(MAP_PARAMS));
+                    playSilence((String) map.get(MAP_UTTERANCE_ID), (long) map.get(MAP_SILENCE));
                 }
             }
 
@@ -761,12 +757,12 @@ final class TextToSpeechManager {
         Log.v(TAG, "TTS - added utterance listener -> size:  " + listenersMap.size());
     }
 
-    private void addToQueue(@NonNull String utteranceId, String message, long duration, HashMap<String, String> params, @NonNull String groupId) {
+    private void addToQueue(@NonNull String utteranceId, String message, long duration, @Nullable HashMap<String, String> params, @NonNull String groupId) {
         Map<String, Object> map = new HashMap<>();
         map.put(MAP_UTTERANCE_ID, utteranceId);
         if (message != null) map.put(MAP_MESSAGE, message);
         if (duration > 0) map.put(MAP_SILENCE, duration);
-        map.put(MAP_PARAMS, params);
+        if (params != null) map.put(MAP_PARAMS, params);
         synchronized (queue) {
             if (!queue.containsKey(groupId)) {
                 Log.v(TAG, "TTS - added group: <" + groupId + ">");
@@ -774,8 +770,8 @@ final class TextToSpeechManager {
                 queue.put(groupId, new ConcurrentLinkedQueue<>());
             }
             queue.get(groupId).add(map);
-            Log.v(TAG, "TTS - added message to queue. Number of groups: " + queue.size());
-            Log.v(TAG, "TTS - messages in the queue: " + queue.get(groupId).size());
+            Log.v(TAG, "TTS - added message to queue <" + groupId + ">. Number of groups: " + queue.size());
+            Log.v(TAG, "TTS - messages in the queue <" + groupId + ">: " + queue.get(groupId).size());
         }
     }
 
@@ -865,12 +861,12 @@ final class TextToSpeechManager {
             public void onDone(String utteranceId) {
                 clearTimeout();
                 if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
-                    Log.v(TAG, "TTS - on done -> stop timeout -> go to setup language");
+                    Log.v(TAG, "TTS - on done <" + groupId + "> -> stop timeout -> go to setup language");
                     checkLanguage(onInit, true);
                 }
                 else {
                     synchronized (listenersMap) {
-                        Log.v(TAG, "TTS - on done -> stop timeout -> utterance listener size: " + listenersMap.size());
+                        Log.v(TAG, "TTS - on done <" + groupId + "> -> stop timeout -> utterance listener size: " + listenersMap.size());
                         if (listenersMap.size() > 0) {
                             UtteranceProgressListener listener = listenersMap.remove(utteranceId);
                             if (listener != null) {
@@ -961,6 +957,7 @@ final class TextToSpeechManager {
     }
 
     private void executeOnTtsReady(String utteranceId, String text, HashMap<String, String> params) {
+        //noinspection ConstantConditions
         String finalText = HtmlUtils.from(text).toString();
 
         for (MessageFilter filter : filters) {
@@ -983,30 +980,18 @@ final class TextToSpeechManager {
         }
     }
 
-    private void playSilence(String utteranceId, long durationInMillis, HashMap<String, String> params) {
+    private void playSilence(String utteranceId, long durationInMillis) {
         Log.i(TAG, "TTS - play silence");
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            tts.playSilentUtterance(durationInMillis, TextToSpeech.QUEUE_ADD, utteranceId);
-        }
-        else {
-            //noinspection deprecation
-            tts.playSilence(durationInMillis, TextToSpeech.QUEUE_ADD, params);
-        }
+        tts.playSilentUtterance(durationInMillis, TextToSpeech.QUEUE_ADD, utteranceId);
     }
 
     private void play(String utteranceId, String text, HashMap<String, String> params) {
         Log.i(TAG, "TTS - reading out loud: \"" + text + "\"");
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            Bundle newParams = new Bundle();
-            String paramStream = params.get(TextToSpeech.Engine.KEY_PARAM_STREAM);
-            if (paramStream != null) {
-                newParams.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, Integer.valueOf(paramStream));
-            }
-            tts.speak(text, TextToSpeech.QUEUE_ADD, newParams, utteranceId);
+        Bundle newParams = new Bundle();
+        String paramStream = params.get(TextToSpeech.Engine.KEY_PARAM_STREAM);
+        if (paramStream != null) {
+            newParams.putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, Integer.valueOf(paramStream));
         }
-        else {
-            //noinspection deprecation
-            tts.speak(text, TextToSpeech.QUEUE_ADD, params);
-        }
+        tts.speak(text, TextToSpeech.QUEUE_ADD, newParams, utteranceId);
     }
 }
