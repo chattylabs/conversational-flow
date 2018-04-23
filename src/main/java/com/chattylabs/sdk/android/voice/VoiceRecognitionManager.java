@@ -261,13 +261,15 @@ final class VoiceRecognitionManager {
     }
 
     public void release() {
-        mainHandler.removeCallbacksAndMessages(null);
+        if (mainHandler != null) {
+            mainHandler.removeCallbacksAndMessages(null);
+            executorService.submit(lock::unlock);
+        }
         setRmsDebug(false);
         setNoSoundThreshold(0);
         setLowSoundThreshold(0);
         setBluetoothScoRequired(false);
         Log.i(TAG, "VOICE - released");
-        executorService.submit(lock::unlock);
     }
 
     public void stopAndSendCapturedSpeech() {
