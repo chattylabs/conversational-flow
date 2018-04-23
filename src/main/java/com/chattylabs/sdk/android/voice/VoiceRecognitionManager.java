@@ -261,24 +261,22 @@ final class VoiceRecognitionManager {
     }
 
     public void release() {
-        if (mainHandler != null) {
-            mainHandler.removeCallbacksAndMessages(null);
-            executorService.submit(lock::unlock);
-        }
+        mainHandler.removeCallbacksAndMessages(null);
         setRmsDebug(false);
         setNoSoundThreshold(0);
         setLowSoundThreshold(0);
         setBluetoothScoRequired(false);
         Log.i(TAG, "VOICE - released");
+        executorService.submit(lock::unlock);
     }
 
     public void stopAndSendCapturedSpeech() {
         executorService.submit(() -> {
+            lock.lock();
             recognitionListener.reset();
             stopSco();
             if (speechRecognizer != null) {
                 Log.w(TAG, "VOICE - do stop");
-                lock.lock();
                 try {
                     mainHandler.post(() -> {
                         speechRecognizer.stopListening();
@@ -287,6 +285,8 @@ final class VoiceRecognitionManager {
                 } catch (Exception e) {
                     lock.unlock();
                 }
+            } else {
+                lock.unlock();
             }
         });
     }
@@ -302,11 +302,11 @@ final class VoiceRecognitionManager {
 
     public void shutdown() {
         executorService.submit(() -> {
+            lock.lock();
             Log.w(TAG, "VOICE - shutting down");
             recognitionListener.reset();
             stopSco();
             // Destroy current SpeechRecognizer
-            lock.lock();
             try {
                 mainHandler.post(() -> {
                     try {
@@ -316,7 +316,9 @@ final class VoiceRecognitionManager {
                             speechRecognizer = null;
                             Log.v(TAG, "VOICE - speechRecognizer destroyed");
                         }
-                    } catch (Exception ignore) {} finally {
+                    }
+                    catch (Exception ignore) {}
+                    finally {
                         // Release and reset all resources & lock
                         release();
                     }
