@@ -4,9 +4,6 @@ plugins {
 apply plugin: 'com.android.library'
 apply from: '../buildsystem/android.gradle'
 
-group = 'com.chattylabs.sdk.android'
-def version = android.defaultConfig.versionName
-
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     api "com.chattylabs.sdk.android:common:+"
@@ -22,7 +19,7 @@ dependencies {
 install {
     repositories.mavenInstaller {
         pom.groupId = project.group
-        pom.version = version
+        pom.version = project.version
         pom.artifactId = project.name.replace("sdk-","")
     }
 }
