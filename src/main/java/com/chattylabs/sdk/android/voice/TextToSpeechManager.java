@@ -401,8 +401,7 @@ final class TextToSpeechManager {
         registerPhoneStateReceiver();
         // Check whether Sco is connected or required
         Log.i(TAG, "TTS - is bluetooth Sco required: " + b(isBluetoothScoRequired()));
-        if (peripheral.get(Peripheral.Type.HEADSET).isConnected() ||
-            !isBluetoothScoRequired() || isScoConnected) {
+        if (!isBluetoothScoRequired() || isScoConnected) {
             Log.v(TAG, "TTS - bluetooth sco is: " + (isScoConnected ? "on" : "off"));
             listener.onConnected();
         }
@@ -502,7 +501,7 @@ final class TextToSpeechManager {
     }
 
     private boolean isBluetoothScoRequired() {
-        return bluetoothScoRequired;
+        return bluetoothScoRequired && !peripheral.get(Peripheral.Type.HEADSET).isConnected();
     }
 
     void setBluetoothScoRequired(boolean bluetoothScoRequired) {
@@ -719,10 +718,10 @@ final class TextToSpeechManager {
         // Enabling this option, the audio is not rooted to the speakers if the sco is activated
         // Meaning that we can force bluetooth sco even with speakers connected
         // Nice to have feature!
-        speakerphoneOn = audioManager.isSpeakerphoneOn();
-        boolean isHeadsetConnected = peripheral.get(Peripheral.Type.HEADSET).isConnected();
-        if (!isHeadsetConnected) { audioManager.setSpeakerphoneOn(!isBluetoothScoRequired()); }
-        else { audioManager.setSpeakerphoneOn(true); }
+        //speakerphoneOn = audioManager.isSpeakerphoneOn();
+        //boolean isHeadsetConnected = peripheral.get(Peripheral.Type.HEADSET).isConnected();
+        //if (!isHeadsetConnected) { audioManager.setSpeakerphoneOn(!isBluetoothScoRequired()); }
+        //else { audioManager.setSpeakerphoneOn(true); }
     }
 
     private void unsetAudioMode() {
