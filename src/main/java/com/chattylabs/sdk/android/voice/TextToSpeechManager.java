@@ -345,6 +345,24 @@ final class TextToSpeechManager {
     }
 
     synchronized void resume() {
+        if (tts == null) {
+            initTts(status -> {
+                Log.i(TAG, "TTS - instance initialized");
+                if (status == TextToSpeech.SUCCESS) {
+                    isReady = true;
+                    run();
+                }
+                else {
+                    shutdown();
+                }
+            }, null);
+        }
+        else if (isReady) {
+            run();
+        }
+    }
+
+    private void run() {
         Log.i(TAG, "TTS - resume group: <" + groupId + ">");
         checkForEmptyGroup();
         if (!isGroupQueueEmpty()) {
@@ -803,8 +821,8 @@ final class TextToSpeechManager {
                 task = new TimerTask() {
                     @Override
                     public void run() {
-                        if (!tts.isSpeaking()) {
-                            Log.e(TAG, "TTS - is not speaking && reached timeout!");
+                        if (tts == null || !tts.isSpeaking()) {
+                            Log.e(TAG, "TTS - is null or not speaking && reached timeout!");
                             shutdown();
                             onDone(utteranceId);
                         }
