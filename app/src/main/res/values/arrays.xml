@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="actions">
+        <item>Select&#8230;</item>
+        <item>Read</item>
+        <item>Listen</item>
+        <item>Check</item>
+    </string-array>
+</resources>
