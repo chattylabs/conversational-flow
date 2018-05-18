@@ -1,7 +1,13 @@
-plugins {
-    id "com.github.dcendents.android-maven" version "2.0"
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.novoda:bintray-release:0.8.1'
+    }
 }
 apply plugin: 'com.android.library'
+apply plugin: 'com.novoda.bintray-release'
 apply from: '../buildsystem/android.gradle'
 
 dependencies {
@@ -17,11 +23,11 @@ dependencies {
     }
 }
 
-install {
-    repositories.mavenInstaller {
-        pom.groupId = project.group
-        pom.version = project.version
-        pom.artifactId = project.name
-        println "install <${pom.groupId}:${pom.artifactId}:${pom.version}>"
-    }
+publish {
+    userOrg = 'chattylabs'
+    groupId = project.group
+    artifactId = project.name
+    publishVersion = project.version
+    desc = 'Android Voice Interaction SDK'
+    website = 'https://github.com/chattylabs/android-sdk-voice-interaction'
 }
