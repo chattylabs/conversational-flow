@@ -1,6 +1,7 @@
 buildscript {
     repositories {
         jcenter()
+        maven { url "https://dl.bintray.com/chattylabs/maven" }
     }
     dependencies {
         classpath 'com.novoda:bintray-release:0.8.1'
@@ -12,7 +13,7 @@ apply from: '../buildsystem/android.gradle'
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    api "com.chattylabs.sdk.android:common:+"
+    api "com.chattylabs.sdk.android:common:0.4.0"
 
     dagger.each {
         implementation it
@@ -26,7 +27,7 @@ dependencies {
 publish {
     userOrg = 'chattylabs'
     groupId = project.group
-    artifactId = project.name
+    artifactId = project.name.replace("sdk-", "")
     publishVersion = project.version
     desc = 'Android Voice Interaction SDK'
     website = 'https://github.com/chattylabs/android-sdk-voice-interaction'

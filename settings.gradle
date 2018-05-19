@@ -1,1 +1,1 @@
-include ':app', ':voice-interaction'
+include ':app', ':sdk-voice-interaction'
