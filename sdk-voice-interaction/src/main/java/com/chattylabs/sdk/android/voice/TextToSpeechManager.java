@@ -365,7 +365,7 @@ final class TextToSpeechManager {
     private void run() {
         Log.i(TAG, "TTS - resume group: <" + groupId + ">");
         checkForEmptyGroup();
-        if (!isGroupQueueEmpty()) {
+        if (!isCurrentGroupEmpty()) {
             isSpeaking = true;
             // Gets and plays the current message in the queue
             synchronized (lock) {
@@ -379,7 +379,7 @@ final class TextToSpeechManager {
     }
 
     private void checkForEmptyGroup() {
-        if (isGroupQueueEmpty()) {
+        if (isCurrentGroupEmpty()) {
             Log.v(TAG, "TTS - no more messages in the queue of the group <" + groupId + ">");
             moveToNextGroup();
         }
@@ -549,7 +549,7 @@ final class TextToSpeechManager {
         }
     }
 
-    boolean isGroupQueueEmpty() {
+    boolean isCurrentGroupEmpty() {
         synchronized (lock) {
             return !queue.containsKey(groupId) || queue.get(groupId).isEmpty();
         }

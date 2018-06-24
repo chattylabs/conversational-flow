@@ -136,8 +136,8 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                 }
 
                 @Override
-                public boolean isGroupQueueEmpty() {
-                    return textToSpeechManager.isGroupQueueEmpty();
+                public boolean isCurrentGroupEmpty() {
+                    return textToSpeechManager.isCurrentGroupEmpty();
                 }
 
                 @Override

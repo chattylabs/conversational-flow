@@ -199,7 +199,7 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
 
         boolean isEmpty();
 
-        boolean isGroupQueueEmpty();
+        boolean isCurrentGroupEmpty();
 
         String lastGroup();
 
