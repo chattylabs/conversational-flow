@@ -113,7 +113,7 @@ final class TextToSpeechManager {
         return new TextToSpeech(application, listener);
     }
 
-    synchronized void setup(Application application, OnTextToSpeechInitialisedListener onInit) {
+    void setup(Application application, OnTextToSpeechInitialisedListener onInit) {
         Log.i(TAG, "TTS - setup and checking");
         this.application = application;
         try {
@@ -158,7 +158,7 @@ final class TextToSpeechManager {
         }
     }
 
-    synchronized void speak(String text, String groupId, TextToSpeechListeners... listeners) {
+    void speak(String text, String groupId, TextToSpeechListeners... listeners) {
         speak(text, groupId, generateUtteranceListener(listeners));
     }
 
@@ -168,10 +168,8 @@ final class TextToSpeechManager {
 
     private void speak(String text, String groupId, @Nullable UtteranceProgressListener listener, String utteranceId) {
         Log.i(TAG, "TTS - prepare to speak \"" + text + "\" with Group: <" + groupId + ">");
-        synchronized (lock) {
-            if (listenersMap.containsKey(utteranceId)) {
-                utteranceId = utteranceId + "_" + listenersMap.size();
-            }
+        if (listenersMap.containsKey(utteranceId)) {
+            utteranceId = utteranceId + "_" + listenersMap.size();
         }
         final String uId = utteranceId;
         HashMap<String, String> params = buildParams(uId, String.valueOf(getMainStreamType()));
@@ -187,10 +185,12 @@ final class TextToSpeechManager {
                 }
                 else {
                     Log.e(TAG, "TTS - Status ERROR");
-                    synchronized (lock) {
-                        if (listenersMap.containsKey(uId)) {
-                            listenersMap.remove(uId).onError(uId, TextToSpeech.ERROR);
+                    if (listenersMap.containsKey(uId)) {
+                        UtteranceProgressListener utteranceProgressListener;
+                        synchronized (lock) {
+                            utteranceProgressListener = listenersMap.remove(uId);
                         }
+                        utteranceProgressListener.onError(uId, TextToSpeech.ERROR);
                     }
                     //shutdown();
                 }
@@ -201,14 +201,12 @@ final class TextToSpeechManager {
         }
     }
 
-    synchronized void speakNow(String text, TextToSpeechListeners... listeners) {
+    void speakNow(String text, TextToSpeechListeners... listeners) {
         Log.i(TAG, "TTS - prepare to speak \"" + text + "\" with no Group");
         UtteranceAdapter listener = generateUtteranceListener(listeners);
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
-        synchronized (lock) {
-            if (listenersMap.containsKey(utteranceId)) {
-                utteranceId = utteranceId + "_" + listenersMap.size();
-            }
+        if (listenersMap.containsKey(utteranceId)) {
+            utteranceId = utteranceId + "_" + listenersMap.size();
         }
         HashMap<String, String> params = buildParams(utteranceId, String.valueOf(getMainStreamType()));
         handleListener(utteranceId, listener);
@@ -235,15 +233,13 @@ final class TextToSpeechManager {
         }
     }
 
-    synchronized void playSilence(long durationInMillis, String groupId, TextToSpeechListeners... listeners) {
+    void playSilence(long durationInMillis, String groupId, TextToSpeechListeners... listeners) {
         if (durationInMillis <= 0) throw new IllegalArgumentException("Silence duration must be greater than 0");
         Log.i(TAG, "TTS - play silence with Group: <" + groupId + ">");
         UtteranceAdapter listener = generateUtteranceListener(listeners);
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
-        synchronized (lock) {
-            if (listenersMap.containsKey(utteranceId)) {
-                utteranceId = utteranceId + "_" + listenersMap.size();
-            }
+        if (listenersMap.containsKey(utteranceId)) {
+            utteranceId = utteranceId + "_" + listenersMap.size();
         }
         final String uId = utteranceId;
         handleListener(uId, listener);
@@ -259,10 +255,12 @@ final class TextToSpeechManager {
                 }
                 else {
                     Log.e(TAG, "TTS - Status ERROR");
-                    synchronized (lock) {
-                        if (listenersMap.containsKey(uId)) {
-                            listenersMap.remove(uId).onError(uId, TextToSpeech.ERROR);
+                    if (listenersMap.containsKey(uId)) {
+                        UtteranceProgressListener utteranceProgressListener;
+                        synchronized (lock) {
+                            utteranceProgressListener = listenersMap.remove(uId);
                         }
+                        utteranceProgressListener.onError(uId, TextToSpeech.ERROR);
                     }
                     //shutdown();
                 }
@@ -273,15 +271,13 @@ final class TextToSpeechManager {
         }
     }
 
-    synchronized void playSilenceNow(long durationInMillis, TextToSpeechListeners... listeners) {
+    void playSilenceNow(long durationInMillis, TextToSpeechListeners... listeners) {
         if (durationInMillis <= 0) throw new IllegalArgumentException("Silence duration must be greater than 0");
         Log.i(TAG, "TTS - play silence with no Group");
         UtteranceAdapter listener = generateUtteranceListener(listeners);
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
-        synchronized (lock) {
-            if (listenersMap.containsKey(utteranceId)) {
-                utteranceId = utteranceId + "_" + listenersMap.size();
-            }
+        if (listenersMap.containsKey(utteranceId)) {
+            utteranceId = utteranceId + "_" + listenersMap.size();
         }
         handleListener(utteranceId, listener);
         Map<String, Object> map = new HashMap<>();
@@ -344,7 +340,7 @@ final class TextToSpeechManager {
         return Boolean.valueOf(b).toString();
     }
 
-    synchronized void resume() {
+    void resume() {
         if (tts == null) {
             initTts(status -> {
                 Log.i(TAG, "TTS - instance initialized");
@@ -368,9 +364,7 @@ final class TextToSpeechManager {
         if (!isCurrentGroupEmpty()) {
             isSpeaking = true;
             // Gets and plays the current message in the queue
-            synchronized (lock) {
-                playTheQueue(queue.get(groupId).poll());
-            }
+            playTheQueue(queue.get(groupId).poll());
         }
         else {
             forceStop();
@@ -432,11 +426,11 @@ final class TextToSpeechManager {
         }
     }
 
-    synchronized void stop() {
+    void stop() {
         forceStop();
     }
 
-    synchronized void shutdown() {
+    void shutdown() {
         Log.w(TAG, "TTS - shutting down");
         forceStop();
         if (tts != null) {
@@ -550,28 +544,22 @@ final class TextToSpeechManager {
     }
 
     boolean isCurrentGroupEmpty() {
-        synchronized (lock) {
-            return !queue.containsKey(groupId) || queue.get(groupId).isEmpty();
-        }
+        return !queue.containsKey(groupId) || queue.get(groupId).isEmpty();
     }
 
     boolean isEmpty() {
-        synchronized (lock) {
-            return queue.isEmpty() || (queue.containsKey(DEFAULT_GROUP) && queue.size() == 1 && queue.get(DEFAULT_GROUP).isEmpty());
-        }
+        return queue.isEmpty() || (queue.containsKey(DEFAULT_GROUP) && queue.size() == 1 && queue.get(DEFAULT_GROUP).isEmpty());
     }
 
     Set<String> getGroupQueue() {
-        synchronized (lock) {
-            return queue.keySet();
-        }
+        return queue.keySet();
     }
 
     private void moveToNextGroup() {
         // is empty, still contains the group id and it's not the default one
-        synchronized (lock) {
-            if (queue.containsKey(groupId) && !DEFAULT_GROUP.equals(groupId)) {
-                Log.v(TAG, "TTS - remove empty group: <" + groupId + ">");
+        if (queue.containsKey(groupId) && !DEFAULT_GROUP.equals(groupId)) {
+            Log.v(TAG, "TTS - remove empty group: <" + groupId + ">");
+            synchronized (lock) {
                 queue.remove(groupId);
             }
         }
@@ -752,9 +740,9 @@ final class TextToSpeechManager {
     }
 
     private void handleListener(@NonNull String utteranceId, @NonNull UtteranceProgressListener listener) {
+        Log.v(TAG, "TTS - added utterance listener -> size:  " + listenersMap.size());
         synchronized (lock) {
             listenersMap.put(utteranceId, listener);
-            Log.v(TAG, "TTS - added utterance listener -> size:  " + listenersMap.size());
         }
     }
 
@@ -764,16 +752,16 @@ final class TextToSpeechManager {
         if (message != null) map.put(MAP_MESSAGE, message);
         if (duration > 0) map.put(MAP_SILENCE, duration);
         if (params != null) map.put(MAP_PARAMS, params);
-        synchronized (lock) {
-            if (!queue.containsKey(groupId)) {
-                Log.v(TAG, "TTS - added group: <" + groupId + ">");
-                lastGroup = groupId;
+        if (!queue.containsKey(groupId)) {
+            Log.v(TAG, "TTS - added group: <" + groupId + ">");
+            lastGroup = groupId;
+            synchronized (lock) {
                 queue.put(groupId, new ConcurrentLinkedQueue<>());
             }
-            queue.get(groupId).add(map);
-            Log.v(TAG, "TTS - added message to queue <" + groupId + ">. Number of groups: " + queue.size());
-            Log.v(TAG, "TTS - messages in the queue <" + groupId + ">: " + queue.get(groupId).size());
         }
+        queue.get(groupId).add(map);
+        Log.v(TAG, "TTS - added message to queue <" + groupId + ">. Number of groups: " + queue.size());
+        Log.v(TAG, "TTS - messages in the queue <" + groupId + ">: " + queue.get(groupId).size());
     }
 
     private HashMap<String, String> buildParams(@NonNull String utteranceId, @NonNull String audioStream) {
@@ -844,17 +832,15 @@ final class TextToSpeechManager {
 
             @Override
             public void onStart(String utteranceId) {
-                synchronized (lock) {
-                    Log.v(TAG, "TTS - on start -> utterance listener size: " + listenersMap.size());
+                Log.v(TAG, "TTS - on start -> utterance listener size: " + listenersMap.size());
 
-                    startTimeout(utteranceId);
-                    timestamp = System.currentTimeMillis();
+                startTimeout(utteranceId);
+                timestamp = System.currentTimeMillis();
 
-                    if (listenersMap.size() > 0) {
-                        UtteranceProgressListener listener = listenersMap.get(utteranceId);
-                        if (listener != null) {
-                            listener.onStart(utteranceId);
-                        }
+                if (listenersMap.size() > 0) {
+                    UtteranceProgressListener listener = listenersMap.get(utteranceId);
+                    if (listener != null) {
+                        listener.onStart(utteranceId);
                     }
                 }
             }
@@ -867,21 +853,21 @@ final class TextToSpeechManager {
                     checkLanguage(onInit, true);
                 }
                 else {
-                    synchronized (lock) {
-                        Log.v(TAG, "TTS - on done <" + groupId + "> -> stop timeout");
-                        if (listenersMap.size() > 0) {
-                            UtteranceProgressListener listener = listenersMap.remove(utteranceId);
-                            if (listener != null) {
-                                Log.v(TAG, "TTS - execute on done <" + groupId + ">");
-                                listener.onDone(utteranceId);
-                            }
-                            else {
-                                resume();
-                            }
+                    Log.v(TAG, "TTS - on done <" + groupId + "> -> stop timeout");
+                    if (listenersMap.size() > 0) {
+                        UtteranceProgressListener listener;
+                        synchronized (lock) {
+                            listener = listenersMap.remove(utteranceId);
                         }
-                        else {
+                        if (listener != null) {
+                            Log.v(TAG, "TTS - execute on done <" + groupId + ">");
+                            listener.onDone(utteranceId);
+                        } else {
                             resume();
                         }
+                    }
+                    else {
+                        resume();
                     }
                 }
             }
@@ -890,24 +876,25 @@ final class TextToSpeechManager {
             @TargetApi(Build.VERSION_CODES.LOLLIPOP)
             public void onError(String utteranceId, int errorCode) {
                 clearTimeout();
-                synchronized (lock) {
-                    Log.e(TAG, "TTS - on error -> stop timeout -> utterance listener size: " + listenersMap.size());
-                    Log.e(TAG, "TTS - error code: " + getTextToSpeechErrorType(errorCode));
-                    if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
-                        shutdown();
-                        if (errorCode == TextToSpeech.ERROR_NOT_INSTALLED_YET) {
-                            onInit.execute(TEXT_TO_SPEECH_NOT_AVAILABLE_ERROR);
-                        }
-                        else {
-                            onInit.execute(TEXT_TO_SPEECH_UNKNOWN_ERROR);
-                        }
+                Log.e(TAG, "TTS - on error -> stop timeout -> utterance listener size: " + listenersMap.size());
+                Log.e(TAG, "TTS - error code: " + getTextToSpeechErrorType(errorCode));
+                if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
+                    shutdown();
+                    if (errorCode == TextToSpeech.ERROR_NOT_INSTALLED_YET) {
+                        onInit.execute(TEXT_TO_SPEECH_NOT_AVAILABLE_ERROR);
                     }
                     else {
-                        if (listenersMap.size() > 0) {
-                            UtteranceProgressListener listener = listenersMap.remove(utteranceId);
-                            if (listener != null) {
-                                listener.onError(utteranceId, errorCode);
-                            }
+                        onInit.execute(TEXT_TO_SPEECH_UNKNOWN_ERROR);
+                    }
+                }
+                else {
+                    if (listenersMap.size() > 0) {
+                        UtteranceProgressListener listener;
+                        synchronized (lock) {
+                            listener = listenersMap.remove(utteranceId);
+                        }
+                        if (listener != null) {
+                            listener.onError(utteranceId, errorCode);
                         }
                     }
                 }
