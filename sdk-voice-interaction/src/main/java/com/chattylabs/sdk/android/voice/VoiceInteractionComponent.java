@@ -193,6 +193,10 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
 
         <T extends TextToSpeechListeners> void playSilenceNow(long durationInMillis, T... listeners);
 
+        void dispose();
+
+        void hold();
+
         void resume();
 
         void shutdown();

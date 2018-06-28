@@ -68,6 +68,7 @@ final class TextToSpeechManager {
     private final Object lock = new Object();
     // States
     private boolean isReady; // released
+    private boolean isOnHold; // released
     private boolean isSpeaking; // released
     private boolean reviewAgain; // released
     private boolean triedToDownloadTtsData; // released
@@ -175,7 +176,9 @@ final class TextToSpeechManager {
         HashMap<String, String> params = buildParams(uId, String.valueOf(getMainStreamType()));
         if (listener != null) handleListener(uId, listener);
         addToQueue(uId, text, -1, params, groupId);
-        Log.i(TAG, "TTS - ready: " + b(isReady) + " | speaking: " + b(isSpeaking));
+        Log.i(TAG, "TTS - ready: " + Boolean.toString(isReady) +
+                " | speaking: " + Boolean.toString(isSpeaking) +
+                " | held: " + Boolean.toString(isOnHold));
         if (tts == null) {
             initTts(status -> {
                 Log.i(TAG, "TTS - instance initialized");
@@ -196,7 +199,7 @@ final class TextToSpeechManager {
                 }
             }, null);
         }
-        else if (isReady && !isSpeaking) {
+        else if (isReady && !isSpeaking && !isOnHold) {
             resume();
         }
     }
@@ -214,7 +217,8 @@ final class TextToSpeechManager {
         map.put(MAP_UTTERANCE_ID, utteranceId);
         map.put(MAP_MESSAGE, text);
         map.put(MAP_PARAMS, params);
-        Log.i(TAG, "TTS - ready: " + b(isReady) + " | speaking: " + b(isSpeaking));
+        Log.i(TAG, "TTS - ready: " + Boolean.toString(isReady) +
+                " | speaking: " + Boolean.toString(isSpeaking));
         if (tts == null) {
             initTts(status -> {
                 Log.i(TAG, "TTS - instance initialized");
@@ -245,7 +249,9 @@ final class TextToSpeechManager {
         handleListener(uId, listener);
         // Silence doesn't need params
         addToQueue(uId, null, durationInMillis, null, groupId);
-        Log.i(TAG, "TTS - ready: " + b(isReady) + " | speaking: " + b(isSpeaking));
+        Log.i(TAG, "TTS - ready: " + Boolean.toString(isReady) +
+                " | speaking: " + Boolean.toString(isSpeaking) +
+                " | held: " + Boolean.toString(isOnHold));
         if (tts == null) {
             initTts(status -> {
                 Log.i(TAG, "TTS - instance initialized");
@@ -266,7 +272,7 @@ final class TextToSpeechManager {
                 }
             }, null);
         }
-        else if (isReady && !isSpeaking) {
+        else if (isReady && !isSpeaking && !isOnHold) {
             resume();
         }
     }
@@ -283,7 +289,8 @@ final class TextToSpeechManager {
         Map<String, Object> map = new HashMap<>();
         map.put(MAP_UTTERANCE_ID, utteranceId);
         map.put(MAP_SILENCE, durationInMillis);
-        Log.i(TAG, "TTS - ready: " + b(isReady) + " | speaking: " + b(isSpeaking));
+        Log.i(TAG, "TTS - ready: " + Boolean.toString(isReady) +
+                " | speaking: " + Boolean.toString(isSpeaking));
         if (tts == null) {
             initTts(status -> {
                 Log.i(TAG, "TTS - instance initialized");
@@ -336,8 +343,12 @@ final class TextToSpeechManager {
         return listener;
     }
 
-    private String b(boolean b) {
-        return Boolean.valueOf(b).toString();
+    void dispose() {
+        isOnHold = false;
+    }
+
+    void hold() {
+        isOnHold = true;
     }
 
     void resume() {
@@ -408,7 +419,7 @@ final class TextToSpeechManager {
         // Register for incoming calls
         registerPhoneStateReceiver();
         // Check whether Sco is connected or required
-        Log.i(TAG, "TTS - is bluetooth Sco required: " + b(isBluetoothScoRequired()));
+        Log.i(TAG, "TTS - is bluetooth Sco required: " + Boolean.toString(isBluetoothScoRequired()));
         if (!isBluetoothScoRequired() || isScoConnected) {
             Log.v(TAG, "TTS - bluetooth sco is: " + (isScoConnected ? "on" : "off"));
             listener.onConnected();
@@ -422,13 +433,9 @@ final class TextToSpeechManager {
         }
     }
 
-    void stop() {
-        forceStop();
-    }
-
     void shutdown() {
         Log.w(TAG, "TTS - shutting down");
-        forceStop();
+        stop();
         if (tts != null) {
             try {
                 Log.v(TAG, "TTS - shutting down");
@@ -441,7 +448,7 @@ final class TextToSpeechManager {
         release();
     }
 
-    private void forceStop() {
+    void stop() {
         Log.w(TAG, "TTS - Stopping..");
         if (utteranceListener != null)
             utteranceListener.clearTimeout();
@@ -505,6 +512,7 @@ final class TextToSpeechManager {
         bluetoothScoRequired = false;
         triedToDownloadTtsData = false;
         isReady = false;
+        isOnHold = false;
         isSpeaking = false;
         requestAudioExclusive = false;
         Log.v(TAG, "TTS - states and resources released");
@@ -809,13 +817,13 @@ final class TextToSpeechManager {
                     public void run() {
                         if (tts == null || !tts.isSpeaking()) {
                             Log.e(TAG, "TTS - is null or not speaking && reached timeout!");
-                            forceStop();
+                            stop();
                             onDone(utteranceId);
                         }
                         else {
                             if ((System.currentTimeMillis() - timestamp) > TimeUnit.SECONDS.toMillis(MAX_SPEECH_TIME)) {
                                 Log.e(TAG, "TTS - exceeded " + MAX_SPEECH_TIME + " sec!");
-                                forceStop();
+                                stop();
                                 onDone(utteranceId);
                             }
                             else {
@@ -854,7 +862,7 @@ final class TextToSpeechManager {
                     Log.v(TAG, "TTS - check For Empty Group <" + groupId + ">");
                     checkForEmptyGroup();
                     if (isCurrentGroupEmpty()) {
-                        forceStop();
+                        stop();
                         Log.i(TAG, "TTS - Stream Finished.");
                     }
                     if (listenersMap.size() > 0) {
@@ -886,7 +894,7 @@ final class TextToSpeechManager {
                 else {
                     checkForEmptyGroup();
                     if (isCurrentGroupEmpty()) {
-                        forceStop();
+                        stop();
                         Log.i(TAG, "TTS - ERROR - Stream Finished.");
                     }
                     if (listenersMap.size() > 0) {

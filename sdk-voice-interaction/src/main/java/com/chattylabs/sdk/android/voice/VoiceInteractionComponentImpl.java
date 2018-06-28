@@ -118,6 +118,16 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                 }
 
                 @Override
+                public void dispose() {
+                    textToSpeechManager.dispose();
+                }
+
+                @Override
+                public void hold() {
+                    textToSpeechManager.hold();
+                }
+
+                @Override
                 public void resume() {
                     textToSpeechManager.resume();
                 }
