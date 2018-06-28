@@ -55,7 +55,7 @@ final class TextToSpeechManager {
 
     private static final String CHECKING_UTTERANCE_ID = BuildConfig.APPLICATION_ID + ".checking";
     private static final String DEFAULT_UTTERANCE_ID = BuildConfig.APPLICATION_ID + ".utterance:";
-    private static final int MAX_SPEECH_TIME = 30;
+    private static final int MAX_SPEECH_TIME = 60;
     private static final String TESTING_STRING = "<TESTING_STRING>";
     private static final String MAP_UTTERANCE_ID = "utteranceId";
     private static final String MAP_SILENCE = "silence";
@@ -361,20 +361,16 @@ final class TextToSpeechManager {
     private void run() {
         Log.i(TAG, "TTS - resume group: <" + groupId + ">");
         checkForEmptyGroup();
-        if (!isCurrentGroupEmpty()) {
+        if (!isEmpty()) {
             isSpeaking = true;
             // Gets and plays the current message in the queue
             playTheQueue(queue.get(groupId).poll());
-        }
-        else {
-            forceStop();
-            Log.i(TAG, "TTS - Stream Finished - no more pending messages.");
         }
     }
 
     private void checkForEmptyGroup() {
         if (isCurrentGroupEmpty()) {
-            Log.v(TAG, "TTS - no more messages in the queue of the group <" + groupId + ">");
+            Log.v(TAG, "TTS - no more messages in the group <" + groupId + ">");
             moveToNextGroup();
         }
     }
@@ -446,7 +442,9 @@ final class TextToSpeechManager {
     }
 
     private void forceStop() {
-        if (utteranceListener != null) utteranceListener.clearTimeout();
+        Log.w(TAG, "TTS - Stopping..");
+        if (utteranceListener != null)
+            utteranceListener.clearTimeout();
         // Unregister all broadcast receivers
         unregisterReceivers();
         // Stop Bluetooth Sco if required
@@ -458,11 +456,11 @@ final class TextToSpeechManager {
         if (tts != null) {
             try {
                 tts.stop();
-                Log.v(TAG, "TTS - stopped");
+                Log.v(TAG, "TTS - TextToSpeech stopped");
             } catch (Exception ignored) {}
         }
+        Log.w(TAG, "TTS - Speaking false");
         isSpeaking = false;
-        Log.w(TAG, "TTS - forced stopping!");
     }
 
     TextToSpeech.EngineInfo getEngineByName(TextToSpeech tts, String name) {
@@ -572,7 +570,7 @@ final class TextToSpeechManager {
                 lastGroup = groupId;
             }
         }
-        Log.v(TAG, "TTS - move to new group: <" + groupId + ">");
+        Log.v(TAG, "TTS - New group: <" + groupId + ">");
     }
 
     void addFilter(MessageFilter filter) {
@@ -797,7 +795,7 @@ final class TextToSpeechManager {
 
             @Override
             protected void clearTimeout() {
-                Log.i(TAG, "TTS - timeout cleared!");
+                Log.i(TAG, "TTS - utterance timeout cleared!");
                 if (task != null) task.cancel();
                 if (timer != null) timer.cancel();
             }
@@ -811,13 +809,13 @@ final class TextToSpeechManager {
                     public void run() {
                         if (tts == null || !tts.isSpeaking()) {
                             Log.e(TAG, "TTS - is null or not speaking && reached timeout!");
-                            shutdown();
+                            forceStop();
                             onDone(utteranceId);
                         }
                         else {
                             if ((System.currentTimeMillis() - timestamp) > TimeUnit.SECONDS.toMillis(MAX_SPEECH_TIME)) {
                                 Log.e(TAG, "TTS - exceeded " + MAX_SPEECH_TIME + " sec!");
-                                shutdown();
+                                forceStop();
                                 onDone(utteranceId);
                             }
                             else {
@@ -827,7 +825,7 @@ final class TextToSpeechManager {
                         }
                     }
                 };
-                timer.schedule(task, TimeUnit.SECONDS.toMillis(5));
+                timer.schedule(task, TimeUnit.SECONDS.toMillis(10));
             }
 
             @Override
@@ -849,25 +847,23 @@ final class TextToSpeechManager {
             public void onDone(String utteranceId) {
                 clearTimeout();
                 if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
-                    Log.v(TAG, "TTS - on done <" + groupId + "> -> stop timeout -> go to setup language");
+                    Log.v(TAG, "TTS - on done <" + groupId + "> -> go to setup language");
                     checkLanguage(onInit, true);
                 }
                 else {
-                    Log.v(TAG, "TTS - on done <" + groupId + "> -> stop timeout");
+                    Log.v(TAG, "TTS - check For Empty Group <" + groupId + ">");
+                    checkForEmptyGroup();
+                    if (isCurrentGroupEmpty()) {
+                        forceStop();
+                        Log.i(TAG, "TTS - Stream Finished.");
+                    }
                     if (listenersMap.size() > 0) {
                         UtteranceProgressListener listener;
                         synchronized (lock) {
                             listener = listenersMap.remove(utteranceId);
                         }
-                        if (listener != null) {
-                            Log.v(TAG, "TTS - execute on done <" + groupId + ">");
-                            listener.onDone(utteranceId);
-                        } else {
-                            resume();
-                        }
-                    }
-                    else {
-                        resume();
+                        Log.v(TAG, "TTS - Execute listener onDone <" + groupId + ">");
+                        listener.onDone(utteranceId);
                     }
                 }
             }
@@ -888,6 +884,11 @@ final class TextToSpeechManager {
                     }
                 }
                 else {
+                    checkForEmptyGroup();
+                    if (isCurrentGroupEmpty()) {
+                        forceStop();
+                        Log.i(TAG, "TTS - ERROR - Stream Finished.");
+                    }
                     if (listenersMap.size() > 0) {
                         UtteranceProgressListener listener;
                         synchronized (lock) {
