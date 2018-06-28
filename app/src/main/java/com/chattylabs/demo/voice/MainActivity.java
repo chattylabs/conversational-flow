@@ -28,6 +28,8 @@ import com.chattylabs.sdk.android.voice.VoiceInteractionModule;
 
 import java.util.Objects;
 
+import javax.inject.Inject;
+
 import dagger.android.support.DaggerAppCompatActivity;
 
 import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnTextToSpeechDoneListener;
@@ -54,10 +56,11 @@ public class MainActivity extends DaggerAppCompatActivity {
     private Button proceed;
     private SparseArray<Pair<Integer, String>> queue = new SparseArray<>();
     private ArrayAdapter<CharSequence> adapter;
-    private VoiceInteractionComponent voiceInteractionComponent;
     private CheckBox scoCheck;
     private boolean isScoRequired;
     private Button startStopSco;
+
+    @Inject VoiceInteractionComponent voiceInteractionComponent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,7 +68,7 @@ public class MainActivity extends DaggerAppCompatActivity {
         setContentView(R.layout.activity_main);
         initViews();
         initActions();
-        voiceInteractionComponent = VoiceInteractionModule.provideVoiceInteractionComponent();
+        //voiceInteractionComponent = VoiceInteractionModule.provideVoiceInteractionComponent();
         voiceInteractionComponent.setup(this, voiceInteractionStatus -> {
             if (voiceInteractionStatus.isAvailable()) {
                 voiceInteractionComponent.getSpeechSynthesizer(this).addFilter(new UrlMessageFilter());

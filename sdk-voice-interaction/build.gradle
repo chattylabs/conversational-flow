@@ -27,7 +27,7 @@ dependencies {
     kapt 'com.google.dagger:dagger-android-processor:2.15'
 
     // SDK
-    api "com.chattylabs.sdk.android:common:0.4.4"
+    api "com.chattylabs.sdk.android:common:0.4.6"
 }
 
 publish {

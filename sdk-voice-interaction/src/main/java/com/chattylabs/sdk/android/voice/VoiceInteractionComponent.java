@@ -12,6 +12,7 @@ import android.util.Log;
 
 import com.chattylabs.sdk.android.common.RequiredPermissions;
 import com.chattylabs.sdk.android.common.Tag;
+import com.chattylabs.sdk.android.common.internal.ILogger;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -32,7 +33,7 @@ import java.util.regex.Pattern;
 @dagger.Reusable
 public interface VoiceInteractionComponent extends RequiredPermissions {
 
-    String TAG = Tag.make(VoiceInteractionComponent.class);
+    String TAG = Tag.make("VoiceInteractionComponent");
 
     String DEFAULT_GROUP = "default_group";
 
@@ -245,16 +246,12 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
         void next();
     }
 
-    /**
-     * TODO: documentation...
-     */
     class Instance {
-        transient static SoftReference<VoiceInteractionComponent> instanceOf;
+        static SoftReference<VoiceInteractionComponent> instanceOf;
         static VoiceInteractionComponent getInstanceOf() {
             synchronized (Instance.class) {
                 if ((instanceOf == null) || (instanceOf.get() == null))
                 {
-                    Log.w(TAG, "New instance of SoftReference<VoiceInteractionComponent>");
                     return new SoftReference<>(new VoiceInteractionComponentImpl()).get();
                 }
                 return instanceOf.get();
@@ -345,7 +342,7 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
     @Nullable
     static String selectMostConfidentResult(List<String> results, float[] confidences) {
         String message = null;
-        if (results != null && results.size() > 0 && results.get(0).length() > 0) {
+        if (results != null && !results.isEmpty() && results.get(0).length() > 0) {
             float last = 0;
             if (confidences != null && confidences.length > 0) {
                 for (int a = 0; a < confidences.length; a++) {
@@ -367,6 +364,8 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
      */
 
     void setup(Context context, OnSetupListener onSetupListener);
+
+    void setLogger(ILogger logger);
 
     void setBluetoothScoRequired(Context context, boolean required);
 

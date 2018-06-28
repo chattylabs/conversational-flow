@@ -7,9 +7,10 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.util.Pools;
 import android.support.v4.util.SimpleArrayMap;
-import android.util.Log;
 
 import com.chattylabs.sdk.android.common.Tag;
+import com.chattylabs.sdk.android.common.internal.ILogger;
+import com.chattylabs.sdk.android.common.internal.ILoggerImpl;
 
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
@@ -23,8 +24,9 @@ import javax.inject.Inject;
 @dagger.Reusable
 final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
 
-    private TextToSpeechManager textToSpeechManager;
-    private VoiceRecognitionManager voiceRecognitionManager;
+    private ILogger logger;
+    private AndroidSpeechSynthesizer androidSpeechSynthesizer;
+    private AndroidSpeechRecognizer androidSpeechRecognizer;
     private SpeechRecognizer speechRecognizer;
     private SpeechSynthesizer speechSynthesizer;
 
@@ -39,16 +41,16 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
     }
 
     private void init(Application application) {
-        if (textToSpeechManager == null) textToSpeechManager = new TextToSpeechManager(application);
-        if (voiceRecognitionManager == null) voiceRecognitionManager = new VoiceRecognitionManager(
-                application, () -> android.speech.SpeechRecognizer.createSpeechRecognizer(application));
+        if (androidSpeechSynthesizer == null) androidSpeechSynthesizer = new AndroidSpeechSynthesizer(application, logger);
+        if (androidSpeechRecognizer == null) androidSpeechRecognizer = new AndroidSpeechRecognizer(
+                application, logger, () -> android.speech.SpeechRecognizer.createSpeechRecognizer(application));
     }
 
     @Override
     public void setup(Context context, OnSetupListener onSetupListener) {
         Application application = (Application) context.getApplicationContext();
         init(application);
-        textToSpeechManager.setup(application, textToSpeechStatus -> {
+        androidSpeechSynthesizer.setup(application, textToSpeechStatus -> {
             int speechRecognizerStatus = android.speech.SpeechRecognizer.isRecognitionAvailable(application) ?
                                          VOICE_RECOGNITION_AVAILABLE : VOICE_RECOGNITION_NOT_AVAILABLE;
             onSetupListener.execute(new VoiceInteractionStatus() {
@@ -72,6 +74,11 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
     }
 
     @Override
+    public void setLogger(ILogger logger) {
+        this.logger = logger;
+    }
+
+    @Override
     public void setBluetoothScoRequired(Context context, boolean required) {
         getSpeechSynthesizer(context).setBluetoothScoRequired(required);
         getSpeechRecognizer(context).setBluetoothScoRequired(required);
@@ -79,96 +86,96 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
 
     @Override
     public VoiceInteractionComponent.SpeechSynthesizer getSpeechSynthesizer(Context context) {
-        if (speechSynthesizer == null || textToSpeechManager == null) {
-            Log.w(TAG, "Synthesizer - create new object");
+        if (speechSynthesizer == null || androidSpeechSynthesizer == null) {
+            logger.w(TAG, "Synthesizer - create new object");
             init((Application) context.getApplicationContext());
             speechSynthesizer = new VoiceInteractionComponent.SpeechSynthesizer() {
                 @Override
                 public void addFilter(MessageFilter filter) {
-                    textToSpeechManager.addFilter(filter);
+                    androidSpeechSynthesizer.addFilter(filter);
                 }
 
                 @Override
                 public void setBluetoothScoRequired(boolean required) {
-                    textToSpeechManager.setBluetoothScoRequired(required);
+                    androidSpeechSynthesizer.setBluetoothScoRequired(required);
                 }
 
                 @SafeVarargs
                 @Override
                 public final <T extends TextToSpeechListeners> void play(String text, String groupId, T... listeners) {
-                    textToSpeechManager.speak(text, groupId, listeners);
+                    androidSpeechSynthesizer.speak(text, groupId, listeners);
                 }
 
                 @SafeVarargs
                 @Override
                 public final <T extends TextToSpeechListeners> void playNow(String text, T... listeners) {
-                    textToSpeechManager.speakNow(text, listeners);
+                    androidSpeechSynthesizer.speakNow(text, listeners);
                 }
 
                 @SafeVarargs
                 @Override
                 public final <T extends TextToSpeechListeners> void playSilence(long durationInMillis, String groupId, T... listeners) {
-                    textToSpeechManager.playSilence(durationInMillis, groupId, listeners);
+                    androidSpeechSynthesizer.playSilence(durationInMillis, groupId, listeners);
                 }
 
                 @SafeVarargs
                 @Override
                 public final <T extends TextToSpeechListeners> void playSilenceNow(long durationInMillis, T... listeners) {
-                    textToSpeechManager.playSilenceNow(durationInMillis, listeners);
+                    androidSpeechSynthesizer.playSilenceNow(durationInMillis, listeners);
                 }
 
                 @Override
                 public void dispose() {
-                    textToSpeechManager.dispose();
+                    androidSpeechSynthesizer.dispose();
                 }
 
                 @Override
                 public void hold() {
-                    textToSpeechManager.hold();
+                    androidSpeechSynthesizer.hold();
                 }
 
                 @Override
                 public void resume() {
-                    textToSpeechManager.resume();
+                    androidSpeechSynthesizer.resume();
                 }
 
                 @Override
                 public void shutdown() {
-                    if (textToSpeechManager != null) {
-                        textToSpeechManager.shutdown();
-                        textToSpeechManager = null;
+                    if (androidSpeechSynthesizer != null) {
+                        androidSpeechSynthesizer.shutdown();
+                        androidSpeechSynthesizer = null;
                     }
                 }
 
                 @Override
                 public boolean isEmpty() {
-                    return textToSpeechManager.isEmpty();
+                    return androidSpeechSynthesizer.isEmpty();
                 }
 
                 @Override
                 public boolean isCurrentGroupEmpty() {
-                    return textToSpeechManager.isCurrentGroupEmpty();
+                    return androidSpeechSynthesizer.isCurrentGroupEmpty();
                 }
 
                 @Override
                 public String lastGroup() {
-                    return textToSpeechManager.getLastGroup();
+                    return androidSpeechSynthesizer.getLastGroup();
                 }
 
                 @Nullable
                 @Override
                 public String nextGroup() {
-                    return textToSpeechManager.getNextGroup();
+                    return androidSpeechSynthesizer.getNextGroup();
                 }
 
                 @Override
                 public String group() {
-                    return textToSpeechManager.getGroupId();
+                    return androidSpeechSynthesizer.getGroupId();
                 }
 
                 @Override
                 public Set<String> groupQueue() {
-                    return textToSpeechManager.getGroupQueue();
+                    return androidSpeechSynthesizer.getGroupQueue();
                 }
             };
         }
@@ -177,47 +184,47 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
 
     @Override
     public VoiceInteractionComponent.SpeechRecognizer getSpeechRecognizer(Context context) {
-        if (speechRecognizer == null || voiceRecognitionManager == null) {
-            Log.w(TAG, "Recognizer - create new object");
+        if (speechRecognizer == null || androidSpeechRecognizer == null) {
+            logger.w(TAG, "Recognizer - create new object");
             init((Application) context.getApplicationContext());
             speechRecognizer = new VoiceInteractionComponent.SpeechRecognizer() {
                 @SafeVarargs
                 @Override
                 public final <T extends VoiceRecognitionListeners> void listen(T... listeners) {
-                    voiceRecognitionManager.start(listeners);
+                    androidSpeechRecognizer.start(listeners);
                 }
 
                 @Override
                 public void setBluetoothScoRequired(boolean required) {
-                    voiceRecognitionManager.setBluetoothScoRequired(required);
+                    androidSpeechRecognizer.setBluetoothScoRequired(required);
                 }
 
                 @Override
                 public void shutdown() {
-                    if (voiceRecognitionManager != null) {
-                        voiceRecognitionManager.shutdown();
-                        voiceRecognitionManager = null;
+                    if (androidSpeechRecognizer != null) {
+                        androidSpeechRecognizer.shutdown();
+                        androidSpeechRecognizer = null;
                     }
                 }
 
                 @Override
                 public void cancel() {
-                    voiceRecognitionManager.cancel();
+                    androidSpeechRecognizer.cancel();
                 }
 
                 @Override
                 public void setRmsDebug(boolean debug) {
-                    voiceRecognitionManager.setRmsDebug(debug);
+                    androidSpeechRecognizer.setRmsDebug(debug);
                 }
 
                 @Override
                 public void setNoSoundThreshold(float maxValue) {
-                    voiceRecognitionManager.setNoSoundThreshold(maxValue);
+                    androidSpeechRecognizer.setNoSoundThreshold(maxValue);
                 }
 
                 @Override
                 public void setLowSoundThreshold(float maxValue) {
-                    voiceRecognitionManager.setLowSoundThreshold(maxValue);
+                    androidSpeechRecognizer.setLowSoundThreshold(maxValue);
                 }
             };
         }
@@ -300,7 +307,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
 
             @Override
             public void next() {
-                Log.v(TAG, "Conversation - running next");
+                logger.v(TAG, "Conversation - running next");
                 next(getNext());
             }
 
@@ -309,7 +316,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                 if (node != null) {
                     if (node instanceof VoiceMessage) {
                         VoiceMessage message = (VoiceMessage) node;
-                        Log.v(TAG, "Conversation - running Message: " + message.text);
+                        logger.v(TAG, "Conversation - running Message: " + message.text);
                         current = message;
                         SpeechSynthesizer speechSynthesizer = getSpeechSynthesizer();
                         speechSynthesizer.playNow(
@@ -332,7 +339,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                             }
                         }
                         if (captureAction[0] != null) {
-                            Log.v(TAG, "Conversation - running Capture");
+                            logger.v(TAG, "Conversation - running Capture");
                             // Listen Only
                             getSpeechRecognizer().listen(
                                     (OnVoiceRecognitionMostConfidentResultListener) result -> {
@@ -342,14 +349,14 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                                         else next();
                                     },
                                     (OnVoiceRecognitionErrorListener) (error, originalError) -> {
-                                        Log.e(TAG, "Conversation - listening Capture error");
+                                        logger.e(TAG, "Conversation - listening Capture error");
                                         boolean unexpected = error == VOICE_RECOGNITION_STOPPED_TOO_EARLY_ERROR;
                                         boolean isLowSound = error == VOICE_RECOGNITION_LOW_SOUND_ERROR;
                                         boolean isNoSound = error == VOICE_RECOGNITION_NO_SOUND_ERROR;
                                         if (noMatchAction[0] != null) noMatch(noMatchAction[0], unexpected, isLowSound, isNoSound, null);
                                     });
                         } else {
-                            Log.v(TAG, "Conversation - running Actions");
+                            logger.v(TAG, "Conversation - running Actions");
                             getSpeechRecognizer().listen(
                                     (OnVoiceRecognitionResultsListener) (results, confidences) -> {
                                         String result = VoiceInteractionComponent.selectMostConfidentResult(results, confidences);
@@ -360,7 +367,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                                         processResults(Collections.singletonList(result), actions, true);
                                     },
                                     (OnVoiceRecognitionErrorListener) (error, originalError) -> {
-                                        Log.e(TAG, "Conversation - listening Action error");
+                                        logger.e(TAG, "Conversation - listening Action error");
                                         boolean unexpected = error == VOICE_RECOGNITION_STOPPED_TOO_EARLY_ERROR;
                                         boolean isLowSound = error == VOICE_RECOGNITION_LOW_SOUND_ERROR;
                                         boolean isNoSound = error == VOICE_RECOGNITION_NO_SOUND_ERROR;
@@ -368,7 +375,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                                     });
                         }
                     }
-                } else Log.w(TAG, "Conversation - no more nodes, finished.");
+                } else logger.w(TAG, "Conversation - no more nodes, finished.");
                 // Otherwise there is no more nodes
             }
 
@@ -383,7 +390,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                             List<String> expected = Arrays.asList(action.expectedResults);
                             boolean matches = VoiceInteractionComponent.anyMatch(results, expected);
                             if (matches) {
-                                Log.i(TAG, "Conversation - matched with: " + expected);
+                                logger.i(TAG, "Conversation - matched with: " + expected);
                                 getSpeechRecognizer().cancel();
                                 current = action;
                                 if (action.onMatched != null) action.onMatched.accept(results);
@@ -393,7 +400,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                         }
                     }
                 }
-                Log.w(TAG, "Conversation - not matched");
+                logger.w(TAG, "Conversation - not matched");
                 if (!isPartial && noMatchAction[0] != null) {
                     if (noMatchAction[0].retry == 0) current = noMatchAction[0];
                     noMatch(noMatchAction[0], false, false, false, results);
@@ -404,14 +411,14 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                                  @Nullable List<String> results) {
                 if (noMatchAction.retry > 0) {
                     noMatchAction.retry--;
-                    Log.v(TAG, "Conversation - pending retry: " + noMatchAction.retry);
+                    logger.v(TAG, "Conversation - pending retry: " + noMatchAction.retry);
                     if (isUnexpected && noMatchAction.unexpectedErrorMessage != null) {
-                        Log.v(TAG, "Conversation - unexpected error");
+                        logger.v(TAG, "Conversation - unexpected error");
                         play(noMatchAction.unexpectedErrorMessage, this::next);
                     }
                     else if (hasFlag(FLAG_ENABLE_ON_LOW_SOUND_ERROR_MESSAGE) &&
                             isLowSound && noMatchAction.lowSoundErrorMessage != null) {
-                        Log.v(TAG, "Conversation - low sound");
+                        logger.v(TAG, "Conversation - low sound");
                         play(noMatchAction.lowSoundErrorMessage, this::next);
                     }
                     else if (!isNoSound && !isLowSound && noMatchAction.listeningErrorMessage != null) {
@@ -421,7 +428,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                     //    next();
                     //}
                     else {
-                        Log.v(TAG, "Conversation - no sound at all!!");
+                        logger.v(TAG, "Conversation - no sound at all!!");
                         // No repeat
                         noMatchAction.retry = 0;
                         if (noMatchAction.onNotMatched != null) noMatchAction.onNotMatched.accept(results);
@@ -504,8 +511,8 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
 
     @Override
     public void stop() {
-        if (textToSpeechManager != null) textToSpeechManager.stop();
-        if (voiceRecognitionManager != null) voiceRecognitionManager.stopAndSendCapturedSpeech();
+        if (androidSpeechSynthesizer != null) androidSpeechSynthesizer.stop();
+        if (androidSpeechRecognizer != null) androidSpeechRecognizer.stopAndSendCapturedSpeech();
     }
 
     @Override
