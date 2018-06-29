@@ -252,6 +252,7 @@ final class AndroidSpeechRecognizer {
         this.release();
         this.executorService = Executors.newSingleThreadExecutor();
         this.application = application;
+        this.logger = logger;
         this.audioManager = (AudioManager) application.getSystemService(Context.AUDIO_SERVICE);
         this.mainHandler = new AndroidHandlerImpl(Looper.getMainLooper());
         this.speechRecognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);

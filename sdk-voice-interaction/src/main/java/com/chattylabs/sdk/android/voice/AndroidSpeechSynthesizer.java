@@ -108,6 +108,7 @@ final class AndroidSpeechSynthesizer {
         this.logger = logger;
         this.release();
         this.application = application;
+        this.logger = logger;
         this.audioManager = (AudioManager) application.getSystemService(Context.AUDIO_SERVICE);
         this.peripheral = new Peripheral(audioManager);
     }

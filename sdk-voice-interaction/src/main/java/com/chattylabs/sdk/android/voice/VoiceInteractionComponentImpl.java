@@ -79,6 +79,11 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
     }
 
     @Override
+    public void setLogger(ILogger logger) {
+        this.logger = logger;
+    }
+
+    @Override
     public void setBluetoothScoRequired(Context context, boolean required) {
         getSpeechSynthesizer(context).setBluetoothScoRequired(required);
         getSpeechRecognizer(context).setBluetoothScoRequired(required);
