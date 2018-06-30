@@ -13,7 +13,6 @@ import android.os.Looper;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.telephony.TelephonyManager;
-import android.util.Log;
 
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.common.internal.ILogger;
@@ -249,10 +248,10 @@ final class AndroidSpeechRecognizer {
     private ILogger logger;
 
     AndroidSpeechRecognizer(Application application, ILogger logger, SpeechRecognizerCreator recognizerCreator) {
+        this.logger = logger;
         this.release();
         this.executorService = Executors.newSingleThreadExecutor();
         this.application = application;
-        this.logger = logger;
         this.audioManager = (AudioManager) application.getSystemService(Context.AUDIO_SERVICE);
         this.mainHandler = new AndroidHandlerImpl(Looper.getMainLooper());
         this.speechRecognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);

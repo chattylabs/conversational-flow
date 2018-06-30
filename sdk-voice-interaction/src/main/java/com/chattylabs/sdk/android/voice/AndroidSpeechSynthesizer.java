@@ -15,7 +15,6 @@ import android.speech.tts.UtteranceProgressListener;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.telephony.TelephonyManager;
-import android.util.Log;
 
 import com.chattylabs.sdk.android.common.HtmlUtils;
 import com.chattylabs.sdk.android.common.StringUtils;
@@ -106,9 +105,9 @@ final class AndroidSpeechSynthesizer {
         this.listenersMap = new LinkedHashMap<>();
         this.queue = new LinkedHashMap<>();
         this.filters = new LinkedList<>();
+        this.logger = logger;
         this.release();
         this.application = application;
-        this.logger = logger;
         this.audioManager = (AudioManager) application.getSystemService(Context.AUDIO_SERVICE);
         this.peripheral = new Peripheral(audioManager);
     }
