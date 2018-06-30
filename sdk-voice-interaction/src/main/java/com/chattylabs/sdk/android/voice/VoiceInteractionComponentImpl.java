@@ -10,7 +10,6 @@ import android.support.v4.util.SimpleArrayMap;
 
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.common.internal.ILogger;
-import com.chattylabs.sdk.android.common.internal.ILoggerImpl;
 
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
@@ -19,9 +18,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import javax.inject.Inject;
-
-@dagger.Reusable
 final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
 
     private ILogger logger;
@@ -30,7 +26,6 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
     private SpeechRecognizer speechRecognizer;
     private SpeechSynthesizer speechSynthesizer;
 
-    @Inject
     VoiceInteractionComponentImpl() {
         Instance.instanceOf = new SoftReference<>(this);
     }

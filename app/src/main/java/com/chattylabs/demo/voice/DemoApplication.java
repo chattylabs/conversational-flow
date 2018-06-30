@@ -4,8 +4,6 @@ import com.chattylabs.sdk.android.common.internal.ILogger;
 import com.chattylabs.sdk.android.common.internal.ILoggerImpl;
 import com.chattylabs.sdk.android.voice.VoiceInteractionModule;
 
-import dagger.Binds;
-import dagger.Provides;
 import dagger.android.AndroidInjector;
 import dagger.android.ContributesAndroidInjector;
 import dagger.android.support.AndroidSupportInjectionModule;
@@ -29,13 +27,9 @@ public class DemoApplication extends DaggerApplication {
     @dagger.Module
     static abstract class DemoModule {
 
-        @dagger.Provides
+        @dagger.Binds
         @dagger.Reusable
-        ILogger provideLogger() {
-            ILogger logger = new ILoggerImpl();
-            logger.i("ILogger", "from Demo");
-            return new ILoggerImpl();
-        }
+        abstract ILogger provideLogger(ILoggerImpl logger);
 
         @ContributesAndroidInjector
         abstract MainActivity mainActivity();

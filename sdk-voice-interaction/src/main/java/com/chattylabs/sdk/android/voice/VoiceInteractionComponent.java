@@ -8,7 +8,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RestrictTo;
 import android.text.TextUtils;
-import android.util.Log;
 
 import com.chattylabs.sdk.android.common.RequiredPermissions;
 import com.chattylabs.sdk.android.common.Tag;
@@ -55,6 +54,20 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
     int VOICE_RECOGNITION_LOW_SOUND_ERROR = 210;
 
     int MIN_LISTENING_TIME = 2000;
+
+    class Instance {
+        static SoftReference<VoiceInteractionComponent> instanceOf;
+        static VoiceInteractionComponent getInstanceOf() {
+            synchronized (Instance.class) {
+                if ((instanceOf == null) || (instanceOf.get() == null))
+                {
+                    return new VoiceInteractionComponentImpl();
+                }
+                return instanceOf.get();
+            }
+        }
+        private Instance(){}
+    }
 
     /**
      * Handles SharedPreferences keys related to this component
@@ -244,20 +257,6 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
         void start(Node root);
 
         void next();
-    }
-
-    class Instance {
-        static SoftReference<VoiceInteractionComponent> instanceOf;
-        static VoiceInteractionComponent getInstanceOf() {
-            synchronized (Instance.class) {
-                if ((instanceOf == null) || (instanceOf.get() == null))
-                {
-                    return new SoftReference<>(new VoiceInteractionComponentImpl()).get();
-                }
-                return instanceOf.get();
-            }
-        }
-        private Instance(){}
     }
 
     /**

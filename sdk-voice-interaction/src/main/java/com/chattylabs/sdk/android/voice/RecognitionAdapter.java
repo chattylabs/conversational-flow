@@ -9,7 +9,7 @@ import com.chattylabs.sdk.android.common.Tag;
 
 
 abstract class RecognitionAdapter implements RecognitionListener {
-    private static final String TAG = Tag.make(RecognitionAdapter.class);
+    private static final String TAG = Tag.make("RecognitionAdapter");
 
     // Settings
     private static final int MINIMUM_REACHED_LEVEL_INTENTS = 3;
