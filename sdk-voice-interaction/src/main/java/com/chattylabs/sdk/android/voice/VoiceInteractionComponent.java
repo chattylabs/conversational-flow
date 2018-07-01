@@ -366,6 +366,8 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
 
     void setLogger(ILogger logger);
 
+    ILogger getLogger();
+
     void setBluetoothScoRequired(Context context, boolean required);
 
     SpeechSynthesizer getSpeechSynthesizer(Context context);

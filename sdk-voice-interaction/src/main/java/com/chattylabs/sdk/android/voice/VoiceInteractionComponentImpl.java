@@ -31,6 +31,16 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
     }
 
     @Override
+    public void setLogger(ILogger logger) {
+        this.logger = logger;
+    }
+
+    @Override
+    public ILogger getLogger() {
+        return logger;
+    }
+
+    @Override
     public String[] requiredPermissions() {
         return new String[]{Manifest.permission.RECORD_AUDIO};
     }
@@ -66,11 +76,6 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
                 }
             });
         });
-    }
-
-    @Override
-    public void setLogger(ILogger logger) {
-        this.logger = logger;
     }
 
     @Override
