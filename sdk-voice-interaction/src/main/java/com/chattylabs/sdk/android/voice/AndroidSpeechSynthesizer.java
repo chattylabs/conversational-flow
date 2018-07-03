@@ -287,6 +287,7 @@ final class AndroidSpeechSynthesizer {
     }
 
     void resume() {
+        if (isSpeaking) return;
         initTts(status -> {
             if (status == TextToSpeech.SUCCESS) {
                 run();
@@ -397,6 +398,7 @@ final class AndroidSpeechSynthesizer {
         }
         logger.w(TAG, "TTS - Speaking false");
         isSpeaking = false;
+        dispose();
     }
 
     TextToSpeech.EngineInfo getEngineByName(TextToSpeech tts, String name) {
@@ -800,6 +802,7 @@ final class AndroidSpeechSynthesizer {
                 }
                 else {
                     logger.v(TAG, "TTS - check For Empty Group <" + groupId + ">");
+                    isSpeaking = false;
                     checkForEmptyGroup();
                     if (isCurrentGroupEmpty()) {
                         stop();
@@ -832,6 +835,7 @@ final class AndroidSpeechSynthesizer {
                     }
                 }
                 else {
+                    isSpeaking = false;
                     checkForEmptyGroup();
                     if (isCurrentGroupEmpty()) {
                         stop();

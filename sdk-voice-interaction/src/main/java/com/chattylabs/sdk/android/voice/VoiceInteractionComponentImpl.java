@@ -79,11 +79,6 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
     }
 
     @Override
-    public void setLogger(ILogger logger) {
-        this.logger = logger;
-    }
-
-    @Override
     public void setBluetoothScoRequired(Context context, boolean required) {
         getSpeechSynthesizer(context).setBluetoothScoRequired(required);
         getSpeechRecognizer(context).setBluetoothScoRequired(required);
@@ -239,7 +234,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
     @Override
     public VoiceInteractionComponent.Conversation createConversation(Context context) {
         return new VoiceInteractionComponent.Conversation() {
-            private final String TAG = Tag.make(Conversation.class);
+            private final String TAG = Tag.make("Conversation");
 
             private final Pools.Pool<ArrayList<Node>> mListPool = new Pools.SimplePool<>(10);
             private final SimpleArrayMap<Node, ArrayList<Node>> graph = new SimpleArrayMap<>();
