@@ -27,8 +27,6 @@ import com.chattylabs.sdk.android.voice.Peripheral;
 import com.chattylabs.sdk.android.voice.TextFilterForUrl;
 import com.chattylabs.sdk.android.voice.VoiceInteractionComponent;
 
-import java.util.Objects;
-
 import javax.inject.Inject;
 
 import dagger.android.support.DaggerAppCompatActivity;
@@ -166,7 +164,7 @@ public class MainActivity extends DaggerAppCompatActivity {
             SparseArray<String> news = getChecks(new SparseArray<>(), index + 1);
             if (news.size() > 0) {
                 for (int a = 0; a < news.size(); a++) {
-                    if (Objects.equals(news.valueAt(a), o)) {
+                    if (VoiceInteractionComponent.matches(news.valueAt(a), o)) {
                         representQueue(news.keyAt(a));
                         break;
                     }
@@ -247,7 +245,6 @@ public class MainActivity extends DaggerAppCompatActivity {
         clear = findViewById(R.id.clear);
         proceed = findViewById(R.id.proceed);
         scoCheck = findViewById(R.id.bluetooth_sco);
-
 
         //
         scoCheck.setOnCheckedChangeListener((buttonView, isChecked) -> {

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="actions">
-        <item>Select&#8230;</item>
-        <item>Read</item>
-        <item>Listen</item>
-        <item>Check</item>
+        <item>Select and option&#8230;</item>
+        <item>Read aloud&#8230;</item>
+        <item>Listen to any message</item>
+        <item>Check for&#8230;</item>
     </string-array>
 </resources>
