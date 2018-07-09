@@ -87,7 +87,6 @@ public class MainActivity extends DaggerAppCompatActivity {
             voiceInteractionComponent.shutdown();
         });
         proceed.setOnClickListener((View v) -> {
-            voiceInteractionComponent.shutdown();
             execution.setText(HtmlUtils.from(representQueue(-1)));
             readAll();
         });
@@ -137,6 +136,9 @@ public class MainActivity extends DaggerAppCompatActivity {
                         listen(index);
                     } else {
                         synthesizer.resume();
+                        if (synthesizer.isEmpty()) {
+                            voiceInteractionComponent.shutdown();
+                        }
                     }
                 });
     }
@@ -159,6 +161,9 @@ public class MainActivity extends DaggerAppCompatActivity {
             SpeechSynthesizer synthesizer = voiceInteractionComponent.getSpeechSynthesizer(this);
             synthesizer.releaseCurrentQueue();
             synthesizer.resume();
+            if (synthesizer.isEmpty()) {
+                voiceInteractionComponent.shutdown();
+            }
         }, (VoiceInteractionComponent.OnRecognizerError) (i, i1) -> {
             Log.e(TAG, "Error " + i);
             Log.e(TAG, "Original Error " + AndroidSpeechSynthesizer.getErrorType(i1));
@@ -166,9 +171,7 @@ public class MainActivity extends DaggerAppCompatActivity {
                     .setTitle("Error")
                     .setMessage(AndroidSpeechSynthesizer.getErrorType(i1))
                     .create().show();
-            SpeechSynthesizer synthesizer = voiceInteractionComponent.getSpeechSynthesizer(this);
-            synthesizer.releaseCurrentQueue();
-            synthesizer.shutdown();
+            voiceInteractionComponent.shutdown();
         });
     }
 
@@ -235,7 +238,10 @@ public class MainActivity extends DaggerAppCompatActivity {
         //
         scoCheck.setOnCheckedChangeListener((buttonView, isChecked) -> {
             voiceInteractionComponent.updateVoiceConfiguration(
-                    builder -> builder.setBluetoothScoRequired(() -> isChecked));
+                    builder -> {
+                        builder.setBluetoothScoRequired(() -> isChecked);
+                        return builder.build();
+                    });
         });
         proceed.setEnabled(false);
         // Create an ArrayAdapter using the string array and a default spinner layout
