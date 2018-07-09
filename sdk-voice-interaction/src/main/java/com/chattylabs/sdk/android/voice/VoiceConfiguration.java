@@ -32,7 +32,7 @@ public class VoiceConfiguration {
     }
 
     public interface Update {
-        void run(VoiceConfiguration.Builder builder);
+        VoiceConfiguration run(VoiceConfiguration.Builder builder);
     }
 
     public interface BluetoothScoLazyReturn {

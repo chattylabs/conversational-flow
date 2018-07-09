@@ -24,7 +24,9 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
     private ILogger logger;
 
     VoiceInteractionComponentImpl() {
-        voiceConfiguration = new VoiceConfiguration.Builder().build();
+        voiceConfiguration = new VoiceConfiguration.Builder()
+                .setBluetoothScoRequired(() -> false)
+                .build();
         Instance.instanceOf = new SoftReference<>(this);
     }
 
@@ -35,7 +37,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
 
     @Override
     public void updateVoiceConfiguration(VoiceConfiguration.Update update) {
-        update.run(new VoiceConfiguration.Builder(voiceConfiguration));
+        voiceConfiguration = update.run(new VoiceConfiguration.Builder(voiceConfiguration));
         audioHandler = null;
         speechSynthesizer = null;
         speechRecognizer = null;

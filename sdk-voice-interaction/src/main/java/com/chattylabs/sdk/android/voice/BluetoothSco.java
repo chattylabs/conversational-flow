@@ -52,20 +52,20 @@ class BluetoothSco {
         registerReceiver(bluetoothScoListener);
         if (audioManager.isBluetoothScoAvailableOffCall() && !isBluetoothScoOn) {
             audioManager.setBluetoothScoOn(true);
-            audioManager.startBluetoothSco();
             isBluetoothScoOn = true;
+            audioManager.startBluetoothSco();
             logger.v(TAG, "start bluetooth sco");
         }
     }
 
     void stopSco() {
+        unregisterReceiver();
         if (audioManager.isBluetoothScoAvailableOffCall() && isBluetoothScoOn) {
             audioManager.setBluetoothScoOn(false);
-            audioManager.stopBluetoothSco();
             isBluetoothScoOn = false;
+            audioManager.stopBluetoothSco();
             logger.v(TAG, "stop bluetooth sco");
         }
-        unregisterReceiver();
     }
 
     public boolean isBluetoothScoOn() {
