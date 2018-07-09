@@ -3,7 +3,7 @@ package com.chattylabs.sdk.android.voice;
 import android.support.annotation.NonNull;
 
 class Flow implements EdgeSource, EdgeTarget {
-    private Node from;
+    private VoiceNode from;
     private Edge edge;
 
     Flow(Edge edge) {
@@ -11,18 +11,18 @@ class Flow implements EdgeSource, EdgeTarget {
     }
 
     @Override
-    public EdgeTarget from(@NonNull Node node) {
+    public EdgeTarget from(@NonNull VoiceNode node) {
         from = node;
         return this;
     }
 
     @Override
-    public void to(@NonNull Node node, Node... optNodes) {
+    public void to(@NonNull VoiceNode node, VoiceNode... optNodes) {
         edge.addEdge(node, from);
-        for (Node n : optNodes) edge.addEdge(n, from);
+        for (VoiceNode n : optNodes) edge.addEdge(n, from);
     }
 
     interface Edge {
-        void addEdge(@NonNull Node node, @NonNull Node incomingEdge);
+        void addEdge(@NonNull VoiceNode node, @NonNull VoiceNode incomingEdge);
     }
 }

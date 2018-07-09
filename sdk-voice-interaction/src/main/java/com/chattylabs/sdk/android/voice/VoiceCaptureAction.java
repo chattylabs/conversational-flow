@@ -1,6 +1,6 @@
 package com.chattylabs.sdk.android.voice;
 
-public class VoiceCaptureAction implements IAction {
+public class VoiceCaptureAction implements VoiceActionContract {
     public final String id;
     public final VoiceInteractionComponent.Consumer<String> onCaptured;
 

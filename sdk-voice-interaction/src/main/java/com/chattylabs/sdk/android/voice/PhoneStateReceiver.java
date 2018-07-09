@@ -11,13 +11,13 @@ public class PhoneStateReceiver extends BroadcastReceiver {
     private boolean incomingCall = false;
     private boolean outgoingCall = false;
     private int outgoingCallFlag;
-    protected OnPhoneListener listener;
+    protected PhoneStateListener listener;
 
-    public void setListener(OnPhoneListener listener) {
+    public void setListener(PhoneStateListener listener) {
         this.listener = listener;
     }
 
-    public OnPhoneListener getListener() {
+    public PhoneStateListener getListener() {
         return listener;
     }
 

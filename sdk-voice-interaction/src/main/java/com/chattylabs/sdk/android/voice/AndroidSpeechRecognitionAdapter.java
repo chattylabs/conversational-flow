@@ -8,8 +8,8 @@ import android.util.Log;
 import com.chattylabs.sdk.android.common.Tag;
 
 
-abstract class RecognitionAdapter implements RecognitionListener {
-    private static final String TAG = Tag.make("RecognitionAdapter");
+abstract class AndroidSpeechRecognitionAdapter implements RecognitionListener {
+    private static final String TAG = Tag.make("AndroidSpeechRecognitionAdapter");
 
     // Settings
     private static final int MINIMUM_REACHED_LEVEL_INTENTS = 3;
@@ -22,11 +22,11 @@ abstract class RecognitionAdapter implements RecognitionListener {
     static final int LOW_SOUND = 2;
     static final int NORMAL_SOUND = 3;
 
-    private VoiceInteractionComponent.OnVoiceRecognitionReadyListener onReady;
-    private VoiceInteractionComponent.OnVoiceRecognitionResultsListener onResults;
-    private VoiceInteractionComponent.OnVoiceRecognitionPartialResultsListener onPartialResults;
-    private VoiceInteractionComponent.OnVoiceRecognitionMostConfidentResultListener onMostConfidentResult;
-    private VoiceInteractionComponent.OnVoiceRecognitionErrorListener onError;
+    private VoiceInteractionComponent.OnRecognizerReady onReady;
+    private VoiceInteractionComponent.OnRecognizerResults onResults;
+    private VoiceInteractionComponent.OnRecognizerPartialResults onPartialResults;
+    private VoiceInteractionComponent.OnRecognizerMostConfidentResult onMostConfidentResult;
+    private VoiceInteractionComponent.OnRecognizerError onError;
 
     private boolean tryAgain;
     private int soundLevel = UNKNOWN;
@@ -36,54 +36,54 @@ abstract class RecognitionAdapter implements RecognitionListener {
     private int lowSoundIntents;
     private int normalSoundIntents;
 
-    public void setOnReady(VoiceInteractionComponent.OnVoiceRecognitionReadyListener onReady) {
+    public void setOnReady(VoiceInteractionComponent.OnRecognizerReady onReady) {
         this.onReady = onReady;
     }
 
-    public VoiceInteractionComponent.OnVoiceRecognitionResultsListener getOnResults() {
+    public VoiceInteractionComponent.OnRecognizerResults getOnResults() {
         return onResults;
     }
 
-    public RecognitionAdapter setOnResults(VoiceInteractionComponent.OnVoiceRecognitionResultsListener onResults) {
+    public AndroidSpeechRecognitionAdapter setOnResults(VoiceInteractionComponent.OnRecognizerResults onResults) {
         this.onResults = onResults;
         return this;
     }
 
-    public VoiceInteractionComponent.OnVoiceRecognitionPartialResultsListener getOnPartialResults() {
+    public VoiceInteractionComponent.OnRecognizerPartialResults getOnPartialResults() {
         return onPartialResults;
     }
 
-    public RecognitionAdapter setOnPartialResults(
-            VoiceInteractionComponent.OnVoiceRecognitionPartialResultsListener onPartialResults) {
+    public AndroidSpeechRecognitionAdapter setOnPartialResults(
+            VoiceInteractionComponent.OnRecognizerPartialResults onPartialResults) {
         this.onPartialResults = onPartialResults;
         return this;
     }
 
-    public VoiceInteractionComponent.OnVoiceRecognitionMostConfidentResultListener getOnMostConfidentResult() {
+    public VoiceInteractionComponent.OnRecognizerMostConfidentResult getOnMostConfidentResult() {
         return onMostConfidentResult;
     }
 
-    public RecognitionAdapter setOnMostConfidentResult(
-            VoiceInteractionComponent.OnVoiceRecognitionMostConfidentResultListener onMostConfidentResult) {
+    public AndroidSpeechRecognitionAdapter setOnMostConfidentResult(
+            VoiceInteractionComponent.OnRecognizerMostConfidentResult onMostConfidentResult) {
         this.onMostConfidentResult = onMostConfidentResult;
         return this;
     }
 
-    public VoiceInteractionComponent.OnVoiceRecognitionErrorListener getOnError() {
+    public VoiceInteractionComponent.OnRecognizerError getOnError() {
         return onError;
     }
 
-    public RecognitionAdapter setOnError(VoiceInteractionComponent.OnVoiceRecognitionErrorListener onError) {
+    public AndroidSpeechRecognitionAdapter setOnError(VoiceInteractionComponent.OnRecognizerError onError) {
         this.onError = onError;
         return this;
     }
 
-    public RecognitionAdapter setNoSoundThreshold(float noSoundThreshold) {
+    public AndroidSpeechRecognitionAdapter setNoSoundThreshold(float noSoundThreshold) {
         this.noSoundThreshold = noSoundThreshold;
         return this;
     }
 
-    public RecognitionAdapter setLowSoundThreshold(float lowSoundThreshold) {
+    public AndroidSpeechRecognitionAdapter setLowSoundThreshold(float lowSoundThreshold) {
         this.lowSoundThreshold = lowSoundThreshold;
         return this;
     }
@@ -92,7 +92,7 @@ abstract class RecognitionAdapter implements RecognitionListener {
         return tryAgain;
     }
 
-    public RecognitionAdapter setTryAgain(boolean tryAgain) {
+    public AndroidSpeechRecognitionAdapter setTryAgain(boolean tryAgain) {
         this.tryAgain = tryAgain;
         return this;
     }

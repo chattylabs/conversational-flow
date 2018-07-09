@@ -1,18 +1,11 @@
 package com.chattylabs.sdk.android.voice;
 
 import android.app.Application;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.media.AudioAttributes;
-import android.media.AudioFocusRequest;
-import android.media.AudioManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
-import android.telephony.TelephonyManager;
 
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.common.internal.ILogger;
@@ -25,66 +18,48 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.MIN_LISTENING_TIME;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnVoiceRecognitionErrorListener;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnVoiceRecognitionMostConfidentResultListener;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnVoiceRecognitionPartialResultsListener;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnVoiceRecognitionReadyListener;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnVoiceRecognitionResultsListener;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.VOICE_RECOGNITION_AFTER_PARTIALS_ERROR;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.VOICE_RECOGNITION_EMPTY_RESULTS_ERROR;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.VOICE_RECOGNITION_LOW_SOUND_ERROR;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.VOICE_RECOGNITION_NO_SOUND_ERROR;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.VOICE_RECOGNITION_RETRY_ERROR;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.VOICE_RECOGNITION_STOPPED_TOO_EARLY_ERROR;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.VOICE_RECOGNITION_UNAVAILABLE_ERROR;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.VOICE_RECOGNITION_UNKNOWN_ERROR;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.VoiceRecognitionListeners;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.getVoiceRecognitionErrorType;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.MIN_VOICE_RECOGNITION_TIME_LISTENING;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnRecognizerReady;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnRecognizerError;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnRecognizerMostConfidentResult;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnRecognizerPartialResults;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnRecognizerResults;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.RECOGNIZER_AFTER_PARTIALS_ERROR;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.RECOGNIZER_EMPTY_RESULTS_ERROR;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.RECOGNIZER_LOW_SOUND_ERROR;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.RECOGNIZER_NO_SOUND_ERROR;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.RECOGNIZER_RETRY_ERROR;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.RECOGNIZER_STOPPED_TOO_EARLY_ERROR;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.RECOGNIZER_UNAVAILABLE_ERROR;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.RECOGNIZER_UNKNOWN_ERROR;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.RecognizerListenerContract;
 import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.selectMostConfidentResult;
 
-final class AndroidSpeechRecognizer {
+public final class AndroidSpeechRecognizer implements VoiceInteractionComponent.SpeechRecognizer {
     private static final String TAG = Tag.make("AndroidSpeechRecognizer");
-    private static final long LOCK_TIMEOUT = TimeUnit.SECONDS.toMillis(3);
 
-    private final Application application;
-    private final AudioManager audioManager;
-    private final AndroidHandler mainHandler;
-    private final Intent speechRecognizerIntent;
     private final ReentrantLock lock = new ReentrantLock();
+
     // States
-    private int audioMode = AudioManager.MODE_CURRENT; // released
-    private int dtmfVolume;
-    private int systemVolume;
-    private int ringVolume;
-    private int alarmVolume;
-    private int notifVolume;
-    private int musicVolume;
-    private int callVolume;
-    private boolean bluetoothScoRequired; // released
-    private boolean isScoReceiverRegistered; // released
-    private boolean requestAudioFocusExclusive; // released
-    private boolean speakerphoneOn; // released
     private boolean rmsDebug; // released
-    private boolean isPhoneStateReceiverRegistered; // released
     private float noSoundThreshold; // released
     private float lowSoundThreshold; // released
-    // Objects
-    private AudioFocusRequest focusRequestExclusive;
+
+    // Resources
+    private final Application application;
+    private final VoiceConfiguration configuration;
+    private final AndroidHandler mainHandler;
+    private AndroidAudioHandler audioHandler;
+    private BluetoothSco bluetoothSco;
+    private final Intent speechRecognizerIntent;
     private SpeechRecognizer speechRecognizer;
     private SpeechRecognizerCreator recognizerCreator;
-    private PhoneStateReceiver phoneStateReceiver = new PhoneStateReceiver();
-    private ScoReceiver scoReceiver = new ScoReceiver();
     private ExecutorService executorService;
-    private AudioAttributes.Builder audioAttributes = new AudioAttributes.Builder()
-            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-            .setUsage(AudioAttributes.USAGE_MEDIA)
-            .setLegacyStreamType(AudioManager.STREAM_MUSIC);
+
     // Listener
-    private final RecognitionAdapter recognitionListener = new RecognitionAdapter() {
+    private final AndroidSpeechRecognitionAdapter recognitionListener = new AndroidSpeechRecognitionAdapter() {
         private int intents;
         private long elapsedTime;
         private Timer timeout;
@@ -92,7 +67,7 @@ final class AndroidSpeechRecognizer {
 
         private void releaseTimeout() {
             if (timeout != null) {
-                logger.w(TAG, "VOICE - releasing previous timeout - RecognitionAdapter");
+                logger.w(TAG, "VOICE - releasing previous timeout - AndroidSpeechRecognitionAdapter");
                 task.cancel();
                 timeout.cancel();
                 timeout = null;
@@ -103,12 +78,12 @@ final class AndroidSpeechRecognizer {
         @Override
         public void startTimeout() {
             releaseTimeout();
-            logger.w(TAG, "VOICE - started timeout - RecognitionAdapter");
+            logger.w(TAG, "VOICE - started timeout - AndroidSpeechRecognitionAdapter");
             timeout = new Timer();
             task = new TimerTask() {
                 @Override
                 public void run() {
-                    logger.w(TAG, "VOICE - reached timeout - RecognitionAdapter");
+                    logger.w(TAG, "VOICE - reached timeout - AndroidSpeechRecognitionAdapter");
                     executorService.submit(() -> {
                         lock.lock();
                         try {
@@ -122,20 +97,19 @@ final class AndroidSpeechRecognizer {
                     });
                 }
             };
-            timeout.schedule(task, MIN_LISTENING_TIME * 3);
+            timeout.schedule(task, MIN_VOICE_RECOGNITION_TIME_LISTENING * 3);
         }
 
         private void cleanup() {
             elapsedTime = System.currentTimeMillis();
             intents = 0;
-            logger.v(TAG, "VOICE - cleanup elapsedTime & partial intents - RecognitionAdapter");
+            logger.v(TAG, "VOICE - cleanup elapsedTime & partial intents - AndroidSpeechRecognitionAdapter");
         }
 
         @Override
         public void reset() {
             releaseTimeout();
-            abandonAudioFocusExclusive();
-            unregisterReceivers();
+            audioHandler.abandonAudioFocus();
             cleanup();
             super.setTryAgain(false);
             setOnError(null);
@@ -148,45 +122,45 @@ final class AndroidSpeechRecognizer {
 
         @Override
         public void onReadyForSpeech(Bundle params) {
-            if (!audioManager.isBluetoothScoOn()) requestAudioFocusExclusive();
+            if (!bluetoothSco.isBluetoothScoOn()) audioHandler.requestAudioFocus();
             //resetVolumeForBeep();
             super.onReadyForSpeech(params);
         }
 
         @Override
         public void onError(int error) {
-            logger.e(TAG, "VOICE - error: " + getVoiceRecognitionErrorType(error));
+            logger.e(TAG, "VOICE - error: " + getErrorType(error));
             // We consider 2 sec as timeout for non speech
-            boolean stoppedTooEarly = (System.currentTimeMillis() - elapsedTime) < VoiceInteractionComponent.MIN_LISTENING_TIME;
+            boolean stoppedTooEarly = (System.currentTimeMillis() - elapsedTime) < VoiceInteractionComponent.MIN_VOICE_RECOGNITION_TIME_LISTENING;
             // Start checking for the error
-            OnVoiceRecognitionErrorListener errorListener = getOnError();
+            OnRecognizerError errorListener = getOnError();
             int soundLevel = getSoundLevel();
             logger.v(TAG, "VOICE - Sound Level: " + getSoundLevelAsString(soundLevel));
             // Restart the recognizer
             cancel();
             if (errorListener != null) {
                 if (needRetry(error)) {
-                    errorListener.execute(VOICE_RECOGNITION_UNAVAILABLE_ERROR, error);
+                    errorListener.execute(RECOGNIZER_UNAVAILABLE_ERROR, error);
                 }
                 else if (stoppedTooEarly) {
-                    errorListener.execute(VOICE_RECOGNITION_STOPPED_TOO_EARLY_ERROR, error);
+                    errorListener.execute(RECOGNIZER_STOPPED_TOO_EARLY_ERROR, error);
                 }
                 else if (soundLevel == NO_SOUND) {
-                    errorListener.execute(VOICE_RECOGNITION_NO_SOUND_ERROR, error);
+                    errorListener.execute(RECOGNIZER_NO_SOUND_ERROR, error);
                 }
                 else if (soundLevel == LOW_SOUND) {
-                    errorListener.execute(VOICE_RECOGNITION_LOW_SOUND_ERROR, error);
+                    errorListener.execute(RECOGNIZER_LOW_SOUND_ERROR, error);
                 }
                 else if (intents > 0) {
-                    errorListener.execute(VOICE_RECOGNITION_AFTER_PARTIALS_ERROR, error);
+                    errorListener.execute(RECOGNIZER_AFTER_PARTIALS_ERROR, error);
                 }
                 else if (isTryAgain()) {
                     errorListener.execute(error == SpeechRecognizer.ERROR_NO_MATCH ?
-                                          VOICE_RECOGNITION_UNKNOWN_ERROR :
-                                          VOICE_RECOGNITION_RETRY_ERROR, error);
+                            RECOGNIZER_UNKNOWN_ERROR :
+                            RECOGNIZER_RETRY_ERROR, error);
                 }
                 else { // Restore VOICE
-                    errorListener.execute(VOICE_RECOGNITION_UNKNOWN_ERROR, error);
+                    errorListener.execute(RECOGNIZER_UNKNOWN_ERROR, error);
                 }
             }
         }
@@ -198,8 +172,8 @@ final class AndroidSpeechRecognizer {
             List<String> textResults = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
             float[] confidences = results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
             if (textResults != null && (textResults.size() > 1 || (!textResults.isEmpty() && textResults.get(0).length() > 0))) {
-                OnVoiceRecognitionResultsListener resultsListener = getOnResults();
-                OnVoiceRecognitionMostConfidentResultListener mostConfidentResult = getOnMostConfidentResult();
+                OnRecognizerResults resultsListener = getOnResults();
+                OnRecognizerMostConfidentResult mostConfidentResult = getOnMostConfidentResult();
                 reset();
                 if (resultsListener != null) {
                     logger.v(TAG, "VOICE - results: " + textResults);
@@ -213,9 +187,9 @@ final class AndroidSpeechRecognizer {
             }
             else {
                 logger.e(TAG, "VOICE - NO results");
-                OnVoiceRecognitionErrorListener listener = getOnError();
+                OnRecognizerError listener = getOnError();
                 reset();
-                if (listener != null) listener.execute(VOICE_RECOGNITION_EMPTY_RESULTS_ERROR, -1);
+                if (listener != null) listener.execute(RECOGNIZER_EMPTY_RESULTS_ERROR, -1);
             }
         }
 
@@ -223,7 +197,7 @@ final class AndroidSpeechRecognizer {
         public void onPartialResults(Bundle partialResults) {
             releaseTimeout();
             intents++;
-            OnVoiceRecognitionPartialResultsListener listener = getOnPartialResults();
+            OnRecognizerPartialResults listener = getOnPartialResults();
             if (listener == null) return;
             List<String> textResults = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
             float[] confidences = partialResults.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
@@ -245,15 +219,21 @@ final class AndroidSpeechRecognizer {
             }
         }
     };
+
+    // Log stuff
     private ILogger logger;
 
-    AndroidSpeechRecognizer(Application application, ILogger logger, SpeechRecognizerCreator recognizerCreator) {
-        this.logger = logger;
-        this.release();
-        this.executorService = Executors.newSingleThreadExecutor();
+    AndroidSpeechRecognizer(Application application, VoiceConfiguration configuration,
+                            AndroidAudioHandler audioHandler, BluetoothSco bluetoothSco,
+                            SpeechRecognizerCreator recognizerCreator, ILogger logger) {
         this.application = application;
+        this.configuration = configuration;
+        this.audioHandler = audioHandler;
+        this.audioHandler.setRequestAudioExclusive(true);
+        this.bluetoothSco = bluetoothSco;
         this.logger = logger;
-        this.audioManager = (AudioManager) application.getSystemService(Context.AUDIO_SERVICE);
+        this.executorService = Executors.newSingleThreadExecutor();
+        this.release();
         this.mainHandler = new AndroidHandlerImpl(Looper.getMainLooper());
         this.speechRecognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
@@ -263,7 +243,7 @@ final class AndroidSpeechRecognizer {
         this.recognizerCreator = recognizerCreator;
     }
 
-    public void release() {
+    private void release() {
         if (mainHandler != null) {
             mainHandler.removeCallbacksAndMessages(null);
             executorService.submit(lock::unlock);
@@ -271,15 +251,15 @@ final class AndroidSpeechRecognizer {
         setRmsDebug(false);
         setNoSoundThreshold(0);
         setLowSoundThreshold(0);
-        setBluetoothScoRequired(false);
         logger.i(TAG, "VOICE - released");
     }
 
-    public void stopAndSendCapturedSpeech() {
+    @Override
+    public void stop() {
         executorService.submit(() -> {
             lock.lock();
             recognitionListener.reset();
-            stopSco();
+            bluetoothSco.stopSco();
             if (speechRecognizer != null) {
                 logger.w(TAG, "VOICE - do stop");
                 try {
@@ -296,6 +276,7 @@ final class AndroidSpeechRecognizer {
         });
     }
 
+    @Override
     public void cancel() {
         recognitionListener.reset();
         if (speechRecognizer != null) {
@@ -305,12 +286,13 @@ final class AndroidSpeechRecognizer {
         }
     }
 
+    @Override
     public void shutdown() {
         executorService.submit(() -> {
             lock.lock();
             logger.w(TAG, "VOICE - shutting down");
             recognitionListener.reset();
-            stopSco();
+            bluetoothSco.stopSco();
             // Destroy current SpeechRecognizer
             try {
                 mainHandler.post(() -> {
@@ -334,35 +316,37 @@ final class AndroidSpeechRecognizer {
         });
     }
 
-    public void start(VoiceRecognitionListeners... listeners) {
+    @Override
+    public void listen(RecognizerListenerContract... listeners) {
         logger.i(TAG, "VOICE - start conversation");
         handleListeners(listeners);
-        // Register for incoming calls
-        registerPhoneStateReceiver();
-        if (isBluetoothScoRequired() && !audioManager.isBluetoothScoOn()) {
+        // Check whether Sco is connected or required
+        logger.i(TAG, "TTS - is bluetooth Sco required: " +
+                Boolean.toString(configuration.isBluetoothScoRequired()));
+        if (configuration.isBluetoothScoRequired() && !bluetoothSco.isBluetoothScoOn()) {
             // Sco Listener
-            OnScoListener listener = new OnScoListener() {
+            BluetoothScoListener listener = new BluetoothScoListener() {
                 @Override
                 public void onConnected() {
-                    if (audioManager.isBluetoothScoOn()) {
-                        logger.w(TAG, "VOICE - Sco onConnected");
-                    }
+                    logger.w(TAG, "VOICE - Sco onConnected");
                     startListening();
                 }
 
                 @Override
                 public void onDisconnected() {
                     logger.w(TAG, "VOICE - Sco onDisconnected");
-                    if (audioManager.isBluetoothScoOn()) {
+                    if (bluetoothSco.isBluetoothScoOn()) {
                         logger.w(TAG, "VOICE - shutdown from Sco");
                         shutdown();
                     }
                 }
             };
-            registerScoReceiver(listener);
-            startSco();
+            // Start Bluetooth Sco
+            bluetoothSco.startSco(listener);
+            logger.v(TAG, "VOICE - waiting for bluetooth sco connection");
         }
         else {
+            logger.v(TAG, "VOICE - bluetooth sco is: " + (bluetoothSco.isBluetoothScoOn() ? "on" : "off"));
             startListening();
         }
     }
@@ -392,103 +376,27 @@ final class AndroidSpeechRecognizer {
         });
     }
 
-    private void registerPhoneStateReceiver() {
-        if (!isPhoneStateReceiverRegistered) {
-            logger.v(TAG, "VOICE - register for phone receiver");
-            IntentFilter phoneFilter = new IntentFilter();
-            phoneFilter.addAction(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
-            phoneFilter.addAction(Intent.ACTION_NEW_OUTGOING_CALL);
-            phoneStateReceiver.setListener(new OnPhoneListener() {
-                @Override
-                public void onOutgoingCallStarts() {
-                    shutdown();
-                }
-
-                @Override
-                public void onIncomingCallRinging() {
-                    shutdown();
-                }
-
-                @Override
-                public void onOutgoingCallEnds() {}
-
-                @Override
-                public void onIncomingCallEnds() {}
-            });
-            application.registerReceiver(phoneStateReceiver, phoneFilter);
-            isPhoneStateReceiverRegistered = true;
-        }
-    }
-
-    private void registerScoReceiver(OnScoListener onScoListener) {
-        scoReceiver.setListener(onScoListener);
-        if (!isScoReceiverRegistered) {
-            logger.v(TAG, "VOICE - register sco receiver");
-            IntentFilter scoFilter = new IntentFilter();
-            scoFilter.addAction(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
-            application.registerReceiver(scoReceiver, scoFilter);
-            isScoReceiverRegistered = true;
-        }
-    }
-
-    private void unregisterReceivers() {
-        // Phone State
-        if (isPhoneStateReceiverRegistered) {
-            application.unregisterReceiver(phoneStateReceiver);
-            isPhoneStateReceiverRegistered = false;
-        }
-        // Bluetooth Sco
-        if (isScoReceiverRegistered) {
-            application.unregisterReceiver(scoReceiver);
-            isScoReceiverRegistered = false;
-        }
-    }
-
-    private void startSco() {
-        if (audioManager.isBluetoothScoAvailableOffCall() && !audioManager.isBluetoothScoOn()) {
-            audioManager.setBluetoothScoOn(true);
-            audioManager.startBluetoothSco();
-            logger.v(TAG, "VOICE - start bluetooth sco");
-        }
-    }
-
-    private void stopSco() {
-        if (audioManager.isBluetoothScoAvailableOffCall() && audioManager.isBluetoothScoOn()) {
-            audioManager.setBluetoothScoOn(false);
-            audioManager.stopBluetoothSco();
-            logger.v(TAG, "VOICE - stop bluetooth sco");
-        }
-    }
-
-    private void handleListeners(VoiceRecognitionListeners... listeners) {
+    private void handleListeners(RecognizerListenerContract... listeners) {
         recognitionListener.reset();
         if (listeners != null && listeners.length > 0) {
-            for (VoiceRecognitionListeners item : listeners) {
-                if (item instanceof OnVoiceRecognitionReadyListener) {
-                    recognitionListener.setOnReady((OnVoiceRecognitionReadyListener) item);
+            for (RecognizerListenerContract item : listeners) {
+                if (item instanceof OnRecognizerReady) {
+                    recognitionListener.setOnReady((OnRecognizerReady) item);
                 }
-                else if (item instanceof OnVoiceRecognitionResultsListener) {
-                    recognitionListener.setOnResults((OnVoiceRecognitionResultsListener) item);
+                else if (item instanceof OnRecognizerResults) {
+                    recognitionListener.setOnResults((OnRecognizerResults) item);
                 }
-                else if (item instanceof OnVoiceRecognitionMostConfidentResultListener) {
-                    recognitionListener.setOnMostConfidentResult((OnVoiceRecognitionMostConfidentResultListener) item);
+                else if (item instanceof OnRecognizerMostConfidentResult) {
+                    recognitionListener.setOnMostConfidentResult((OnRecognizerMostConfidentResult) item);
                 }
-                else if (item instanceof OnVoiceRecognitionPartialResultsListener) {
-                    recognitionListener.setOnPartialResults((OnVoiceRecognitionPartialResultsListener) item);
+                else if (item instanceof OnRecognizerPartialResults) {
+                    recognitionListener.setOnPartialResults((OnRecognizerPartialResults) item);
                 }
-                else if (item instanceof OnVoiceRecognitionErrorListener) {
-                    recognitionListener.setOnError((OnVoiceRecognitionErrorListener) item);
+                else if (item instanceof OnRecognizerError) {
+                    recognitionListener.setOnError((OnRecognizerError) item);
                 }
             }
         }
-    }
-
-    private boolean isBluetoothScoRequired() {
-        return bluetoothScoRequired;
-    }
-
-    public void setBluetoothScoRequired(boolean bluetoothScoRequired) {
-        this.bluetoothScoRequired = bluetoothScoRequired;
     }
 
     public void setTryAgain(boolean tryAgain) {
@@ -511,77 +419,28 @@ final class AndroidSpeechRecognizer {
         this.lowSoundThreshold = maxValue;
     }
 
-    private void adjustVolumeForBeep() {
-        // Volume
-        dtmfVolume = audioManager.getStreamVolume(AudioManager.STREAM_DTMF);
-        audioManager.setStreamVolume(AudioManager.STREAM_DTMF, audioManager.getStreamMaxVolume(AudioManager.STREAM_DTMF), 0);
-        systemVolume = audioManager.getStreamVolume(AudioManager.STREAM_SYSTEM);
-        audioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, audioManager.getStreamMaxVolume(AudioManager.STREAM_SYSTEM), 0);
-        ringVolume = audioManager.getStreamVolume(AudioManager.STREAM_RING);
-        audioManager.setStreamVolume(AudioManager.STREAM_RING, audioManager.getStreamMaxVolume(AudioManager.STREAM_RING), 0);
-        alarmVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM);
-        audioManager.setStreamVolume(AudioManager.STREAM_ALARM, audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM), 0);
-        notifVolume = audioManager.getStreamVolume(AudioManager.STREAM_NOTIFICATION);
-        audioManager.setStreamVolume(AudioManager.STREAM_NOTIFICATION, audioManager.getStreamMaxVolume(AudioManager.STREAM_NOTIFICATION), 0);
-        musicVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC), 0);
-        callVolume = audioManager.getStreamVolume(AudioManager.STREAM_VOICE_CALL);
-        audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL, audioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL), 0);
-    }
-
-    private void resetVolumeForBeep() {
-        // Volume
-        audioManager.setStreamVolume(AudioManager.STREAM_DTMF, dtmfVolume, 0);
-        audioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, systemVolume, 0);
-        audioManager.setStreamVolume(AudioManager.STREAM_RING, ringVolume, 0);
-        audioManager.setStreamVolume(AudioManager.STREAM_ALARM, alarmVolume, 0);
-        audioManager.setStreamVolume(AudioManager.STREAM_NOTIFICATION, notifVolume, 0);
-        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, musicVolume, 0);
-        audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL, callVolume, 0);
-    }
-
-    private void setAudioMode() {
-        audioMode = audioManager.getMode();
-        audioManager.setMode(AudioManager.MODE_NORMAL); // We put this mode because when over Sco we never gain focus!
-    }
-
-    private void unsetAudioMode() {
-        audioManager.setMode(audioMode);
-    }
-
-    private void abandonAudioFocusExclusive() {
-        if (requestAudioFocusExclusive) {
-            logger.v(TAG, "VOICE - abandon Audio Focus Exclusive");
-            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
-                audioManager.abandonAudioFocus(null);
-            }
-            else {
-                audioManager.abandonAudioFocusRequest(focusRequestExclusive);
-            }
-            unsetAudioMode();
-            requestAudioFocusExclusive = false;
-        }
-    }
-
-    private void requestAudioFocusExclusive() {
-        if (!requestAudioFocusExclusive) {
-            logger.v(TAG, "VOICE - request Audio Focus Exclusive");
-            setAudioMode();
-            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
-                //noinspection deprecation
-                requestAudioFocusExclusive = AudioManager.AUDIOFOCUS_REQUEST_GRANTED ==
-                                             audioManager.requestAudioFocus(
-                                                     null,
-                                                     AudioManager.STREAM_MUSIC,
-                                                     AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE);
-
-            }
-            else {
-                focusRequestExclusive = new AudioFocusRequest
-                        .Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
-                        .setAudioAttributes(audioAttributes.build()).build();
-                requestAudioFocusExclusive = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(focusRequestExclusive);
-            }
+    public static String getErrorType(int error) {
+        switch (error) {
+            case android.speech.SpeechRecognizer.ERROR_AUDIO:
+                return "ERROR_AUDIO";
+            case android.speech.SpeechRecognizer.ERROR_CLIENT:
+                return "ERROR_CLIENT";
+            case android.speech.SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS:
+                return "ERROR_INSUFFICIENT_PERMISSIONS";
+            case android.speech.SpeechRecognizer.ERROR_NETWORK:
+                return "ERROR_NETWORK";
+            case android.speech.SpeechRecognizer.ERROR_NETWORK_TIMEOUT:
+                return "ERROR_NETWORK_TIMEOUT";
+            case android.speech.SpeechRecognizer.ERROR_NO_MATCH:
+                return "ERROR_NO_MATCH";
+            case android.speech.SpeechRecognizer.ERROR_RECOGNIZER_BUSY:
+                return "ERROR_RECOGNIZER_BUSY";
+            case android.speech.SpeechRecognizer.ERROR_SERVER:
+                return "ERROR_SERVER";
+            case android.speech.SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
+                return "ERROR_SPEECH_TIMEOUT";
+            default:
+                return "ERROR_UNKNOWN";
         }
     }
 }

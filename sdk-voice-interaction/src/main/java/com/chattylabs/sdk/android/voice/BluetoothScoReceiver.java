@@ -5,21 +5,21 @@ import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
 
-public class ScoReceiver extends BroadcastReceiver {
+public class BluetoothScoReceiver extends BroadcastReceiver {
 
     private boolean isAlreadyConnected = false;
     private boolean isAlreadyDisconnected = false;
-    protected OnScoListener listener;
+    protected BluetoothScoListener listener;
 
-    public void setListener(OnScoListener listener) {
+    public void setListener(BluetoothScoListener listener) {
         this.listener = listener;
     }
 
-    public OnScoListener getListener() {
+    public BluetoothScoListener getListener() {
         return listener;
     }
 
-    public ScoReceiver() {}
+    public BluetoothScoReceiver() {}
 
     @Override
     public void onReceive(Context context, Intent intent) {

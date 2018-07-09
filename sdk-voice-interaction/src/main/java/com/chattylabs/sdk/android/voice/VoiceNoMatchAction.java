@@ -2,7 +2,7 @@ package com.chattylabs.sdk.android.voice;
 
 import java.util.List;
 
-public class VoiceNoMatchAction implements IAction {
+public class VoiceNoMatchAction implements VoiceActionContract {
     public int retry;
     public final String lowSoundErrorMessage;
     public final String listeningErrorMessage;

@@ -1,6 +1,6 @@
 package com.chattylabs.sdk.android.voice;
 
-public interface OnPhoneListener {
+public interface PhoneStateListener {
     void onOutgoingCallStarts();
 
     void onIncomingCallRinging();

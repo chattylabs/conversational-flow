@@ -1,6 +1,6 @@
 package com.chattylabs.sdk.android.voice;
 
-public class VoiceMessage implements Node {
+public class VoiceMessage implements VoiceNode {
     public final String id;
     public final String text;
     public final Runnable onSuccess;

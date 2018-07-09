@@ -2,7 +2,7 @@ package com.chattylabs.sdk.android.voice;
 
 import java.util.List;
 
-public class VoiceAction implements IAction {
+public class VoiceAction implements VoiceActionContract {
     public final String id;
     public final boolean canMatchOnPartials;
     public final String[] expectedResults;
