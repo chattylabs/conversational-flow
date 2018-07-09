@@ -4,25 +4,25 @@ import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.os.Build;
 
-class HeadsetDevice {
+public final class PeripheralBluetoothDevice implements Peripheral.Device {
 
     private AudioManager audioManager;
 
-    HeadsetDevice(AudioManager audioManager) {
+    PeripheralBluetoothDevice(AudioManager audioManager) {
         this.audioManager = audioManager;
     }
 
     @SuppressWarnings("deprecation")
+    @Override
     public boolean isConnected() {
         try {
-            return audioManager.isWiredHeadsetOn();
+            return audioManager.isBluetoothA2dpOn();
         } catch (Exception ignored) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 AudioDeviceInfo[] audioDevices = audioManager.getDevices(AudioManager.GET_DEVICES_ALL);
                 for (AudioDeviceInfo deviceInfo : audioDevices) {
-                    if (deviceInfo.getType() == AudioDeviceInfo.TYPE_WIRED_HEADPHONES
-                        || deviceInfo.getType() == AudioDeviceInfo.TYPE_WIRED_HEADSET
-                        || deviceInfo.getType() == AudioDeviceInfo.TYPE_USB_HEADSET) {
+                    if (deviceInfo.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP
+                            || deviceInfo.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_SCO) {
                         return true;
                     }
                 }

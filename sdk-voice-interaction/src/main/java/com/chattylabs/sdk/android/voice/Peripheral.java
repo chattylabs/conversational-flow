@@ -2,27 +2,29 @@ package com.chattylabs.sdk.android.voice;
 
 import android.media.AudioManager;
 
-public class Peripheral {
+public final class Peripheral {
     private AudioManager audioManager;
-    private HeadsetDevice device;
+    private Device device;
 
     public enum Type {
-        HEADSET
+        WIRED_HEADSET, BLUETOOTH
+    }
+
+    public interface Device {
+        boolean isConnected();
     }
 
     public Peripheral(AudioManager audioManager) {
         this.audioManager = audioManager;
     }
 
-    public Peripheral get(Type type) {
+    public Device get(Type type) {
         switch (type) {
-            case HEADSET:
-                device = new HeadsetDevice(audioManager);
+            case WIRED_HEADSET:
+                device = new PeripheralHeadsetDevice(audioManager);
+            case BLUETOOTH:
+                device = new PeripheralBluetoothDevice(audioManager);
         }
-        return this;
-    }
-
-    public boolean isConnected() {
-        return device != null && device.isConnected();
+        return device;
     }
 }

@@ -275,23 +275,19 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
         if (isSpeaking) return;
         initTts(status -> {
             if (status == TextToSpeech.SUCCESS) {
-                run();
+                logger.i(TAG, "TTS - resume getCurrentQueueId: <" + queueId + ">");
+                checkForEmptyCurrentQueue();
+                if (!isEmpty()) {
+                    isSpeaking = true;
+                    // Gets and plays the current message in the queue
+                    playTheCurrentQueue(queue.get(queueId).poll());
+                }
             }
             else {
                 logger.e(TAG, "TTS - status ERROR");
                 shutdown();
             }
         }, null);
-    }
-
-    private void run() {
-        logger.i(TAG, "TTS - resume getCurrentQueueId: <" + queueId + ">");
-        checkForEmptyCurrentQueue();
-        if (!isEmpty()) {
-            isSpeaking = true;
-            // Gets and plays the current message in the queue
-            playTheCurrentQueue(queue.get(queueId).poll());
-        }
     }
 
     private void checkForEmptyCurrentQueue() {
