@@ -1,6 +1,6 @@
 package com.chattylabs.sdk.android.voice;
 
-public interface OnScoListener {
+public interface BluetoothScoListener {
     void onConnected();
     void onDisconnected();
 }

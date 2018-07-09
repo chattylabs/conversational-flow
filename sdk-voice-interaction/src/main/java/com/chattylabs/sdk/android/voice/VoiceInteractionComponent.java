@@ -1,9 +1,8 @@
 package com.chattylabs.sdk.android.voice;
 
+import android.app.Application;
 import android.content.Context;
 import android.os.Bundle;
-import android.speech.tts.TextToSpeech;
-import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RestrictTo;
@@ -13,13 +12,8 @@ import com.chattylabs.sdk.android.common.RequiredPermissions;
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.common.internal.ILogger;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.SoftReference;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -31,29 +25,30 @@ import java.util.regex.Pattern;
  */
 @dagger.Reusable
 public interface VoiceInteractionComponent extends RequiredPermissions {
-
     String TAG = Tag.make("VoiceInteractionComponent");
 
-    String DEFAULT_GROUP = "default_group";
+    String DEFAULT_QUEUE_ID = "default_queue";
 
-    int TEXT_TO_SPEECH_AVAILABLE = 101;
-    int TEXT_TO_SPEECH_AVAILABLE_BUT_INACTIVE = 102;
-    int TEXT_TO_SPEECH_UNKNOWN_ERROR = 103;
-    int TEXT_TO_SPEECH_LANGUAGE_NOT_SUPPORTED_ERROR = 104;
-    int TEXT_TO_SPEECH_NOT_AVAILABLE_ERROR = 105;
+    // Synthesizer codes
+    int SYNTHESIZER_AVAILABLE = 101;
+    int SYNTHESIZER_AVAILABLE_BUT_INACTIVE = 102;
+    int SYNTHESIZER_UNKNOWN_ERROR = 103;
+    int SYNTHESIZER_LANGUAGE_NOT_SUPPORTED_ERROR = 104;
+    int SYNTHESIZER_NOT_AVAILABLE_ERROR = 105;
 
-    int VOICE_RECOGNITION_AVAILABLE = 201;
-    int VOICE_RECOGNITION_NOT_AVAILABLE = 202;
-    int VOICE_RECOGNITION_UNKNOWN_ERROR = 203;
-    int VOICE_RECOGNITION_EMPTY_RESULTS_ERROR = 204;
-    int VOICE_RECOGNITION_UNAVAILABLE_ERROR = 205;
-    int VOICE_RECOGNITION_STOPPED_TOO_EARLY_ERROR = 206;
-    int VOICE_RECOGNITION_RETRY_ERROR = 207;
-    int VOICE_RECOGNITION_AFTER_PARTIALS_ERROR = 208;
-    int VOICE_RECOGNITION_NO_SOUND_ERROR = 209;
-    int VOICE_RECOGNITION_LOW_SOUND_ERROR = 210;
+    // Recognizer codes
+    int RECOGNIZER_AVAILABLE = 201;
+    int RECOGNIZER_NOT_AVAILABLE = 202;
+    int RECOGNIZER_UNKNOWN_ERROR = 203;
+    int RECOGNIZER_EMPTY_RESULTS_ERROR = 204;
+    int RECOGNIZER_UNAVAILABLE_ERROR = 205;
+    int RECOGNIZER_STOPPED_TOO_EARLY_ERROR = 206;
+    int RECOGNIZER_RETRY_ERROR = 207;
+    int RECOGNIZER_AFTER_PARTIALS_ERROR = 208;
+    int RECOGNIZER_NO_SOUND_ERROR = 209;
+    int RECOGNIZER_LOW_SOUND_ERROR = 210;
 
-    int MIN_LISTENING_TIME = 2000;
+    int MIN_VOICE_RECOGNITION_TIME_LISTENING = 2000;
 
     class Instance {
         static SoftReference<VoiceInteractionComponent> instanceOf;
@@ -70,59 +65,54 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
     }
 
     /**
-     * Handles SharedPreferences keys related to this component
-     */
-    interface Preferences {
-    }
-
-    /**
      * The callbacks to interact with.
      * <p>
      * Declared as single interfaces so we can easily make use of lambda expressions and isolate each callback.
      */
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
-    interface TextToSpeechListeners {}
-    @RestrictTo(RestrictTo.Scope.LIBRARY)
-    interface VoiceRecognitionListeners {}
-
-    interface OnSetupListener extends TextToSpeechListeners {
-        void execute(VoiceInteractionStatus status);
+    interface OnSetup {
+        void execute(Status status);
     }
 
-    interface OnTextToSpeechErrorListener extends TextToSpeechListeners {
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    interface SynthesizerListenerContract {}
+
+    interface OnSynthesizerError extends SynthesizerListenerContract {
         void execute(String utteranceId, int errorCode);
     }
 
-    interface OnTextToSpeechInitialisedListener extends TextToSpeechListeners {
-        void execute(int status);
+    interface OnSynthesizerInitialised extends SynthesizerListenerContract {
+        void execute(int synthesizerStatus);
     }
 
-    interface OnTextToSpeechStartedListener extends TextToSpeechListeners {
+    interface OnSynthesizerStart extends SynthesizerListenerContract {
         void execute(String utteranceId);
     }
 
-    interface OnTextToSpeechDoneListener extends TextToSpeechListeners {
+    interface OnSynthesizerDone extends SynthesizerListenerContract {
         void execute(String utteranceId);
     }
 
-    interface OnVoiceRecognitionReadyListener extends VoiceRecognitionListeners {
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    interface RecognizerListenerContract {}
+
+    interface OnRecognizerReady extends RecognizerListenerContract {
         void execute(Bundle params);
     }
 
-    interface OnVoiceRecognitionResultsListener extends VoiceRecognitionListeners {
+    interface OnRecognizerResults extends RecognizerListenerContract {
         void execute(List<String> results, float[] confidences);
     }
 
-    interface OnVoiceRecognitionPartialResultsListener extends VoiceRecognitionListeners {
+    interface OnRecognizerPartialResults extends RecognizerListenerContract {
         void execute(List<String> results, float[] confidences);
     }
 
-    interface OnVoiceRecognitionMostConfidentResultListener extends VoiceRecognitionListeners {
+    interface OnRecognizerMostConfidentResult extends RecognizerListenerContract {
         void execute(String result);
     }
 
-    interface OnVoiceRecognitionErrorListener extends VoiceRecognitionListeners {
+    interface OnRecognizerError extends RecognizerListenerContract {
         void execute(int error, int originalError);
     }
 
@@ -130,22 +120,14 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
      * Extra interfaces
      */
 
-    interface OnLogListener {
-        void execute(String item);
-    }
-
     interface SpeechRecognizerCreator {
         android.speech.SpeechRecognizer create();
     }
 
-    interface VoiceInteractionStatus {
+    interface Status {
         boolean isAvailable();
-        int getTextToSpeechStatus();
-        int getSpeechRecognizerStatus();
-    }
-
-    interface MessageFilter {
-        String apply(String message);
+        int getSynthesizerStatus();
+        int getRecognizerStatus();
     }
 
     @FunctionalInterface
@@ -178,9 +160,9 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
 
     @SuppressWarnings("unchecked")
     interface SpeechRecognizer {
-        <T extends VoiceRecognitionListeners> void listen(T... listeners);
+        <T extends RecognizerListenerContract> void listen(T... listeners);
 
-        void setBluetoothScoRequired(boolean required);
+        void stop();
 
         void shutdown();
 
@@ -195,21 +177,23 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
 
     @SuppressWarnings("unchecked")
     interface SpeechSynthesizer {
-        void addFilter(MessageFilter filter);
+        void setup(Application application, OnSynthesizerInitialised onSynthesizerInitialised);
 
-        void setBluetoothScoRequired(boolean required);
+        void addFilter(TextFilter filter);
 
-        <T extends TextToSpeechListeners> void play(String text, String groupId, T... listeners);
+        <T extends SynthesizerListenerContract> void playText(String text, String queueId, T... listeners);
 
-        <T extends TextToSpeechListeners> void playNow(String text, T... listeners);
+        <T extends SynthesizerListenerContract> void playText(String text, T... listeners);
 
-        <T extends TextToSpeechListeners> void playSilence(long durationInMillis, String groupId, T... listeners);
+        <T extends SynthesizerListenerContract> void playSilence(long durationInMillis, String queueId, T... listeners);
 
-        <T extends TextToSpeechListeners> void playSilenceNow(long durationInMillis, T... listeners);
+        <T extends SynthesizerListenerContract> void playSilence(long durationInMillis, T... listeners);
 
-        void dispose();
+        void releaseCurrentQueue();
 
-        void hold();
+        void holdCurrentQueue();
+
+        void stop();
 
         void resume();
 
@@ -217,50 +201,20 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
 
         boolean isEmpty();
 
-        boolean isCurrentGroupEmpty();
+        boolean isCurrentQueueEmpty();
 
-        String lastGroup();
+        String getLastQueueId();
 
         @Nullable
-        String nextGroup();
+        String getNextQueueId();
 
-        String group();
+        String getCurrentQueueId();
 
-        Set<String> groupQueue();
-    }
-
-    interface Conversation extends Flow.Edge {
-
-        int FLAG_ENABLE_ON_LOW_SOUND_ERROR_MESSAGE = 0x8F4E00;
-
-        @IntDef({FLAG_ENABLE_ON_LOW_SOUND_ERROR_MESSAGE})
-        @Retention(RetentionPolicy.SOURCE)
-        @interface Flag {}
-
-        SpeechSynthesizer getSpeechSynthesizer();
-
-        SpeechRecognizer getSpeechRecognizer();
-
-        void addFlag(@Flag int flag);
-
-        void removeFlag(@Flag int flag);
-
-        boolean hasFlag(@Flag int flag);
-
-        void addNode(@NonNull Node node);
-
-        EdgeSource prepare();
-
-        @Override
-        void addEdge(@NonNull Node node, @NonNull Node incomingEdge);
-
-        void start(Node root);
-
-        void next();
+        Set<String> getQueueSet();
     }
 
     /**
-     * Utilities related to this component
+     * Utils
      */
 
     static boolean anyMatch(@NonNull List<String> data, @NonNull List<String> expected) {
@@ -284,60 +238,6 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
         return matcher.find();
     }
 
-    static String logTime(String message) {
-        SimpleDateFormat formatter = new SimpleDateFormat("hh:mm:ss.SSS", Locale.getDefault());
-        String time = formatter.format(Calendar.getInstance().getTime());
-        return time + " " + message;
-    }
-
-    static String getTextToSpeechErrorType(int error) {
-        switch (error) {
-            case TextToSpeech.ERROR:
-                return "ERROR";
-            case TextToSpeech.ERROR_INVALID_REQUEST:
-                return "ERROR_INVALID_REQUEST";
-            case TextToSpeech.ERROR_NETWORK:
-                return "ERROR_NETWORK";
-            case TextToSpeech.ERROR_NETWORK_TIMEOUT:
-                return "ERROR_NETWORK_TIMEOUT";
-            case TextToSpeech.ERROR_NOT_INSTALLED_YET:
-                return "ERROR_NOT_INSTALLED_YET";
-            case TextToSpeech.ERROR_OUTPUT:
-                return "ERROR_OUTPUT";
-            case TextToSpeech.ERROR_SERVICE:
-                return "ERROR_SERVICE";
-            case TextToSpeech.ERROR_SYNTHESIS:
-                return "ERROR_SYNTHESIS";
-            default:
-                return "ERROR_UNKNOWN";
-        }
-    }
-
-    static String getVoiceRecognitionErrorType(int error) {
-        switch (error) {
-            case android.speech.SpeechRecognizer.ERROR_AUDIO:
-                return "ERROR_AUDIO";
-            case android.speech.SpeechRecognizer.ERROR_CLIENT:
-                return "ERROR_CLIENT";
-            case android.speech.SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS:
-                return "ERROR_INSUFFICIENT_PERMISSIONS";
-            case android.speech.SpeechRecognizer.ERROR_NETWORK:
-                return "ERROR_NETWORK";
-            case android.speech.SpeechRecognizer.ERROR_NETWORK_TIMEOUT:
-                return "ERROR_NETWORK_TIMEOUT";
-            case android.speech.SpeechRecognizer.ERROR_NO_MATCH:
-                return "ERROR_NO_MATCH";
-            case android.speech.SpeechRecognizer.ERROR_RECOGNIZER_BUSY:
-                return "ERROR_RECOGNIZER_BUSY";
-            case android.speech.SpeechRecognizer.ERROR_SERVER:
-                return "ERROR_SERVER";
-            case android.speech.SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
-                return "ERROR_SPEECH_TIMEOUT";
-            default:
-                return "ERROR_UNKNOWN";
-        }
-    }
-
     @Nullable
     static String selectMostConfidentResult(List<String> results, float[] confidences) {
         String message = null;
@@ -359,16 +259,16 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
     }
 
     /**
-     * Contract
+     * Main Component Contract
      */
-
-    void setup(Context context, OnSetupListener onSetupListener);
 
     void setLogger(ILogger logger);
 
-    ILogger getLogger();
+    void setup(Context context, OnSetup onSetup);
 
-    void setBluetoothScoRequired(Context context, boolean required);
+    void setVoiceConfiguration(VoiceConfiguration voiceConfiguration);
+
+    void updateVoiceConfiguration(VoiceConfiguration.Update update);
 
     SpeechSynthesizer getSpeechSynthesizer(Context context);
 

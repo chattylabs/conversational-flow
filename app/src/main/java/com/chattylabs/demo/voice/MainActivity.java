@@ -1,9 +1,7 @@
 package com.chattylabs.demo.voice;
 
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.Intent;
-import android.media.AudioManager;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
@@ -22,9 +20,9 @@ import android.widget.TextView;
 import com.chattylabs.sdk.android.common.HtmlUtils;
 import com.chattylabs.sdk.android.common.PermissionsHelper;
 import com.chattylabs.sdk.android.common.Tag;
-import com.chattylabs.sdk.android.voice.UrlMessageFilter;
+import com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer;
+import com.chattylabs.sdk.android.voice.TextFilterForUrl;
 import com.chattylabs.sdk.android.voice.VoiceInteractionComponent;
-import com.chattylabs.sdk.android.voice.VoiceInteractionModule;
 
 import java.util.Objects;
 
@@ -32,14 +30,8 @@ import javax.inject.Inject;
 
 import dagger.android.support.DaggerAppCompatActivity;
 
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnTextToSpeechDoneListener;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnTextToSpeechStartedListener;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnVoiceRecognitionErrorListener;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnVoiceRecognitionMostConfidentResultListener;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnVoiceRecognitionReadyListener;
 import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.SpeechRecognizer;
 import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.SpeechSynthesizer;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.getVoiceRecognitionErrorType;
 
 
 public class MainActivity extends DaggerAppCompatActivity {
@@ -57,8 +49,6 @@ public class MainActivity extends DaggerAppCompatActivity {
     private SparseArray<Pair<Integer, String>> queue = new SparseArray<>();
     private ArrayAdapter<CharSequence> adapter;
     private CheckBox scoCheck;
-    private boolean isScoRequired;
-    private Button startStopSco;
 
     @Inject VoiceInteractionComponent voiceInteractionComponent;
 
@@ -69,9 +59,10 @@ public class MainActivity extends DaggerAppCompatActivity {
         initViews();
         initActions();
         //voiceInteractionComponent = VoiceInteractionModule.provideVoiceInteractionComponent();
-        voiceInteractionComponent.setup(this, voiceInteractionStatus -> {
-            if (voiceInteractionStatus.isAvailable()) {
-                voiceInteractionComponent.getSpeechSynthesizer(this).addFilter(new UrlMessageFilter());
+        voiceInteractionComponent.setup(this, status -> {
+            if (status.isAvailable()) {
+                voiceInteractionComponent.getSpeechSynthesizer(this)
+                        .addFilter(new TextFilterForUrl());
             }
         });
         PermissionsHelper.check(this, voiceInteractionComponent.requiredPermissions());
@@ -100,7 +91,6 @@ public class MainActivity extends DaggerAppCompatActivity {
             execution.setText(HtmlUtils.from(representQueue(-1)));
             readAll();
         });
-
     }
 
     @Nullable
@@ -115,13 +105,15 @@ public class MainActivity extends DaggerAppCompatActivity {
                     text = "<font color=\"#FFFFFF\">" + text + "</font>";
                 }
                 tx.append("or \"<i>").append(text).append("</i>\" ");
-            }
-            else {
+            } else {
                 String text = item.second;
                 String label = (String) adapter.getItem(item.first);
                 if (i == index) {
-                    if (text != null) { text = "<font color=\"#FFFFFF\">" + text + "</font>"; }
-                    else { label = "<font color=\"#FFFFFF\">" + label + "</font>"; }
+                    if (text != null) {
+                        text = "<font color=\"#FFFFFF\">" + text + "</font>";
+                    } else {
+                        label = "<font color=\"#FFFFFF\">" + label + "</font>";
+                    }
                 }
                 String action = label + (item.first == LISTEN ? "" : " \"<i>" + text + "</i>\" ");
                 tx = new StringBuilder(tx == null || tx.length() == 0 ? action : tx + (item.first == READ ? "<br/>" : "<br/>...then ") + action);
@@ -133,29 +125,27 @@ public class MainActivity extends DaggerAppCompatActivity {
 
     private void play(String text, int index) {
         SpeechSynthesizer synthesizer = voiceInteractionComponent.getSpeechSynthesizer(this);
-        synthesizer.setBluetoothScoRequired(isScoRequired);
-        synthesizer.play(text, "default",
-                         (OnTextToSpeechStartedListener) s -> {
-                             execution.setText(HtmlUtils.from(representQueue(index)));
-                         },
-                         (OnTextToSpeechDoneListener) s -> {
-                             Log.i(TAG, "on Done index: " + index);
-                             Pair<Integer, String> next = queue.get(index + 1);
-                             if (next.first == LISTEN) {
-                                 listen(index);
-                             } else {
-                                 synthesizer.resume();
-                             }
-                         });
+        synthesizer.playText(text, "default",
+                (VoiceInteractionComponent.OnSynthesizerStart) s -> {
+                    execution.setText(HtmlUtils.from(representQueue(index)));
+                },
+                (VoiceInteractionComponent.OnSynthesizerDone) s -> {
+                    Log.i(TAG, "on Done index: " + index);
+                    Pair<Integer, String> next = queue.get(index + 1);
+                    if (next.first == LISTEN) {
+                        synthesizer.holdCurrentQueue();
+                        listen(index);
+                    } else {
+                        synthesizer.resume();
+                    }
+                });
     }
 
     private void listen(int index) {
-        SpeechSynthesizer synthesizer = voiceInteractionComponent.getSpeechSynthesizer(this);
         SpeechRecognizer recognizer = voiceInteractionComponent.getSpeechRecognizer(this);
-        recognizer.setBluetoothScoRequired(isScoRequired);
-        recognizer.listen((OnVoiceRecognitionReadyListener) bundle -> {
+        recognizer.listen((VoiceInteractionComponent.OnRecognizerReady) bundle -> {
             execution.setText(HtmlUtils.from(representQueue(index + 1)));
-        }, (OnVoiceRecognitionMostConfidentResultListener) o -> {
+        }, (VoiceInteractionComponent.OnRecognizerMostConfidentResult) o -> {
             execution.setText(HtmlUtils.from(representQueue(-1)));
             SparseArray<String> news = getChecks(new SparseArray<>(), index + 1);
             if (news.size() > 0) {
@@ -166,14 +156,18 @@ public class MainActivity extends DaggerAppCompatActivity {
                     }
                 }
             }
+            SpeechSynthesizer synthesizer = voiceInteractionComponent.getSpeechSynthesizer(this);
+            synthesizer.releaseCurrentQueue();
             synthesizer.resume();
-        }, (OnVoiceRecognitionErrorListener) (i, i1) -> {
+        }, (VoiceInteractionComponent.OnRecognizerError) (i, i1) -> {
             Log.e(TAG, "Error " + i);
-            Log.e(TAG, "Original Error " + getVoiceRecognitionErrorType(i1));
+            Log.e(TAG, "Original Error " + AndroidSpeechSynthesizer.getErrorType(i1));
             new AlertDialog.Builder(this)
                     .setTitle("Error")
-                    .setMessage(getVoiceRecognitionErrorType(i1))
+                    .setMessage(AndroidSpeechSynthesizer.getErrorType(i1))
                     .create().show();
+            SpeechSynthesizer synthesizer = voiceInteractionComponent.getSpeechSynthesizer(this);
+            synthesizer.releaseCurrentQueue();
             synthesizer.shutdown();
         });
     }
@@ -193,8 +187,8 @@ public class MainActivity extends DaggerAppCompatActivity {
             Pair<Integer, String> item = queue.get(i);
             if (item.first == READ) {
                 play(item.second, i);
-            }
-            else if (i == 0 && item.first == LISTEN) { // TODO: Check! How it continues speaking after listening?
+            // TODO: Check! How it continues speaking after listening?
+            } else if (i == 0 && item.first == LISTEN) {
                 listen(i);
             }
         }
@@ -236,26 +230,13 @@ public class MainActivity extends DaggerAppCompatActivity {
         clear = findViewById(R.id.clear);
         proceed = findViewById(R.id.proceed);
         scoCheck = findViewById(R.id.bluetooth_sco);
-        startStopSco = findViewById(R.id.start_stop_sco);
 
 
         //
-        scoCheck.setOnCheckedChangeListener((buttonView, isChecked) -> isScoRequired = isChecked);
-        AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        if (audioManager != null) {
-            startStopSco.setText(audioManager.isBluetoothScoOn() ? "Stop Sco" : "Start Sco");
-            startStopSco.setOnClickListener(v -> {
-                if (audioManager.isBluetoothScoOn()) {
-                    audioManager.setBluetoothScoOn(false);
-                    audioManager.stopBluetoothSco();
-                }
-                else {
-                    audioManager.setBluetoothScoOn(true);
-                    audioManager.startBluetoothSco();
-                }
-                startStopSco.setText(audioManager.isBluetoothScoOn() ? "Stop Sco" : "Start Sco");
-            });
-        }
+        scoCheck.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            voiceInteractionComponent.updateVoiceConfiguration(
+                    builder -> builder.setBluetoothScoRequired(() -> isChecked));
+        });
         proceed.setEnabled(false);
         // Create an ArrayAdapter using the string array and a default spinner layout
         adapter = ArrayAdapter.createFromResource(this, R.array.actions, android.R.layout.simple_spinner_item);
@@ -275,7 +256,8 @@ public class MainActivity extends DaggerAppCompatActivity {
             }
 
             @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
         });
     }
 }
