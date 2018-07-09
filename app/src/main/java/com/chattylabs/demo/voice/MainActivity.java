@@ -2,6 +2,7 @@ package com.chattylabs.demo.voice;
 
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
@@ -16,11 +17,13 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.chattylabs.sdk.android.common.HtmlUtils;
 import com.chattylabs.sdk.android.common.PermissionsHelper;
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer;
+import com.chattylabs.sdk.android.voice.Peripheral;
 import com.chattylabs.sdk.android.voice.TextFilterForUrl;
 import com.chattylabs.sdk.android.voice.VoiceInteractionComponent;
 
@@ -35,10 +38,14 @@ import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.SpeechS
 
 
 public class MainActivity extends DaggerAppCompatActivity {
+    public static final String TAG = Tag.make(MainActivity.class);
+
+    // Constants
     public static final int CHECK = 3;
     public static final int LISTEN = 2;
     public static final int READ = 1;
-    public static final String TAG = Tag.make(MainActivity.class);
+
+    // Resources
     private ConstraintLayout root;
     private TextView execution;
     private Spinner spinner;
@@ -50,7 +57,9 @@ public class MainActivity extends DaggerAppCompatActivity {
     private ArrayAdapter<CharSequence> adapter;
     private CheckBox scoCheck;
 
+    // Components
     @Inject VoiceInteractionComponent voiceInteractionComponent;
+    private Peripheral peripheral;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +67,7 @@ public class MainActivity extends DaggerAppCompatActivity {
         setContentView(R.layout.activity_main);
         initViews();
         initActions();
+        peripheral = new Peripheral((AudioManager) getSystemService(AUDIO_SERVICE));
         //voiceInteractionComponent = VoiceInteractionModule.provideVoiceInteractionComponent();
         voiceInteractionComponent.setup(this, status -> {
             if (status.isAvailable()) {
@@ -75,7 +85,7 @@ public class MainActivity extends DaggerAppCompatActivity {
             int itemPosition = spinner.getSelectedItemPosition();
             if (msg.length() > 0 || itemPosition == LISTEN) {
                 queue.put(queue.size(), Pair.create(itemPosition, itemPosition == LISTEN ? null : msg));
-                execution.setText(HtmlUtils.from(representQueue(-1)));
+                representQueue(-1);
                 proceed.setEnabled(true);
                 text.setText(null);
             }
@@ -87,13 +97,13 @@ public class MainActivity extends DaggerAppCompatActivity {
             voiceInteractionComponent.shutdown();
         });
         proceed.setOnClickListener((View v) -> {
-            execution.setText(HtmlUtils.from(representQueue(-1)));
+            representQueue(-1);
             readAll();
         });
     }
 
     @Nullable
-    private String representQueue(int index) {
+    private void representQueue(int index) {
         StringBuilder tx = null;
         boolean isChecking = false;
         for (int i = 0; i < queue.size(); i++) {
@@ -115,18 +125,22 @@ public class MainActivity extends DaggerAppCompatActivity {
                     }
                 }
                 String action = label + (item.first == LISTEN ? "" : " \"<i>" + text + "</i>\" ");
-                tx = new StringBuilder(tx == null || tx.length() == 0 ? action : tx + (item.first == READ ? "<br/>" : "<br/>...then ") + action);
+                tx = new StringBuilder(tx == null || tx.length() == 0 ?
+                        action :
+                        tx.append((item.first == READ ? "<br/>" : "<br/>...then "))
+                          .append(action));
                 isChecking = item.first == CHECK;
             }
         }
-        return tx != null ? tx.toString() : null;
+
+        if (tx != null) execution.setText(HtmlUtils.from(tx.toString()));
     }
 
     private void play(String text, int index) {
         SpeechSynthesizer synthesizer = voiceInteractionComponent.getSpeechSynthesizer(this);
         synthesizer.playText(text, "default",
                 (VoiceInteractionComponent.OnSynthesizerStart) s -> {
-                    execution.setText(HtmlUtils.from(representQueue(index)));
+                    representQueue(index);
                 },
                 (VoiceInteractionComponent.OnSynthesizerDone) s -> {
                     Log.i(TAG, "on Done index: " + index);
@@ -146,14 +160,14 @@ public class MainActivity extends DaggerAppCompatActivity {
     private void listen(int index) {
         SpeechRecognizer recognizer = voiceInteractionComponent.getSpeechRecognizer(this);
         recognizer.listen((VoiceInteractionComponent.OnRecognizerReady) bundle -> {
-            execution.setText(HtmlUtils.from(representQueue(index + 1)));
+            representQueue(index + 1);
         }, (VoiceInteractionComponent.OnRecognizerMostConfidentResult) o -> {
-            execution.setText(HtmlUtils.from(representQueue(-1)));
+            representQueue(-1);
             SparseArray<String> news = getChecks(new SparseArray<>(), index + 1);
             if (news.size() > 0) {
                 for (int a = 0; a < news.size(); a++) {
                     if (Objects.equals(news.valueAt(a), o)) {
-                        execution.setText(HtmlUtils.from(representQueue(news.keyAt(a))));
+                        representQueue(news.keyAt(a));
                         break;
                     }
                 }
@@ -237,9 +251,15 @@ public class MainActivity extends DaggerAppCompatActivity {
 
         //
         scoCheck.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked && !peripheral.get(Peripheral.Type.BLUETOOTH).isConnected()) {
+                buttonView.setChecked(false);
+                Toast.makeText(this, "Not connected to a Bluetooth device", Toast.LENGTH_LONG).show();
+                return;
+            }
             voiceInteractionComponent.updateVoiceConfiguration(
                     builder -> {
-                        builder.setBluetoothScoRequired(() -> isChecked);
+                        builder.setBluetoothScoRequired(() ->
+                                peripheral.get(Peripheral.Type.BLUETOOTH).isConnected() && isChecked);
                         return builder.build();
                     });
         });

@@ -22,14 +22,26 @@ class BluetoothSco {
     // Log stuff
     private ILogger logger;
 
-    public BluetoothSco(Application application, AudioManager audioManager, ILogger logger) {
+    BluetoothSco(Application application, AudioManager audioManager, ILogger logger) {
         this.application = application;
         this.audioManager = audioManager;
         this.logger = logger;
     }
 
     private void registerReceiver(BluetoothScoListener bluetoothScoListener) {
-        bluetoothScoReceiver.setListener(bluetoothScoListener);
+        BluetoothScoListener helper = new BluetoothScoListener() {
+            @Override
+            public void onConnected() {
+                bluetoothScoListener.onConnected();
+            }
+
+            @Override
+            public void onDisconnected() {
+                unregisterReceiver();
+                bluetoothScoListener.onDisconnected();
+            }
+        };
+        bluetoothScoReceiver.setListener(helper);
         if (!isScoReceiverRegistered) {
             logger.v(TAG, "register sco receiver");
             IntentFilter scoFilter = new IntentFilter();
@@ -40,7 +52,6 @@ class BluetoothSco {
     }
 
     private void unregisterReceiver() {
-        // Bluetooth Sco
         if (isScoReceiverRegistered) {
             logger.v(TAG, "unregister sco receiver");
             application.unregisterReceiver(bluetoothScoReceiver);
@@ -51,24 +62,23 @@ class BluetoothSco {
     void startSco(BluetoothScoListener bluetoothScoListener) {
         registerReceiver(bluetoothScoListener);
         if (audioManager.isBluetoothScoAvailableOffCall() && !isBluetoothScoOn) {
-            audioManager.setBluetoothScoOn(true);
             isBluetoothScoOn = true;
+            audioManager.setBluetoothScoOn(true);
             audioManager.startBluetoothSco();
             logger.v(TAG, "start bluetooth sco");
         }
     }
 
     void stopSco() {
-        unregisterReceiver();
         if (audioManager.isBluetoothScoAvailableOffCall() && isBluetoothScoOn) {
-            audioManager.setBluetoothScoOn(false);
             isBluetoothScoOn = false;
+            audioManager.setBluetoothScoOn(false);
             audioManager.stopBluetoothSco();
             logger.v(TAG, "stop bluetooth sco");
         }
     }
 
-    public boolean isBluetoothScoOn() {
+    boolean isBluetoothScoOn() {
         return isBluetoothScoOn;
     }
 }
