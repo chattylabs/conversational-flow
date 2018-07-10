@@ -7,8 +7,17 @@ import android.media.AudioManager;
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.common.internal.ILogger;
 
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+
 class BluetoothSco {
     private static final String TAG = Tag.make("BluetoothSco");
+
+    // Lock
+    private final Lock lock = new ReentrantLock();
+    private final Condition condition = lock.newCondition();
 
     // States
     private boolean isScoReceiverRegistered; // released
@@ -39,6 +48,7 @@ class BluetoothSco {
             public void onDisconnected() {
                 unregisterReceiver();
                 bluetoothScoListener.onDisconnected();
+                condition.signalAll();
             }
         };
         bluetoothScoReceiver.setListener(helper);
@@ -74,6 +84,11 @@ class BluetoothSco {
             isBluetoothScoOn = false;
             audioManager.setBluetoothScoOn(false);
             audioManager.stopBluetoothSco();
+            try {
+                condition.await(5, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                logger.logException(e);
+            }
             logger.v(TAG, "stop bluetooth sco");
         }
     }
