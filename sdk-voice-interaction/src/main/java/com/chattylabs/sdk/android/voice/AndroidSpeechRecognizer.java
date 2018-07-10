@@ -122,7 +122,10 @@ public final class AndroidSpeechRecognizer implements VoiceInteractionComponent.
 
         @Override
         public void onReadyForSpeech(Bundle params) {
-            if (!bluetoothSco.isBluetoothScoOn()) audioHandler.requestAudioFocus();
+            if (!bluetoothSco.isBluetoothScoOn()) {
+                audioHandler.setRequestAudioExclusive(configuration.isRecognizerAudioExclusive());
+                audioHandler.requestAudioFocus();
+            }
             //resetVolumeForBeep();
             super.onReadyForSpeech(params);
         }
@@ -229,7 +232,6 @@ public final class AndroidSpeechRecognizer implements VoiceInteractionComponent.
         this.application = application;
         this.configuration = configuration;
         this.audioHandler = audioHandler;
-        this.audioHandler.setRequestAudioExclusive(true);
         this.bluetoothSco = bluetoothSco;
         this.logger = logger;
         this.executorService = Executors.newSingleThreadExecutor();

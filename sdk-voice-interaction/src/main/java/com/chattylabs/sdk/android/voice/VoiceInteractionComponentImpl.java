@@ -26,6 +26,8 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
     VoiceInteractionComponentImpl() {
         voiceConfiguration = new VoiceConfiguration.Builder()
                 .setBluetoothScoRequired(() -> false)
+                .setSynthesizerAudioExclusive(() -> false)
+                .setRecognizerAudioExclusive(() -> true)
                 .build();
         Instance.instanceOf = new SoftReference<>(this);
     }

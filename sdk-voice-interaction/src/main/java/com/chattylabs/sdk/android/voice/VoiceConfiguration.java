@@ -1,28 +1,52 @@
 package com.chattylabs.sdk.android.voice;
 
 public class VoiceConfiguration {
-    private BluetoothScoLazyReturn bluetoothScoLazyReturn;
+    private BooleanLazyReturn bluetoothScoRequired;
+    private BooleanLazyReturn synthesizerAudioExclusive;
+    private BooleanLazyReturn recognizerAudioExclusive;
 
     private VoiceConfiguration(Builder builder) {
-        bluetoothScoLazyReturn = builder.bluetoothScoLazyReturn;
+        bluetoothScoRequired = builder.bluetoothScoRequired;
+        synthesizerAudioExclusive = builder.synthesizerAudioExclusive;
+        recognizerAudioExclusive = builder.recognizerAudioExclusive;
     }
 
     public boolean isBluetoothScoRequired() {
-        return bluetoothScoLazyReturn.isRequired();
+        return bluetoothScoRequired.isTrue();
+    }
+
+    public boolean isSynthesizerAudioExclusive() {
+        return synthesizerAudioExclusive.isTrue();
+    }
+
+    public boolean isRecognizerAudioExclusive() {
+        return recognizerAudioExclusive.isTrue();
     }
 
     public static final class Builder {
-        private BluetoothScoLazyReturn bluetoothScoLazyReturn;
+        private BooleanLazyReturn bluetoothScoRequired;
+        private BooleanLazyReturn synthesizerAudioExclusive;
+        private BooleanLazyReturn recognizerAudioExclusive;
 
         public Builder() {
         }
 
         public Builder(VoiceConfiguration copy) {
-            this.bluetoothScoLazyReturn = copy.bluetoothScoLazyReturn;
+            this.bluetoothScoRequired = copy.bluetoothScoRequired;
         }
 
-        public Builder setBluetoothScoRequired(BluetoothScoLazyReturn lazyReturn) {
-            this.bluetoothScoLazyReturn = lazyReturn;
+        public Builder setBluetoothScoRequired(BooleanLazyReturn lazyReturn) {
+            this.bluetoothScoRequired = lazyReturn;
+            return this;
+        }
+
+        public Builder setSynthesizerAudioExclusive(BooleanLazyReturn lazyReturn) {
+            this.synthesizerAudioExclusive = lazyReturn;
+            return this;
+        }
+
+        public Builder setRecognizerAudioExclusive(BooleanLazyReturn lazyReturn) {
+            this.recognizerAudioExclusive = lazyReturn;
             return this;
         }
 
@@ -35,7 +59,7 @@ public class VoiceConfiguration {
         VoiceConfiguration run(VoiceConfiguration.Builder builder);
     }
 
-    public interface BluetoothScoLazyReturn {
-        boolean isRequired();
+    public interface BooleanLazyReturn {
+        boolean isTrue();
     }
 }
