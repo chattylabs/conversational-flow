@@ -27,6 +27,20 @@ dependencies {
     kapt 'com.google.dagger:dagger-compiler:2.15'
     // SDK
     api 'com.chattylabs.sdk.android:common:+'
+
+    // Google Cloud
+
+    // gRPC
+    compile "io.grpc:grpc-okhttp:$grpcVersion"
+    compile "io.grpc:grpc-protobuf-lite:$grpcVersion"
+    compile "io.grpc:grpc-stub:$grpcVersion"
+    compile 'javax.annotation:javax.annotation-api:1.2'
+    protobuf 'com.google.protobuf:protobuf-java:3.3.1'
+
+    // OAuth2 for Google API
+    compile('com.google.auth:google-auth-library-oauth2-http:0.7.0') {
+        exclude module: 'httpclient'
+    }
 }
 
 publish {
