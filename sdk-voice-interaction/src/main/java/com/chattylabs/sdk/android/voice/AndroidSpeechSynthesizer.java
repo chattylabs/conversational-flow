@@ -101,7 +101,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
     }
 
     private void playText(String text, String queueId, @Nullable UtteranceProgressListener listener, String utteranceId) {
-        logger.i(TAG, "TTS - prepare to playText \"" + text + "\" with Queue: <" + queueId + ">");
+        logger.i(TAG, "TTS - prepare to playText \"" + text + "\" with Queue: <" + queueId + "> - " + utteranceId);
         if (listenersMap.containsKey(utteranceId)) {
             utteranceId = utteranceId + "_" + System.currentTimeMillis();
         }
@@ -111,7 +111,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
         addToQueueSet(uId, text, -1, params, queueId);
         logger.i(TAG, "TTS - ready: " + Boolean.toString(isReady) +
                 " | speaking: " + Boolean.toString(isSpeaking) +
-                " | held: " + Boolean.toString(isOnHold));
+                " | held: " + Boolean.toString(isOnHold) + " - " + utteranceId);
         if (tts == null) {
             initTts(status -> {
                 if (status == TextToSpeech.SUCCESS) {
@@ -137,9 +137,9 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
 
     @Override
     public void playText(String text, SynthesizerListenerContract... listeners) {
-        logger.i(TAG, "TTS - prepare to immediately playText \"" + text + "\"");
-        AndroidSpeechSynthesizerUtteranceAdapter listener = generateUtteranceListener(listeners);
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
+        logger.i(TAG, "TTS - prepare to immediately playText \"" + text + "\" - " + utteranceId);
+        AndroidSpeechSynthesizerUtteranceAdapter listener = generateUtteranceListener(listeners);
         if (listenersMap.containsKey(utteranceId)) {
             utteranceId = utteranceId + "_" + listenersMap.size();
         }
@@ -150,7 +150,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
         map.put(MAP_MESSAGE, text);
         map.put(MAP_PARAMS, params);
         logger.i(TAG, "TTS - ready: " + Boolean.toString(isReady) +
-                " | speaking: " + Boolean.toString(isSpeaking));
+                " | speaking: " + Boolean.toString(isSpeaking) + " - " + utteranceId);
         initTts(status -> {
             if (status == TextToSpeech.SUCCESS) {
                 playTheCurrentQueue(map);
@@ -165,9 +165,9 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
     @Override
     public void playSilence(long durationInMillis, String queueId, SynthesizerListenerContract... listeners) {
         if (durationInMillis <= 0) throw new IllegalArgumentException("Silence duration must be greater than 0");
-        logger.i(TAG, "TTS - play silence with Queue: <" + queueId + ">");
-        AndroidSpeechSynthesizerUtteranceAdapter listener = generateUtteranceListener(listeners);
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
+        logger.i(TAG, "TTS - play silence with Queue: <" + queueId + "> - " + utteranceId);
+        AndroidSpeechSynthesizerUtteranceAdapter listener = generateUtteranceListener(listeners);
         if (listenersMap.containsKey(utteranceId)) {
             utteranceId = utteranceId + "_" + listenersMap.size();
         }
@@ -177,7 +177,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
         addToQueueSet(uId, null, durationInMillis, null, queueId);
         logger.i(TAG, "TTS - ready: " + Boolean.toString(isReady) +
                 " | speaking: " + Boolean.toString(isSpeaking) +
-                " | held: " + Boolean.toString(isOnHold));
+                " | held: " + Boolean.toString(isOnHold) + " - " + utteranceId);
         if (tts == null) {
             initTts(status -> {
                 if (status == TextToSpeech.SUCCESS) {
@@ -203,24 +203,25 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
     @Override
     public void playSilence(long durationInMillis, SynthesizerListenerContract... listeners) {
         if (durationInMillis <= 0) throw new IllegalArgumentException("Silence duration must be greater than 0");
-        logger.i(TAG, "TTS - play silence immediately");
-        AndroidSpeechSynthesizerUtteranceAdapter listener = generateUtteranceListener(listeners);
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
+        logger.i(TAG, "TTS - play silence immediately - " + utteranceId);
+        AndroidSpeechSynthesizerUtteranceAdapter listener = generateUtteranceListener(listeners);
         if (listenersMap.containsKey(utteranceId)) {
             utteranceId = utteranceId + "_" + listenersMap.size();
         }
-        handleListener(utteranceId, listener);
+        final String uId = utteranceId;
+        handleListener(uId, listener);
         Map<String, Object> map = new HashMap<>();
-        map.put(MAP_UTTERANCE_ID, utteranceId);
+        map.put(MAP_UTTERANCE_ID, uId);
         map.put(MAP_SILENCE, durationInMillis);
         logger.i(TAG, "TTS - ready: " + Boolean.toString(isReady) +
-                " | speaking: " + Boolean.toString(isSpeaking));
+                " | speaking: " + Boolean.toString(isSpeaking) + " - " + uId);
         initTts(status -> {
             if (status == TextToSpeech.SUCCESS) {
                 playTheCurrentQueue(map);
             }
             else {
-                logger.e(TAG, "TTS - silence NOW Status ERROR");
+                logger.e(TAG, "TTS - silence NOW Status ERROR - " + uId);
                 shutdown();
             }
         }, null);
@@ -459,7 +460,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
     }
 
     private void handleListener(@NonNull String utteranceId, @NonNull UtteranceProgressListener listener) {
-        logger.v(TAG, "TTS - added utterance listener -> size:  " + listenersMap.size());
+        logger.v(TAG, "TTS - added utterance - " + utteranceId + " - listener -> size:  " + listenersMap.size());
         synchronized (lock) {
             listenersMap.put(utteranceId, listener);
         }
@@ -472,7 +473,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
         if (duration > 0) map.put(MAP_SILENCE, duration);
         if (params != null) map.put(MAP_PARAMS, params);
         if (!queue.containsKey(queueId)) {
-            logger.v(TAG, "TTS - added queue: <" + queueId + ">");
+            logger.v(TAG, "TTS - added queue: <" + queueId + "> - " + utteranceId);
             lastQueueId = queueId;
             synchronized (lock) {
                 queue.put(queueId, new ConcurrentLinkedQueue<>());
@@ -490,7 +491,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
         params.put(TextToSpeech.Engine.KEY_PARAM_STREAM, audioStream);
         params.put(TextToSpeech.Engine.KEY_FEATURE_NETWORK_TIMEOUT_MS, "5000");
         params.put(TextToSpeech.Engine.KEY_FEATURE_NETWORK_RETRIES_COUNT, "2");
-        logger.v(TAG, "TTS - building params");
+        logger.v(TAG, "TTS - building params - " + utteranceId);
         return params;
     }
 
@@ -534,19 +535,19 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
 
             @Override
             protected void startTimeout(String utteranceId) {
-                logger.i(TAG, "TTS - started timeout!");
+                logger.i(TAG, "TTS - started timeout! - " + utteranceId);
                 timer = new Timer();
                 task = new TimerTask() {
                     @Override
                     public void run() {
                         if (tts == null || !tts.isSpeaking()) {
-                            logger.e(TAG, "TTS - is null or not speaking && reached timeout!");
+                            logger.e(TAG, "TTS - is null or not speaking && reached timeout! - " + utteranceId);
                             stop();
                             onDone(utteranceId);
                         }
                         else {
                             if ((System.currentTimeMillis() - timestamp) > TimeUnit.SECONDS.toMillis(MAX_SPEECH_TIME)) {
-                                logger.e(TAG, "TTS - exceeded " + MAX_SPEECH_TIME + " sec!");
+                                logger.e(TAG, "TTS - exceeded " + MAX_SPEECH_TIME + " sec! - " + utteranceId);
                                 stop();
                                 onDone(utteranceId);
                             }
@@ -562,7 +563,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
 
             @Override
             public void onStart(String utteranceId) {
-                logger.v(TAG, "TTS - on start -> utterance listener size: " + listenersMap.size());
+                logger.v(TAG, "TTS - on start -> utterance - " + utteranceId + " - listener size: " + listenersMap.size());
 
                 startTimeout(utteranceId);
                 timestamp = System.currentTimeMillis();
@@ -579,23 +580,23 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
             public void onDone(String utteranceId) {
                 clearTimeout();
                 if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
-                    logger.v(TAG, "TTS - on done <" + queueId + "> -> go to setup language");
+                    logger.v(TAG, "TTS - on done <" + queueId + "> -> go to setup language - " + utteranceId);
                     checkLanguage(onCheckLanguageInit, true);
                 }
                 else {
-                    logger.v(TAG, "TTS - check For Empty Queue <" + queueId + ">");
+                    logger.v(TAG, "TTS - check For Empty Queue <" + queueId + "> - " + utteranceId);
                     isSpeaking = false;
                     checkForEmptyCurrentQueue();
                     if (isCurrentQueueEmpty()) {
                         stop();
-                        logger.i(TAG, "TTS - Stream Finished.");
+                        logger.i(TAG, "TTS - Stream Finished. - " + utteranceId);
                     }
                     if (listenersMap.size() > 0) {
                         UtteranceProgressListener listener;
                         synchronized (lock) {
                             listener = listenersMap.remove(utteranceId);
                         }
-                        logger.v(TAG, "TTS - Execute listener onDone <" + queueId + ">");
+                        logger.v(TAG, "TTS - Execute listener onDone <" + queueId + "> - " + utteranceId);
                         listener.onDone(utteranceId);
                     }
                 }
@@ -605,8 +606,8 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
             @TargetApi(Build.VERSION_CODES.LOLLIPOP)
             public void onError(String utteranceId, int errorCode) {
                 clearTimeout();
-                logger.e(TAG, "TTS - on error -> stop timeout -> utterance listener size: " + listenersMap.size());
-                logger.e(TAG, "TTS - error code: " + getErrorType(errorCode));
+                logger.e(TAG, "TTS - on error -> stop timeout -> utterance - " + utteranceId + " - listener size: " + listenersMap.size());
+                logger.e(TAG, "TTS - error code: " + getErrorType(errorCode) + " - " + utteranceId);
                 if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
                     shutdown();
                     if (errorCode == TextToSpeech.ERROR_NOT_INSTALLED_YET) {
@@ -621,7 +622,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
                     checkForEmptyCurrentQueue();
                     if (isCurrentQueueEmpty()) {
                         stop();
-                        logger.i(TAG, "TTS - ERROR - Stream Finished.");
+                        logger.i(TAG, "TTS - ERROR - Stream Finished. - " + utteranceId);
                     }
                     if (listenersMap.size() > 0) {
                         UtteranceProgressListener listener;
@@ -723,7 +724,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
         String finalText = HtmlUtils.from(text).toString();
 
         for (TextFilter filter : filters) {
-            logger.v(TAG, "TTS - apply filter: " + filter);
+            logger.v(TAG, "TTS - apply filter: " + filter + " - " + utteranceId);
             finalText = filter.apply(finalText);
         }
 
@@ -743,20 +744,20 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
     }
 
     private void playSilence(String utteranceId, long durationInMillis) {
-        logger.i(TAG, "TTS - playText silence");
+        logger.i(TAG, "TTS - play internal silence - " + utteranceId);
         initTts(status -> {
             if (status == TextToSpeech.SUCCESS) {
                 tts.playSilentUtterance(durationInMillis, TextToSpeech.QUEUE_ADD, utteranceId);
             }
             else {
-                logger.e(TAG, "TTS - silence status ERROR");
+                logger.e(TAG, "TTS - silence status ERROR - " + utteranceId);
                 shutdown();
             }
         }, null);
     }
 
     private void play(String utteranceId, String text, HashMap<String, String> params) {
-        logger.i(TAG, "TTS - reading out loud: \"" + text + "\"");
+        logger.i(TAG, "TTS - reading out loud: \"" + text + "\" - " + utteranceId);
         initTts(status -> {
             if (status == TextToSpeech.SUCCESS) {
                 Bundle newParams = new Bundle();
@@ -767,7 +768,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
                 tts.speak(text, TextToSpeech.QUEUE_ADD, newParams, utteranceId);
             }
             else {
-                logger.e(TAG, "TTS - playText status ERROR");
+                logger.e(TAG, "TTS - playText status ERROR - " + utteranceId);
                 shutdown();
             }
         }, null);
