@@ -50,17 +50,17 @@ class AndroidAudioHandler {
                 .setLegacyStreamType(getMainStreamType());
     }
 
-    void setRequestAudioExclusive(boolean exclusive) {
-        this.requestAudioExclusive = exclusive;
-    }
-
     int getMainStreamType() {
         return configuration.isBluetoothScoRequired() ?
                 AudioManager.STREAM_VOICE_CALL :
                 AudioManager.STREAM_MUSIC;
     }
 
-    void requestAudioFocus() {
+    void requestAudioFocus(boolean exclusive) {
+        if (requestAudioExclusive && !exclusive) {
+            abandonAudioFocus();
+        }
+        requestAudioExclusive = exclusive;
         if (requestAudioExclusive) requestAudioFocusExclusive();
         else requestAudioFocusMayDuck();
     }

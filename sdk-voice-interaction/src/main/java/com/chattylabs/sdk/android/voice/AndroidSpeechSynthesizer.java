@@ -330,8 +330,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
     }
 
     private void runMap(Map<String, Object> map) {
-        audioHandler.setRequestAudioExclusive(configuration.isSynthesizerAudioExclusive());
-        audioHandler.requestAudioFocus();
+        audioHandler.requestAudioFocus(configuration.isAudioExclusiveRequiredForSynthesizer());
         if (map.containsKey(MAP_MESSAGE)) {
             //noinspection unchecked
             executeOnTtsReady((String) map.get(MAP_UTTERANCE_ID),

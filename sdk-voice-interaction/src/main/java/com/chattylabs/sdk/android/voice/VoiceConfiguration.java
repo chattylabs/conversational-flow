@@ -2,31 +2,31 @@ package com.chattylabs.sdk.android.voice;
 
 public class VoiceConfiguration {
     private BooleanLazyReturn bluetoothScoRequired;
-    private BooleanLazyReturn synthesizerAudioExclusive;
-    private BooleanLazyReturn recognizerAudioExclusive;
+    private BooleanLazyReturn audioExclusiveRequiredForSynthesizer;
+    private BooleanLazyReturn audioExclusiveRequiredForRecognizer;
 
     private VoiceConfiguration(Builder builder) {
         bluetoothScoRequired = builder.bluetoothScoRequired;
-        synthesizerAudioExclusive = builder.synthesizerAudioExclusive;
-        recognizerAudioExclusive = builder.recognizerAudioExclusive;
+        audioExclusiveRequiredForSynthesizer = builder.audioExclusiveRequiredForSynthesizer;
+        audioExclusiveRequiredForRecognizer = builder.audioExclusiveRequiredForRecognizer;
     }
 
     public boolean isBluetoothScoRequired() {
         return bluetoothScoRequired.isTrue();
     }
 
-    public boolean isSynthesizerAudioExclusive() {
-        return synthesizerAudioExclusive.isTrue();
+    public boolean isAudioExclusiveRequiredForSynthesizer() {
+        return audioExclusiveRequiredForSynthesizer.isTrue();
     }
 
-    public boolean isRecognizerAudioExclusive() {
-        return recognizerAudioExclusive.isTrue();
+    public boolean isAudioExclusiveRequiredForRecognizer() {
+        return audioExclusiveRequiredForRecognizer.isTrue();
     }
 
     public static final class Builder {
         private BooleanLazyReturn bluetoothScoRequired;
-        private BooleanLazyReturn synthesizerAudioExclusive;
-        private BooleanLazyReturn recognizerAudioExclusive;
+        private BooleanLazyReturn audioExclusiveRequiredForSynthesizer;
+        private BooleanLazyReturn audioExclusiveRequiredForRecognizer;
 
         public Builder() {
         }
@@ -40,13 +40,13 @@ public class VoiceConfiguration {
             return this;
         }
 
-        public Builder setSynthesizerAudioExclusive(BooleanLazyReturn lazyReturn) {
-            this.synthesizerAudioExclusive = lazyReturn;
+        public Builder setAudioExclusiveRequiredForSynthesizer(BooleanLazyReturn lazyReturn) {
+            this.audioExclusiveRequiredForSynthesizer = lazyReturn;
             return this;
         }
 
-        public Builder setRecognizerAudioExclusive(BooleanLazyReturn lazyReturn) {
-            this.recognizerAudioExclusive = lazyReturn;
+        public Builder setAudioExclusiveRequiredForRecognizer(BooleanLazyReturn lazyReturn) {
+            this.audioExclusiveRequiredForRecognizer = lazyReturn;
             return this;
         }
 
