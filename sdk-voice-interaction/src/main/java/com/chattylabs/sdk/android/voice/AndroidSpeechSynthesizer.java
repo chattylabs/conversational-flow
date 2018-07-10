@@ -119,7 +119,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
                     resume();
                 }
                 else {
-                    logger.e(TAG, "TTS - with getCurrentQueueId status ERROR");
+                    logger.e(TAG, "TTS - with queue status ERROR");
                     if (listenersMap.containsKey(uId)) {
                         UtteranceProgressListener utteranceProgressListener;
                         synchronized (lock) {
@@ -156,7 +156,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
                 playTheCurrentQueue(map);
             }
             else {
-                logger.e(TAG, "TTS - no getCurrentQueueId status ERROR");
+                logger.e(TAG, "TTS - no queue status ERROR");
                 shutdown();
             }
         }, null);
@@ -275,7 +275,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
         if (isSpeaking) return;
         initTts(status -> {
             if (status == TextToSpeech.SUCCESS) {
-                logger.i(TAG, "TTS - resume getCurrentQueueId: <" + queueId + ">");
+                logger.i(TAG, "TTS - resume queue: <" + queueId + ">");
                 checkForEmptyCurrentQueue();
                 if (!isEmpty()) {
                     isSpeaking = true;
@@ -292,7 +292,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
 
     private void checkForEmptyCurrentQueue() {
         if (isCurrentQueueEmpty()) {
-            logger.v(TAG, "TTS - no more messages in the getCurrentQueueId <" + queueId + ">");
+            logger.v(TAG, "TTS - no more messages in the queue <" + queueId + ">");
             moveToNextQueue();
         }
     }
@@ -435,9 +435,9 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
     }
 
     private void moveToNextQueue() {
-        // is empty, still contains the getCurrentQueueId id and it's not the default one
+        // is empty, still contains the queue id and it's not the default one
         if (queue.containsKey(queueId) && !DEFAULT_QUEUE_ID.equals(queueId)) {
-            logger.v(TAG, "TTS - remove empty getCurrentQueueId: <" + queueId + ">");
+            logger.v(TAG, "TTS - remove empty queue: <" + queueId + ">");
             synchronized (lock) {
                 queue.remove(queueId);
             }
@@ -447,11 +447,11 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
         if (queueId == null) {
             queueId = DEFAULT_QUEUE_ID;
             if (isLastQueueEqualToCurrent) {
-                logger.v(TAG, "TTS - update last getCurrentQueueId from <" + lastQueueId + "> to <" + queueId + ">");
+                logger.v(TAG, "TTS - update last queue from <" + lastQueueId + "> to <" + queueId + ">");
                 lastQueueId = queueId;
             }
         }
-        logger.v(TAG, "TTS - New getCurrentQueueId: <" + queueId + ">");
+        logger.v(TAG, "TTS - New queue: <" + queueId + ">");
     }
 
     @Override
@@ -473,7 +473,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
         if (duration > 0) map.put(MAP_SILENCE, duration);
         if (params != null) map.put(MAP_PARAMS, params);
         if (!queue.containsKey(queueId)) {
-            logger.v(TAG, "TTS - added getCurrentQueueId: <" + queueId + ">");
+            logger.v(TAG, "TTS - added queue: <" + queueId + ">");
             lastQueueId = queueId;
             synchronized (lock) {
                 queue.put(queueId, new ConcurrentLinkedQueue<>());
