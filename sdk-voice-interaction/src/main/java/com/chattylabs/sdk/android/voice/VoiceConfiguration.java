@@ -33,6 +33,8 @@ public class VoiceConfiguration {
 
         public Builder(VoiceConfiguration copy) {
             this.bluetoothScoRequired = copy.bluetoothScoRequired;
+            this.audioExclusiveRequiredForSynthesizer = copy.audioExclusiveRequiredForSynthesizer;
+            this.audioExclusiveRequiredForRecognizer = copy.audioExclusiveRequiredForRecognizer;
         }
 
         public Builder setBluetoothScoRequired(BooleanLazyReturn lazyReturn) {
