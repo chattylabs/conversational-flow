@@ -48,7 +48,14 @@ class BluetoothSco {
             public void onDisconnected() {
                 unregisterReceiver();
                 bluetoothScoListener.onDisconnected();
-                condition.signalAll();
+                lock.lock();
+                try {
+                    condition.signalAll();
+                } catch (Exception e) {
+                    logger.logException(e);
+                } finally {
+                    lock.unlock();
+                }
             }
         };
         bluetoothScoReceiver.setListener(helper);
@@ -84,11 +91,15 @@ class BluetoothSco {
             isBluetoothScoOn = false;
             audioManager.setBluetoothScoOn(false);
             audioManager.stopBluetoothSco();
+            lock.lock();
             try {
                 condition.await(5, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 logger.logException(e);
+            } finally {
+                lock.unlock();
             }
+            unregisterReceiver();
             logger.v(TAG, "stop bluetooth sco");
         }
     }
