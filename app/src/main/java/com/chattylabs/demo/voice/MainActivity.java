@@ -130,8 +130,11 @@ public class MainActivity extends DaggerAppCompatActivity {
                 isChecking = item.first == CHECK;
             }
         }
+        final StringBuilder copy = tx;
 
-        if (tx != null) execution.setText(HtmlUtils.from(tx.toString()));
+        runOnUiThread(() -> {
+            if (copy != null) execution.setText(HtmlUtils.from(copy.toString()));
+        });
     }
 
     private void play(String text, int index) {
@@ -143,7 +146,7 @@ public class MainActivity extends DaggerAppCompatActivity {
                 (VoiceInteractionComponent.OnSynthesizerDone) s -> {
                     Log.i(TAG, "on Done index: " + index);
                     Pair<Integer, String> next = queue.get(index + 1);
-                    if (next.first == LISTEN) {
+                    if (next != null && next.first == LISTEN) {
                         synthesizer.holdCurrentQueue();
                         listen(index);
                     } else {
