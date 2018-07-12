@@ -1,1 +1,1 @@
-include ':app', ':sdk-voice-interaction'
+include ':app', ':sdk-voice-interaction', ':plugin-google-speech-to-text'
