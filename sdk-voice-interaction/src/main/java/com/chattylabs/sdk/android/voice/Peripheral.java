@@ -4,7 +4,6 @@ import android.media.AudioManager;
 
 public final class Peripheral {
     private AudioManager audioManager;
-    private Device device;
 
     public enum Type {
         WIRED_HEADSET, BLUETOOTH
@@ -19,12 +18,9 @@ public final class Peripheral {
     }
 
     public Device get(Type type) {
-        switch (type) {
-            case WIRED_HEADSET:
-                device = new PeripheralHeadsetDevice(audioManager);
-            case BLUETOOTH:
-                device = new PeripheralBluetoothDevice(audioManager);
-        }
+        Device device = () -> false;
+        if (type.equals(Type.WIRED_HEADSET)) device = new PeripheralHeadsetDevice(audioManager);
+        if (type.equals(Type.BLUETOOTH)) device = new PeripheralBluetoothDevice(audioManager);
         return device;
     }
 }
