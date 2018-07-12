@@ -26,7 +26,7 @@ class BluetoothSco {
     // Resources
     private Application application;
     private AudioManager audioManager;
-    private BluetoothScoReceiver bluetoothScoReceiver = new BluetoothScoReceiver();
+    private BluetoothScoReceiver bluetoothScoReceiver;
 
     // Log stuff
     private ILogger logger;
@@ -35,6 +35,7 @@ class BluetoothSco {
         this.application = application;
         this.audioManager = audioManager;
         this.logger = logger;
+        bluetoothScoReceiver = new BluetoothScoReceiver(logger);
     }
 
     private void registerReceiver(BluetoothScoListener bluetoothScoListener) {

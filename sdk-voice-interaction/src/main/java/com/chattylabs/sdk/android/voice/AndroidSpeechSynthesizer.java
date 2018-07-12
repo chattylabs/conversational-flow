@@ -597,7 +597,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
                             listener = listenersMap.remove(utteranceId);
                         }
                         logger.v(TAG, "TTS - Execute listener onDone <" + queueId + "> - " + utteranceId);
-                        listener.onDone(utteranceId);
+                        if (listener != null) listener.onDone(utteranceId);
                     }
                 }
             }

@@ -88,7 +88,7 @@ public final class AndroidSpeechRecognizer implements VoiceInteractionComponent.
                         lock.lock();
                         try {
                             mainHandler.post(() -> {
-                                speechRecognizer.stopListening();
+                                if (speechRecognizer != null) speechRecognizer.stopListening();
                                 executorService.submit(lock::unlock);
                             });
                         } catch (Exception e) {
