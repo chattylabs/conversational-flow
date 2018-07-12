@@ -1,0 +1,40 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.novoda:bintray-release:0.8.1'
+    }
+}
+repositories {
+    maven { url "https://dl.bintray.com/chattylabs/maven" }
+}
+apply plugin: 'com.android.library'
+apply plugin: 'com.novoda.bintray-release'
+apply from: '../buildsystem/android.gradle'
+
+group = 'com.chattylabs.sdk.android'
+version = android.defaultConfig.versionName
+
+android {
+    //compileSdkVersion 21
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    // Dagger
+    api 'com.google.dagger:dagger:2.15'
+    kapt 'com.google.dagger:dagger-compiler:2.15'
+    // SDK
+    api 'com.chattylabs.sdk.android:common:+'
+    api project(':sdk-conversational-flow-core')
+}
+
+publish {
+    userOrg = 'chattylabs'
+    groupId = project.group
+    artifactId = project.name.replace("sdk-", "")
+    publishVersion = project.version
+    desc = 'Android Speech Addon for the Conversational Flow Component (VUI SDK)'
+    website = 'https://github.com/chattylabs/sdk-conversational-flow'
+}
