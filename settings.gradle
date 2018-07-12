@@ -1,1 +1,1 @@
-include ':app', ':sdk-voice-interaction', ':plugin-google-speech-to-text'
+include ':app', ':sdk-conversational-flow-core', ':sdk-addon-android-speech', ':sdk-addon-google-speech'

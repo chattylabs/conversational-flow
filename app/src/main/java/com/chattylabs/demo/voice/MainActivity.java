@@ -23,8 +23,10 @@ import com.chattylabs.sdk.android.common.HtmlUtils;
 import com.chattylabs.sdk.android.common.PermissionsHelper;
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer;
+import com.chattylabs.sdk.android.voice.DefaultAccessToken;
 import com.chattylabs.sdk.android.voice.Peripheral;
 import com.chattylabs.sdk.android.voice.TextFilterForUrl;
+import com.chattylabs.sdk.android.voice.VoiceConfig;
 import com.chattylabs.sdk.android.voice.VoiceInteractionComponent;
 
 import javax.inject.Inject;
@@ -66,13 +68,21 @@ public class MainActivity extends DaggerAppCompatActivity {
         initViews();
         initActions();
         peripheral = new Peripheral((AudioManager) getSystemService(AUDIO_SERVICE));
+
         //voiceInteractionComponent = VoiceInteractionModule.provideVoiceInteractionComponent();
+
+        voiceInteractionComponent.updateVoiceConfig(builder ->
+                builder.setRecognizerServiceType(() -> VoiceConfig.RECOGNIZER_SERVICE_GOOGLE_SPEECH)
+                        .setGoogleAccessToken(() -> () -> new DefaultAccessToken(R.raw.credential))
+                        .build());
+
         voiceInteractionComponent.setup(this, status -> {
             if (status.isAvailable()) {
                 voiceInteractionComponent.getSpeechSynthesizer(this)
                         .addFilter(new TextFilterForUrl());
             }
         });
+
         PermissionsHelper.check(this, voiceInteractionComponent.requiredPermissions());
         //UpdateManager.register(this);
     }
@@ -182,11 +192,11 @@ public class MainActivity extends DaggerAppCompatActivity {
         }, (VoiceInteractionComponent.OnRecognizerError) (i, i1) -> {
             Log.e(TAG, "Error " + i);
             Log.e(TAG, "Original Error " + AndroidSpeechSynthesizer.getErrorType(i1));
-            new AlertDialog.Builder(this)
+            voiceInteractionComponent.shutdown();
+            runOnUiThread(() -> new AlertDialog.Builder(this)
                     .setTitle("Error")
                     .setMessage(AndroidSpeechSynthesizer.getErrorType(i1))
-                    .create().show();
-            voiceInteractionComponent.shutdown();
+                    .create().show());
         });
     }
 
@@ -256,7 +266,7 @@ public class MainActivity extends DaggerAppCompatActivity {
                 Toast.makeText(this, "Not connected to a Bluetooth device", Toast.LENGTH_LONG).show();
                 return;
             }
-            voiceInteractionComponent.updateVoiceConfiguration(
+            voiceInteractionComponent.updateVoiceConfig(
                     builder -> {
                         builder.setBluetoothScoRequired(() ->
                                 peripheral.get(Peripheral.Type.BLUETOOTH).isConnected() && isChecked);
