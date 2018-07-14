@@ -29,24 +29,24 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
 
     String DEFAULT_QUEUE_ID = "default_queue";
 
-    // Synthesizer codes
-    int SYNTHESIZER_AVAILABLE = 101;
-    int SYNTHESIZER_AVAILABLE_BUT_INACTIVE = 102;
-    int SYNTHESIZER_UNKNOWN_ERROR = 103;
-    int SYNTHESIZER_LANGUAGE_NOT_SUPPORTED_ERROR = 104;
-    int SYNTHESIZER_NOT_AVAILABLE_ERROR = 105;
+    // Synthesizer status codes
+    int SYNTHESIZER_AVAILABLE = 1;
+    int SYNTHESIZER_AVAILABLE_BUT_INACTIVE = 2;
+    int SYNTHESIZER_UNKNOWN_ERROR = 4;
+    int SYNTHESIZER_LANGUAGE_NOT_SUPPORTED_ERROR = 8;
+    int SYNTHESIZER_NOT_AVAILABLE_ERROR = 16;
 
-    // Recognizer codes
-    int RECOGNIZER_AVAILABLE = 201;
-    int RECOGNIZER_NOT_AVAILABLE = 202;
-    int RECOGNIZER_UNKNOWN_ERROR = 203;
-    int RECOGNIZER_EMPTY_RESULTS_ERROR = 204;
-    int RECOGNIZER_UNAVAILABLE_ERROR = 205;
-    int RECOGNIZER_STOPPED_TOO_EARLY_ERROR = 206;
-    int RECOGNIZER_RETRY_ERROR = 207;
-    int RECOGNIZER_AFTER_PARTIALS_ERROR = 208;
-    int RECOGNIZER_NO_SOUND_ERROR = 209;
-    int RECOGNIZER_LOW_SOUND_ERROR = 210;
+    // Recognizer status codes
+    int RECOGNIZER_AVAILABLE = 32;
+    int RECOGNIZER_NOT_AVAILABLE = 64;
+    int RECOGNIZER_UNKNOWN_ERROR = 128;
+    int RECOGNIZER_EMPTY_RESULTS_ERROR = 256;
+    int RECOGNIZER_UNAVAILABLE_ERROR = 512;
+    int RECOGNIZER_STOPPED_TOO_EARLY_ERROR = 1024;
+    int RECOGNIZER_RETRY_ERROR = 2048;
+    int RECOGNIZER_AFTER_PARTIALS_ERROR = 4098;
+    int RECOGNIZER_NO_SOUND_ERROR = 8196;
+    int RECOGNIZER_LOW_SOUND_ERROR = 16392;
 
     int MIN_VOICE_RECOGNITION_TIME_LISTENING = 2000;
 
@@ -256,6 +256,10 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
             }
         }
         return message;
+    }
+
+    static boolean isStatus(int code, int status) {
+        return (code > 0) && (code & status) == status;
     }
 
     /**
