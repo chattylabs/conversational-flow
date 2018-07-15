@@ -11,11 +11,25 @@ import java.lang.ref.SoftReference;
 
 final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
 
+    static class Instance {
+        static SoftReference<VoiceInteractionComponent> instanceOf;
+        static VoiceInteractionComponent get() {
+            synchronized (Instance.class) {
+                if ((instanceOf == null) || (instanceOf.get() == null))
+                {
+                    return new VoiceInteractionComponentImpl();
+                }
+                return instanceOf.get();
+            }
+        }
+        private Instance(){}
+    }
+
     // Resources
     private AudioManager audioManager;
     private AndroidAudioHandler audioHandler;
     private BluetoothSco bluetoothSco;
-    private VoiceConfiguration voiceConfiguration;
+    private VoiceConfig voiceConfig;
     private SpeechSynthesizer speechSynthesizer;
     private SpeechRecognizer speechRecognizer;
     private PhoneStateHandler phoneStateHandler;
@@ -24,7 +38,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
     private ILogger logger;
 
     VoiceInteractionComponentImpl() {
-        voiceConfiguration = new VoiceConfiguration.Builder()
+        voiceConfig = new VoiceConfig.Builder()
                 .setBluetoothScoRequired(() -> false)
                 .setAudioExclusiveRequiredForSynthesizer(() -> false)
                 .setAudioExclusiveRequiredForRecognizer(() -> true)
@@ -33,13 +47,13 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
     }
 
     @Override
-    public void setVoiceConfiguration(VoiceConfiguration voiceConfiguration) {
-        this.voiceConfiguration = voiceConfiguration;
+    public void setVoiceConfig(VoiceConfig voiceConfig) {
+        this.voiceConfig = voiceConfig;
     }
 
     @Override
-    public void updateVoiceConfiguration(VoiceConfiguration.Update update) {
-        voiceConfiguration = update.run(new VoiceConfiguration.Builder(voiceConfiguration));
+    public void updateVoiceConfig(VoiceConfig.Update update) {
+        voiceConfig = update.run(new VoiceConfig.Builder(voiceConfig));
         audioHandler = null;
         speechSynthesizer = null;
         speechRecognizer = null;
@@ -57,12 +71,12 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
 
     private void init(Application application) {
         if (audioManager == null) audioManager = (AudioManager) application.getSystemService(Context.AUDIO_SERVICE);
-        if (audioHandler == null) audioHandler = new AndroidAudioHandler(audioManager, voiceConfiguration, logger);
+        if (audioHandler == null) audioHandler = new AndroidAudioHandler(audioManager, voiceConfig, logger);
         if (bluetoothSco == null) bluetoothSco = new BluetoothSco(application, audioManager, logger);
         if (speechSynthesizer == null) speechSynthesizer =
-                new AndroidSpeechSynthesizer(application, voiceConfiguration, audioHandler, bluetoothSco, logger);
+                new AndroidSpeechSynthesizer(application, voiceConfig, audioHandler, bluetoothSco, logger);
         if (speechRecognizer == null) speechRecognizer = new AndroidSpeechRecognizer(
-                application, voiceConfiguration, audioHandler, bluetoothSco,
+                application, voiceConfig, audioHandler, bluetoothSco,
                 () -> android.speech.SpeechRecognizer.createSpeechRecognizer(application), logger);
         if (phoneStateHandler == null) phoneStateHandler = new PhoneStateHandler(application, logger);
         if (!phoneStateHandler.isPhoneStateReceiverRegistered()) {

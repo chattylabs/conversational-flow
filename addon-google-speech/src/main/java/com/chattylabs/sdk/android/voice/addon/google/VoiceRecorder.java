@@ -81,8 +81,22 @@ public class VoiceRecorder {
     /** The timestamp when the current voice is started. */
     private long mVoiceStartedMillis;
 
+    /** The max time for a recording */
+    private int maxSpeechLength = MAX_SPEECH_LENGTH_MILLIS;
+
+    /** The timeout with no sound recording until it stops */
+    private int speechTimeout = SPEECH_TIMEOUT_MILLIS;
+
     public VoiceRecorder(@NonNull Callback callback) {
         mCallback = callback;
+    }
+
+    public void setMaxSpeechLength(int maxSpeechLength) {
+        this.maxSpeechLength = maxSpeechLength;
+    }
+
+    public void setSpeechTimeout(int speechTimeout) {
+        this.speechTimeout = speechTimeout;
     }
 
     /**
@@ -192,12 +206,12 @@ public class VoiceRecorder {
                         }
                         mCallback.onVoice(mBuffer, size);
                         mLastVoiceHeardMillis = now;
-                        if (now - mVoiceStartedMillis > MAX_SPEECH_LENGTH_MILLIS) {
+                        if (now - mVoiceStartedMillis > maxSpeechLength) {
                             end();
                         }
                     } else if (mLastVoiceHeardMillis != Long.MAX_VALUE) {
                         mCallback.onVoice(mBuffer, size);
-                        if (now - mLastVoiceHeardMillis > SPEECH_TIMEOUT_MILLIS) {
+                        if (now - mLastVoiceHeardMillis > speechTimeout) {
                             end();
                         }
                     }

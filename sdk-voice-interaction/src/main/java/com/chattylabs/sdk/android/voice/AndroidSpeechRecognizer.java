@@ -49,14 +49,14 @@ public final class AndroidSpeechRecognizer implements VoiceInteractionComponent.
 
     // Resources
     private final Application application;
-    private final VoiceConfiguration configuration;
+    private final VoiceConfig config;
     private final AndroidHandler mainHandler;
-    private AndroidAudioHandler audioHandler;
-    private BluetoothSco bluetoothSco;
+    private final AndroidAudioHandler audioHandler;
+    private final BluetoothSco bluetoothSco;
     private final Intent speechRecognizerIntent;
+    private final SpeechRecognizerCreator recognizerCreator;
+    private final ExecutorService executorService;
     private SpeechRecognizer speechRecognizer;
-    private SpeechRecognizerCreator recognizerCreator;
-    private ExecutorService executorService;
 
     // Listener
     private final AndroidSpeechRecognitionAdapter recognitionListener = new AndroidSpeechRecognitionAdapter() {
@@ -123,7 +123,7 @@ public final class AndroidSpeechRecognizer implements VoiceInteractionComponent.
         @Override
         public void onReadyForSpeech(Bundle params) {
             if (!bluetoothSco.isBluetoothScoOn()) {
-                audioHandler.requestAudioFocus(configuration.isAudioExclusiveRequiredForRecognizer());
+                audioHandler.requestAudioFocus(config.isAudioExclusiveRequiredForRecognizer());
             }
             //resetVolumeForBeep();
             super.onReadyForSpeech(params);
@@ -225,11 +225,11 @@ public final class AndroidSpeechRecognizer implements VoiceInteractionComponent.
     // Log stuff
     private ILogger logger;
 
-    AndroidSpeechRecognizer(Application application, VoiceConfiguration configuration,
+    AndroidSpeechRecognizer(Application application, VoiceConfig config,
                             AndroidAudioHandler audioHandler, BluetoothSco bluetoothSco,
                             SpeechRecognizerCreator recognizerCreator, ILogger logger) {
         this.application = application;
-        this.configuration = configuration;
+        this.config = config;
         this.audioHandler = audioHandler;
         this.bluetoothSco = bluetoothSco;
         this.logger = logger;
@@ -322,9 +322,9 @@ public final class AndroidSpeechRecognizer implements VoiceInteractionComponent.
         logger.i(TAG, "VOICE - start conversation");
         handleListeners(listeners);
         // Check whether Sco is connected or required
-        logger.i(TAG, "TTS - is bluetooth Sco required: " +
-                Boolean.toString(configuration.isBluetoothScoRequired()));
-        if (configuration.isBluetoothScoRequired() && !bluetoothSco.isBluetoothScoOn()) {
+        logger.i(TAG, "VOICE - is bluetooth Sco required: " +
+                Boolean.toString(config.isBluetoothScoRequired()));
+        if (config.isBluetoothScoRequired() && !bluetoothSco.isBluetoothScoOn()) {
             // Sco Listener
             BluetoothScoListener listener = new BluetoothScoListener() {
                 @Override

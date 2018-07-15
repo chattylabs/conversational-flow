@@ -53,7 +53,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
     private static final int MAX_SPEECH_TIME = 60;
 
     // Data
-    private final VoiceConfiguration configuration;
+    private final VoiceConfig configuration;
     private final Map<String, UtteranceProgressListener> listenersMap;
     private final Map<String, ConcurrentLinkedQueue<Map<String, Object>>> queue;
     private final List<TextFilter> filters;
@@ -78,7 +78,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
     // Log stuff
     private ILogger logger;
 
-    AndroidSpeechSynthesizer(Application application, VoiceConfiguration configuration,
+    AndroidSpeechSynthesizer(Application application, VoiceConfig configuration,
                              AndroidAudioHandler audioHandler, BluetoothSco bluetoothSco, ILogger logger) {
         this.application = application;
         this.listenersMap = new LinkedHashMap<>();

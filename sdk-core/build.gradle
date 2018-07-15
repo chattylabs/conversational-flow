@@ -1,0 +1,22 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.novoda:bintray-release:0.8.1'
+    }
+}
+repositories {
+    maven { url "https://dl.bintray.com/chattylabs/maven" }
+}
+apply plugin: 'com.android.library'
+apply from: '../buildsystem/android.gradle'
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    // Dagger
+    api 'com.google.dagger:dagger:2.15'
+    kapt 'com.google.dagger:dagger-compiler:2.15'
+    // SDK
+    api 'com.chattylabs.sdk.android:common:+'
+}

@@ -1,11 +1,11 @@
 package com.chattylabs.sdk.android.voice;
 
-public class VoiceConfiguration {
+public class VoiceConfig {
     private BooleanLazyReturn bluetoothScoRequired;
     private BooleanLazyReturn audioExclusiveRequiredForSynthesizer;
     private BooleanLazyReturn audioExclusiveRequiredForRecognizer;
 
-    private VoiceConfiguration(Builder builder) {
+    private VoiceConfig(Builder builder) {
         bluetoothScoRequired = builder.bluetoothScoRequired;
         audioExclusiveRequiredForSynthesizer = builder.audioExclusiveRequiredForSynthesizer;
         audioExclusiveRequiredForRecognizer = builder.audioExclusiveRequiredForRecognizer;
@@ -31,7 +31,7 @@ public class VoiceConfiguration {
         public Builder() {
         }
 
-        public Builder(VoiceConfiguration copy) {
+        public Builder(VoiceConfig copy) {
             this.bluetoothScoRequired = copy.bluetoothScoRequired;
             this.audioExclusiveRequiredForSynthesizer = copy.audioExclusiveRequiredForSynthesizer;
             this.audioExclusiveRequiredForRecognizer = copy.audioExclusiveRequiredForRecognizer;
@@ -52,13 +52,13 @@ public class VoiceConfiguration {
             return this;
         }
 
-        public VoiceConfiguration build() {
-            return new VoiceConfiguration(this);
+        public VoiceConfig build() {
+            return new VoiceConfig(this);
         }
     }
 
     public interface Update {
-        VoiceConfiguration run(VoiceConfiguration.Builder builder);
+        VoiceConfig run(VoiceConfig.Builder builder);
     }
 
     public interface BooleanLazyReturn {

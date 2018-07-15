@@ -27,6 +27,7 @@ dependencies {
     kapt 'com.google.dagger:dagger-compiler:2.15'
     // SDK
     api 'com.chattylabs.sdk.android:common:+'
+    implementation project(':sdk-core')
 }
 
 publish {

@@ -12,7 +12,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-class BluetoothSco {
+public class BluetoothSco {
     private static final String TAG = Tag.make("BluetoothSco");
 
     // Lock
@@ -31,7 +31,7 @@ class BluetoothSco {
     // Log stuff
     private ILogger logger;
 
-    BluetoothSco(Application application, AudioManager audioManager, ILogger logger) {
+    public BluetoothSco(Application application, AudioManager audioManager, ILogger logger) {
         this.application = application;
         this.audioManager = audioManager;
         this.logger = logger;
@@ -76,7 +76,7 @@ class BluetoothSco {
         }
     }
 
-    void startSco(BluetoothScoListener bluetoothScoListener) {
+    public void startSco(BluetoothScoListener bluetoothScoListener) {
         registerReceiver(bluetoothScoListener);
         if (audioManager.isBluetoothScoAvailableOffCall() && !isBluetoothScoOn) {
             isBluetoothScoOn = true;
@@ -86,7 +86,7 @@ class BluetoothSco {
         }
     }
 
-    void stopSco() {
+    public void stopSco() {
         if (audioManager.isBluetoothScoAvailableOffCall() && isBluetoothScoOn) {
             isBluetoothScoOn = false;
             audioManager.setBluetoothScoOn(false);
@@ -104,7 +104,7 @@ class BluetoothSco {
         }
     }
 
-    boolean isBluetoothScoOn() {
+    public boolean isBluetoothScoOn() {
         return isBluetoothScoOn;
     }
 }

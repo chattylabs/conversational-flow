@@ -32,13 +32,9 @@ import android.util.Log;
 import com.google.auth.Credentials;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
-import com.google.cloud.speech.v1.RecognitionAudio;
 import com.google.cloud.speech.v1.RecognitionConfig;
-import com.google.cloud.speech.v1.RecognizeRequest;
-import com.google.cloud.speech.v1.RecognizeResponse;
 import com.google.cloud.speech.v1.SpeechGrpc;
 import com.google.cloud.speech.v1.SpeechRecognitionAlternative;
-import com.google.cloud.speech.v1.SpeechRecognitionResult;
 import com.google.cloud.speech.v1.StreamingRecognitionConfig;
 import com.google.cloud.speech.v1.StreamingRecognitionResult;
 import com.google.cloud.speech.v1.StreamingRecognizeRequest;
@@ -46,11 +42,9 @@ import com.google.cloud.speech.v1.StreamingRecognizeResponse;
 import com.google.protobuf.ByteString;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -97,14 +91,13 @@ public class GoogleSpeechService extends Service {
     /** We refresh the current access token before it expires. */
     private static final int ACCESS_TOKEN_FETCH_MARGIN = 60 * 1000; // one minute
 
-    public static final List<String> SCOPE =
-            Collections.singletonList("https://www.googleapis.com/auth/cloud-platform");
     private static final String HOSTNAME = "speech.googleapis.com";
     private static final int PORT = 443;
 
     private final SpeechBinder mBinder = new SpeechBinder();
     private final ArrayList<Listener> mListeners = new ArrayList<>();
     private volatile AccessTokenTask mAccessTokenTask;
+    private GoogleAccessToken mGoogleAccessToken;
     private SpeechGrpc.SpeechStub mApi;
     private static Handler mHandler;
 
@@ -125,37 +118,6 @@ public class GoogleSpeechService extends Service {
             if (text != null) {
                 for (Listener listener : mListeners) {
                     listener.onSpeechRecognized(text, isFinal);
-                }
-            }
-        }
-
-        @Override
-        public void onError(Throwable t) {
-            Log.e(TAG, "Error calling the API.", t);
-        }
-
-        @Override
-        public void onCompleted() {
-            Log.i(TAG, "API completed.");
-        }
-
-    };
-
-    private final StreamObserver<RecognizeResponse> mFileResponseObserver
-            = new StreamObserver<RecognizeResponse>() {
-        @Override
-        public void onNext(RecognizeResponse response) {
-            String text = null;
-            if (response.getResultsCount() > 0) {
-                final SpeechRecognitionResult result = response.getResults(0);
-                if (result.getAlternativesCount() > 0) {
-                    final SpeechRecognitionAlternative alternative = result.getAlternatives(0);
-                    text = alternative.getTranscript();
-                }
-            }
-            if (text != null) {
-                for (Listener listener : mListeners) {
-                    listener.onSpeechRecognized(text, true);
                 }
             }
         }
@@ -237,6 +199,10 @@ public class GoogleSpeechService extends Service {
         mListeners.remove(listener);
     }
 
+    public void setAccessTokenDelegate(GoogleAccessToken googleAccessToken) {
+        mGoogleAccessToken = googleAccessToken;
+    }
+
     /**
      * Starts recognizing speech audio.
      *
@@ -290,30 +256,6 @@ public class GoogleSpeechService extends Service {
         mRequestObserver = null;
     }
 
-    /**
-     * Recognize all data from the specified {@link InputStream}.
-     *
-     * @param stream The audio data.
-     */
-    public void recognizeInputStream(InputStream stream) {
-        try {
-            mApi.recognize(
-                    RecognizeRequest.newBuilder()
-                            .setConfig(RecognitionConfig.newBuilder()
-                                    .setEncoding(RecognitionConfig.AudioEncoding.LINEAR16)
-                                    .setLanguageCode("en-US")
-                                    .setSampleRateHertz(16000)
-                                    .build())
-                            .setAudio(RecognitionAudio.newBuilder()
-                                    .setContent(ByteString.readFrom(stream))
-                                    .build())
-                            .build(),
-                    mFileResponseObserver);
-        } catch (IOException e) {
-            Log.e(TAG, "Error loading the input", e);
-        }
-    }
-
     private class SpeechBinder extends Binder {
 
         GoogleSpeechService getService() {
@@ -322,12 +264,7 @@ public class GoogleSpeechService extends Service {
 
     }
 
-    private final Runnable mFetchAccessTokenRunnable = new Runnable() {
-        @Override
-        public void run() {
-            fetchAccessToken();
-        }
-    };
+    private final Runnable mFetchAccessTokenRunnable = this::fetchAccessToken;
 
     private class AccessTokenTask extends AsyncTask<Void, Void, AccessToken> {
 
@@ -346,26 +283,16 @@ public class GoogleSpeechService extends Service {
                 }
             }
 
-            // ***** WARNING *****
-            // In this sample, we load the credential from a JSON file stored in a raw resource
-            // folder of this client app. You should never do this in your app. Instead, store
-            // the file in your server and obtain an access token from there.
-            // *******************
-            final InputStream stream = getResources().openRawResource(R.raw.credential);
-            try {
-                final GoogleCredentials credentials = GoogleCredentials.fromStream(stream)
-                        .createScoped(SCOPE);
-                final AccessToken token = credentials.refreshAccessToken();
-                prefs.edit()
-                        .putString(PREF_ACCESS_TOKEN_VALUE, token.getTokenValue())
-                        .putLong(PREF_ACCESS_TOKEN_EXPIRATION_TIME,
-                                token.getExpirationTime().getTime())
-                        .apply();
-                return token;
-            } catch (IOException e) {
-                Log.e(TAG, "Failed to obtain access token.", e);
-            }
-            return null;
+            if (mGoogleAccessToken == null) throw new NullPointerException("You must provide a " +
+                    GoogleAccessToken.class);
+
+            final AccessToken token = mGoogleAccessToken.retrieve();
+            prefs.edit()
+                    .putString(PREF_ACCESS_TOKEN_VALUE, token.getTokenValue())
+                    .putLong(PREF_ACCESS_TOKEN_EXPIRATION_TIME,
+                            token.getExpirationTime().getTime())
+                    .apply();
+            return token;
         }
 
         @Override
@@ -375,7 +302,7 @@ public class GoogleSpeechService extends Service {
                     .builderForAddress(HOSTNAME, PORT)
                     .nameResolverFactory(new DnsNameResolverProvider())
                     .intercept(new GoogleCredentialsInterceptor(new GoogleCredentials(accessToken)
-                            .createScoped(SCOPE)))
+                            .createScoped(GoogleAccessToken.SCOPE)))
                     .build();
             mApi = SpeechGrpc.newStub(channel);
 

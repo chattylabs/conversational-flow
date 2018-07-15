@@ -12,7 +12,6 @@ import com.chattylabs.sdk.android.common.RequiredPermissions;
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.common.internal.ILogger;
 
-import java.lang.ref.SoftReference;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -49,20 +48,6 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
     int RECOGNIZER_LOW_SOUND_ERROR = 210;
 
     int MIN_VOICE_RECOGNITION_TIME_LISTENING = 2000;
-
-    class Instance {
-        static SoftReference<VoiceInteractionComponent> instanceOf;
-        static VoiceInteractionComponent getInstanceOf() {
-            synchronized (Instance.class) {
-                if ((instanceOf == null) || (instanceOf.get() == null))
-                {
-                    return new VoiceInteractionComponentImpl();
-                }
-                return instanceOf.get();
-            }
-        }
-        private Instance(){}
-    }
 
     /**
      * The callbacks to interact with.
@@ -266,9 +251,9 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
 
     void setup(Context context, OnSetup onSetup);
 
-    void setVoiceConfiguration(VoiceConfiguration voiceConfiguration);
+    void setVoiceConfig(VoiceConfig voiceConfiguration);
 
-    void updateVoiceConfiguration(VoiceConfiguration.Update update);
+    void updateVoiceConfig(VoiceConfig.Update update);
 
     SpeechSynthesizer getSpeechSynthesizer(Context context);
 

@@ -25,14 +25,14 @@ import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer;
 import com.chattylabs.sdk.android.voice.Peripheral;
 import com.chattylabs.sdk.android.voice.TextFilterForUrl;
-import com.chattylabs.sdk.android.voice.VoiceInteractionComponent;
+import com.chattylabs.sdk.android.voice.core.VoiceInteractionComponent;
 
 import javax.inject.Inject;
 
 import dagger.android.support.DaggerAppCompatActivity;
 
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.SpeechRecognizer;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.SpeechSynthesizer;
+import static com.chattylabs.sdk.android.voice.core.VoiceInteractionComponent.SpeechRecognizer;
+import static com.chattylabs.sdk.android.voice.core.VoiceInteractionComponent.SpeechSynthesizer;
 
 
 public class MainActivity extends DaggerAppCompatActivity {

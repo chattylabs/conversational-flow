@@ -8,7 +8,7 @@ public abstract class VoiceInteractionModule {
     @dagger.Provides
     @dagger.Reusable
     public static VoiceInteractionComponent provideVoiceInteractionComponent(ILogger logger) {
-        VoiceInteractionComponent component = VoiceInteractionComponent.Instance.getInstanceOf();
+        VoiceInteractionComponent component = VoiceInteractionComponentImpl.Instance.get();
         component.setLogger(logger);
         return component;
     }

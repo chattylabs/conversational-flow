@@ -53,11 +53,14 @@ protobuf {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+
     // Dagger
     api 'com.google.dagger:dagger:2.15'
     kapt 'com.google.dagger:dagger-compiler:2.15'
+
     // SDK
     api 'com.chattylabs.sdk.android:common:+'
+    implementation project(':sdk-core')
 
     // gRPC
     implementation "io.grpc:grpc-okhttp:$grpcVersion"

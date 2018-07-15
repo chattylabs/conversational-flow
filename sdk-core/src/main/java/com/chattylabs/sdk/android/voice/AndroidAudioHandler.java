@@ -8,7 +8,7 @@ import android.os.Build;
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.common.internal.ILogger;
 
-class AndroidAudioHandler {
+public class AndroidAudioHandler {
     private static final String TAG = Tag.make("AndroidAudioHandler");
 
     // States
@@ -29,14 +29,14 @@ class AndroidAudioHandler {
     private AudioFocusRequest focusRequestMayDuck;
     private AudioFocusRequest focusRequestExclusive;
     private final AudioManager audioManager;
-    private final VoiceConfiguration configuration;
+    private final VoiceConfig configuration;
     private final AudioAttributes.Builder audioAttributes;
 
     // Log stuff
     private ILogger logger;
 
     AndroidAudioHandler(AudioManager audioManager,
-                        VoiceConfiguration configuration,
+                        VoiceConfig configuration,
                         ILogger logger) {
         this.audioManager = audioManager;
         this.configuration = configuration;
