@@ -17,28 +17,30 @@ public class VoiceConfig {
             })
     public @interface ServiceType {}
 
-    private BooleanLazyReturn bluetoothScoRequired;
-    private BooleanLazyReturn audioExclusiveRequiredForSynthesizer;
-    private BooleanLazyReturn audioExclusiveRequiredForRecognizer;
-    private ServiceTypeLazyReturn recognizerServiceType;
+    private LazyProvider<Boolean> bluetoothScoRequired;
+    private LazyProvider<Boolean> audioExclusiveRequiredForSynthesizer;
+    private LazyProvider<Boolean> audioExclusiveRequiredForRecognizer;
+    private ServiceTypeLazyProvider recognizerServiceType;
+    private LazyProvider<HelperAccessToken> googleAccessToken;
 
     private VoiceConfig(Builder builder) {
         bluetoothScoRequired = builder.bluetoothScoRequired;
         audioExclusiveRequiredForSynthesizer = builder.audioExclusiveRequiredForSynthesizer;
         audioExclusiveRequiredForRecognizer = builder.audioExclusiveRequiredForRecognizer;
         recognizerServiceType = builder.recognizerServiceType;
+        googleAccessToken = builder.googleAccessToken;
     }
 
     public boolean isBluetoothScoRequired() {
-        return bluetoothScoRequired.isTrue();
+        return bluetoothScoRequired.provide();
     }
 
     public boolean isAudioExclusiveRequiredForSynthesizer() {
-        return audioExclusiveRequiredForSynthesizer.isTrue();
+        return audioExclusiveRequiredForSynthesizer.provide();
     }
 
     public boolean isAudioExclusiveRequiredForRecognizer() {
-        return audioExclusiveRequiredForRecognizer.isTrue();
+        return audioExclusiveRequiredForRecognizer.provide();
     }
 
     @ServiceType
@@ -46,11 +48,16 @@ public class VoiceConfig {
         return recognizerServiceType.get();
     }
 
+    public HelperAccessToken getGoogleAccessToken() {
+        return googleAccessToken.provide();
+    }
+
     public static final class Builder {
-        private BooleanLazyReturn bluetoothScoRequired;
-        private BooleanLazyReturn audioExclusiveRequiredForSynthesizer;
-        private BooleanLazyReturn audioExclusiveRequiredForRecognizer;
-        private ServiceTypeLazyReturn recognizerServiceType;
+        private LazyProvider<Boolean> bluetoothScoRequired;
+        private LazyProvider<Boolean> audioExclusiveRequiredForSynthesizer;
+        private LazyProvider<Boolean> audioExclusiveRequiredForRecognizer;
+        private ServiceTypeLazyProvider recognizerServiceType;
+        private LazyProvider<HelperAccessToken> googleAccessToken;
 
         public Builder() {
         }
@@ -60,25 +67,31 @@ public class VoiceConfig {
             this.audioExclusiveRequiredForSynthesizer = copy.audioExclusiveRequiredForSynthesizer;
             this.audioExclusiveRequiredForRecognizer = copy.audioExclusiveRequiredForRecognizer;
             this.recognizerServiceType = copy.recognizerServiceType;
+            this.googleAccessToken = copy.googleAccessToken;
         }
 
-        public Builder setBluetoothScoRequired(BooleanLazyReturn lazyReturn) {
-            this.bluetoothScoRequired = lazyReturn;
+        public Builder setBluetoothScoRequired(LazyProvider<Boolean> lazyProvider) {
+            this.bluetoothScoRequired = lazyProvider;
             return this;
         }
 
-        public Builder setAudioExclusiveRequiredForSynthesizer(BooleanLazyReturn lazyReturn) {
-            this.audioExclusiveRequiredForSynthesizer = lazyReturn;
+        public Builder setAudioExclusiveRequiredForSynthesizer(LazyProvider<Boolean> lazyProvider) {
+            this.audioExclusiveRequiredForSynthesizer = lazyProvider;
             return this;
         }
 
-        public Builder setAudioExclusiveRequiredForRecognizer(BooleanLazyReturn lazyReturn) {
-            this.audioExclusiveRequiredForRecognizer = lazyReturn;
+        public Builder setAudioExclusiveRequiredForRecognizer(LazyProvider<Boolean> lazyProvider) {
+            this.audioExclusiveRequiredForRecognizer = lazyProvider;
             return this;
         }
 
-        public Builder setRecognizerServiceType(ServiceTypeLazyReturn recognizerServiceType) {
-            this.recognizerServiceType = recognizerServiceType;
+        public Builder setRecognizerServiceType(ServiceTypeLazyProvider lazyRecognizerServiceType) {
+            this.recognizerServiceType = lazyRecognizerServiceType;
+            return this;
+        }
+
+        public Builder setGoogleAccessToken(LazyProvider<HelperAccessToken> lazyProvider) {
+            this.googleAccessToken = lazyProvider;
             return this;
         }
 
@@ -91,15 +104,11 @@ public class VoiceConfig {
         VoiceConfig run(VoiceConfig.Builder builder);
     }
 
-    public interface BooleanLazyReturn {
-        boolean isTrue();
+    public interface LazyProvider<T> {
+        T provide();
     }
 
-    public interface IntegerLazyReturn {
-        int get();
-    }
-
-    public interface ServiceTypeLazyReturn {
+    public interface ServiceTypeLazyProvider {
         @ServiceType int get();
     }
 }

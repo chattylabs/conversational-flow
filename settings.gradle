@@ -1,1 +1,1 @@
-include ':app', ':sdk-voice-interaction', ':addon-google-speech', ':sdk-core'
+include ':app', ':sdk-core', ':sdk-voice-interaction', ':addon-google-speech'

@@ -5,6 +5,7 @@ import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
+import android.support.v4.content.ContextCompat;
 
 import com.chattylabs.sdk.android.common.internal.ILogger;
 
@@ -44,6 +45,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
         voiceConfig = new VoiceConfig.Builder()
                 .setBluetoothScoRequired(() -> false)
                 .setRecognizerServiceType(() -> VoiceConfig.RECOGNIZER_SERVICE_ANDROID_BUILTIN)
+                .setGoogleAccessToken(() -> () -> null)
                 .setAudioExclusiveRequiredForSynthesizer(() -> false)
                 .setAudioExclusiveRequiredForRecognizer(() -> true)
                 .build();
@@ -76,7 +78,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
     private void init(Application application) {
         String[] perms = requiredPermissions();
         for (String perm : perms)
-            if (application.checkCallingOrSelfPermission(perm) == PackageManager.PERMISSION_GRANTED)
+            if (ContextCompat.checkSelfPermission(application, perm) != PackageManager.PERMISSION_GRANTED)
                 throw new IllegalAccessError("Permission \"" + perm + "\" was not granted.");
         if (audioManager == null) audioManager = (AudioManager) application.getSystemService(Context.AUDIO_SERVICE);
         if (audioHandler == null) audioHandler = new AndroidAudioHandler(audioManager, voiceConfig, logger);

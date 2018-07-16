@@ -26,9 +26,12 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RawRes;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.chattylabs.sdk.android.voice.DefaultAccessToken;
+import com.chattylabs.sdk.android.voice.HelperAccessToken;
 import com.google.auth.Credentials;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;
@@ -42,9 +45,11 @@ import com.google.cloud.speech.v1.StreamingRecognizeResponse;
 import com.google.protobuf.ByteString;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -87,6 +92,8 @@ public class GoogleSpeechService extends Service {
 
     private static final String TAG = "SpeechService";
 
+    private static final List<String> SCOPE = Collections.singletonList("https://www.googleapis.com/auth/cloud-platform");
+
     private static final String PREFS = "SpeechService";
     private static final String PREF_ACCESS_TOKEN_VALUE = "access_token_value";
     private static final String PREF_ACCESS_TOKEN_EXPIRATION_TIME = "access_token_expiration_time";
@@ -102,7 +109,7 @@ public class GoogleSpeechService extends Service {
     private final SpeechBinder mBinder = new SpeechBinder();
     private final ArrayList<Listener> mListeners = new ArrayList<>();
     private volatile AccessTokenTask mAccessTokenTask;
-    private GoogleAccessToken mGoogleAccessToken;
+    private HelperAccessToken mHelperAccessToken;
     private SpeechGrpc.SpeechStub mApi;
     private static Handler mHandler;
 
@@ -149,7 +156,6 @@ public class GoogleSpeechService extends Service {
     public void onCreate() {
         super.onCreate();
         mHandler = new Handler();
-        fetchAccessToken();
     }
 
     @Override
@@ -171,7 +177,7 @@ public class GoogleSpeechService extends Service {
         }
     }
 
-    private void fetchAccessToken() {
+    public void fetchAccessToken() {
         if (mAccessTokenTask != null) {
             return;
         }
@@ -204,8 +210,8 @@ public class GoogleSpeechService extends Service {
         mListeners.remove(listener);
     }
 
-    public void setAccessTokenDelegate(GoogleAccessToken googleAccessToken) {
-        mGoogleAccessToken = googleAccessToken;
+    public void setAccessTokenDelegate(HelperAccessToken helperAccessToken) {
+        mHelperAccessToken = helperAccessToken;
     }
 
     /**
@@ -291,16 +297,35 @@ public class GoogleSpeechService extends Service {
                 }
             }
 
-            if (mGoogleAccessToken == null) throw new NullPointerException("You must provide a " +
-                    GoogleAccessToken.class);
+            if (mHelperAccessToken == null) throw new NullPointerException("You must provide a " +
+                    HelperAccessToken.class);
 
-            final AccessToken token = mGoogleAccessToken.retrieve();
-            prefs.edit()
-                    .putString(PREF_ACCESS_TOKEN_VALUE, token.getTokenValue())
-                    .putLong(PREF_ACCESS_TOKEN_EXPIRATION_TIME,
-                            token.getExpirationTime().getTime())
-                    .apply();
+            AccessToken token = null;
+            final DefaultAccessToken retrievedToken = mHelperAccessToken.get();
+            if (retrievedToken.getTokenValue() != null && retrievedToken.getExpirationTime() != null)
+                token = new AccessToken(retrievedToken.getTokenValue(), retrievedToken.getExpirationTime());
+            else if (retrievedToken.getRawResourceId() > 0) {
+                try {
+                    token = generateFromRawFile(getBaseContext(), retrievedToken.getRawResourceId());
+                } catch (IOException e) {
+                    Log.e(TAG, "Failed to obtain access token.", e);
+                }
+            } else throw new RuntimeException("GenericAccessToken was not provided correctly");
+
+            if (token != null)
+                prefs.edit()
+                        .putString(PREF_ACCESS_TOKEN_VALUE, token.getTokenValue())
+                        .putLong(PREF_ACCESS_TOKEN_EXPIRATION_TIME,
+                                token.getExpirationTime().getTime())
+                        .apply();
+
             return token;
+        }
+
+        AccessToken generateFromRawFile(Context context, @RawRes int rawResourceId) throws IOException {
+            final InputStream stream = context.getResources().openRawResource(rawResourceId);
+            final GoogleCredentials credentials = GoogleCredentials.fromStream(stream).createScoped(SCOPE);
+            return credentials.refreshAccessToken();
         }
 
         @Override
@@ -310,7 +335,7 @@ public class GoogleSpeechService extends Service {
                     .builderForAddress(HOSTNAME, PORT)
                     .nameResolverFactory(new DnsNameResolverProvider())
                     .intercept(new GoogleCredentialsInterceptor(new GoogleCredentials(accessToken)
-                            .createScoped(GoogleAccessToken.SCOPE)))
+                            .createScoped(SCOPE)))
                     .build();
             mApi = SpeechGrpc.newStub(channel);
 

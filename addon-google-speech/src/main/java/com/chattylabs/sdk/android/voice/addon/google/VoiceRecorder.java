@@ -188,7 +188,7 @@ public class VoiceRecorder {
             if (sizeInBytes == AudioRecord.ERROR_BAD_VALUE) {
                 continue;
             }
-            final AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
+            final AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.VOICE_COMMUNICATION,
                     sampleRate, CHANNEL, ENCODING, sizeInBytes);
             if (audioRecord.getState() == AudioRecord.STATE_INITIALIZED) {
                 mBuffer = new byte[sizeInBytes];

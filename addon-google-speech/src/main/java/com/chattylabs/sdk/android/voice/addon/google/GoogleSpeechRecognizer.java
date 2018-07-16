@@ -19,7 +19,6 @@ import com.chattylabs.sdk.android.voice.VoiceConfig;
 import com.chattylabs.sdk.android.voice.VoiceInteractionComponent;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -98,8 +97,9 @@ public class GoogleSpeechRecognizer implements VoiceInteractionComponent.SpeechR
                 public void onSpeechRecognized(final String text, final boolean isFinal) {
                     if (!TextUtils.isEmpty(text)) {
                         Bundle bundle = new Bundle();
-                        bundle.putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION,
-                                (ArrayList<String>) Collections.singletonList(text));
+                        ArrayList<String> textList = new ArrayList<>();
+                        textList.add(text);
+                        bundle.putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION, textList);
                         bundle.putFloatArray(SpeechRecognizer.CONFIDENCE_SCORES, new float[]{1});
                         if (isFinal) {
                             mVoiceCallback.onVoiceEnd();
@@ -117,6 +117,9 @@ public class GoogleSpeechRecognizer implements VoiceInteractionComponent.SpeechR
         public void onServiceConnected(ComponentName componentName, IBinder binder) {
             mSpeechService = GoogleSpeechService.from(binder);
             mSpeechService.addListener(mSpeechServiceListener);
+            mSpeechService.setAccessTokenDelegate(config.getGoogleAccessToken());
+            mSpeechService.fetchAccessToken();
+            if (mVoiceRecorder == null) startVoiceRecorder();
         }
 
         @Override
@@ -155,7 +158,7 @@ public class GoogleSpeechRecognizer implements VoiceInteractionComponent.SpeechR
                     executorService.submit(() -> {
                         lock.lock();
                         try {
-                            mVoiceCallback.onVoiceEnd();
+                            //mVoiceCallback.onVoiceEnd();
                             lock.unlock();
                         } catch (Exception e) {
                             lock.unlock();
@@ -271,7 +274,7 @@ public class GoogleSpeechRecognizer implements VoiceInteractionComponent.SpeechR
             List<String> textResults = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
             float[] confidences = partialResults.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
             if (textResults != null && (textResults.size() > 1 || (!textResults.isEmpty() && textResults.get(0).length() > 0))) {
-                logger.v(TAG, "ANDROID VOICE - partial results: " + textResults);
+                logger.v(TAG, "GOOGLE VOICE - partial results: " + textResults);
                 listener.execute(textResults, confidences);
             }
         }
@@ -301,6 +304,7 @@ public class GoogleSpeechRecognizer implements VoiceInteractionComponent.SpeechR
         // Prepare Cloud Speech API
         application.bindService(new Intent(application, GoogleSpeechService.class),
                 mServiceConnection, Context.BIND_AUTO_CREATE);
+        //application.start
     }
 
     private void checkForBluetoothScoRequired(Runnable starter) {
@@ -345,7 +349,8 @@ public class GoogleSpeechRecognizer implements VoiceInteractionComponent.SpeechR
 //                    if (lowSoundThreshold > 0) recognitionListener.setLowSoundThreshold(lowSoundThreshold);
 //                    logger.i(TAG, "VOICE - start listening");
 //                    speechRecognizer.setRecognitionListener(recognitionListener);
-                startVoiceRecorder();
+                if (mSpeechService != null)
+                    startVoiceRecorder();
                 lock.unlock();
 //                });
             } catch (Exception e) {
@@ -403,7 +408,8 @@ public class GoogleSpeechRecognizer implements VoiceInteractionComponent.SpeechR
         stop();
 
         // Stop Cloud Speech API
-        mSpeechService.removeListener(mSpeechServiceListener);
+        if (mSpeechService != null)
+            mSpeechService.removeListener(mSpeechServiceListener);
         application.unbindService(mServiceConnection);
         mSpeechService = null;
     }
