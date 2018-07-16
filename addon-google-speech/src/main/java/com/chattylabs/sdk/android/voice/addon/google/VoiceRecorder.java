@@ -19,6 +19,7 @@ package com.chattylabs.sdk.android.voice.addon.google;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.speech.SpeechRecognizer;
 import android.support.annotation.NonNull;
 
 
@@ -39,6 +40,7 @@ public class VoiceRecorder {
 
     private static final int AMPLITUDE_THRESHOLD = 1500;
     private static final int SPEECH_TIMEOUT_MILLIS = 2000;
+    private static final int NO_SPEECH_TIMEOUT_MILLIS = 4000;
     private static final int MAX_SPEECH_LENGTH_MILLIS = 30 * 1000;
 
     public static abstract class Callback {
@@ -56,6 +58,9 @@ public class VoiceRecorder {
          * @param size The size of the actual data in {@code data}.
          */
         public void onVoice(byte[] data, int size) {
+        }
+
+        public void onVoiceError(int error) {
         }
 
         /**
@@ -78,6 +83,9 @@ public class VoiceRecorder {
     /** The timestamp of the last time that voice is heard. */
     private long mLastVoiceHeardMillis = Long.MAX_VALUE;
 
+    /** The timestamp of the last time that voice is heard. */
+    private long mCurrentVoiceHearingMillis = Long.MAX_VALUE;
+
     /** The timestamp when the current voice is started. */
     private long mVoiceStartedMillis;
 
@@ -86,6 +94,9 @@ public class VoiceRecorder {
 
     /** The timeout with no sound recording until it stops */
     private int speechTimeout = SPEECH_TIMEOUT_MILLIS;
+
+    /** The timeout with no sound recording until it stops */
+    private int noSpeechTimeout = NO_SPEECH_TIMEOUT_MILLIS;
 
     public VoiceRecorder(@NonNull Callback callback) {
         mCallback = callback;
@@ -97,6 +108,10 @@ public class VoiceRecorder {
 
     public void setSpeechTimeout(int speechTimeout) {
         this.speechTimeout = speechTimeout;
+    }
+
+    public void setNoSpeechTimeout(int noSpeechTimeout) {
+        this.noSpeechTimeout = noSpeechTimeout;
     }
 
     /**
@@ -144,6 +159,7 @@ public class VoiceRecorder {
     public void dismiss() {
         if (mLastVoiceHeardMillis != Long.MAX_VALUE) {
             mLastVoiceHeardMillis = Long.MAX_VALUE;
+            mCurrentVoiceHearingMillis = Long.MAX_VALUE;
             mCallback.onVoiceEnd();
         }
     }
@@ -199,6 +215,9 @@ public class VoiceRecorder {
                     }
                     final int size = mAudioRecord.read(mBuffer, 0, mBuffer.length);
                     final long now = System.currentTimeMillis();
+                    if (mCurrentVoiceHearingMillis == Long.MAX_VALUE) {
+                        mCurrentVoiceHearingMillis = now;
+                    }
                     if (isHearingVoice(mBuffer, size)) {
                         if (mLastVoiceHeardMillis == Long.MAX_VALUE) {
                             mVoiceStartedMillis = now;
@@ -214,6 +233,12 @@ public class VoiceRecorder {
                         if (now - mLastVoiceHeardMillis > speechTimeout) {
                             end();
                         }
+                    } else if (mLastVoiceHeardMillis == Long.MAX_VALUE &&
+                            mCurrentVoiceHearingMillis != Long.MAX_VALUE) {
+                        if (now - mCurrentVoiceHearingMillis > noSpeechTimeout) {
+                            mCallback.onVoiceError(SpeechRecognizer.ERROR_SPEECH_TIMEOUT);
+                            end();
+                        }
                     }
                 }
             }
@@ -221,6 +246,7 @@ public class VoiceRecorder {
 
         private void end() {
             mLastVoiceHeardMillis = Long.MAX_VALUE;
+            mCurrentVoiceHearingMillis = Long.MAX_VALUE;
             mCallback.onVoiceEnd();
         }
 

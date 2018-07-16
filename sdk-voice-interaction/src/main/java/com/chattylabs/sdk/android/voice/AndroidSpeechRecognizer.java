@@ -67,7 +67,7 @@ public final class AndroidSpeechRecognizer implements VoiceInteractionComponent.
 
         private void releaseTimeout() {
             if (timeout != null) {
-                logger.w(TAG, "VOICE - releasing previous timeout - AndroidSpeechRecognitionAdapter");
+                logger.w(TAG, "ANDROID VOICE - releasing previous timeout");
                 task.cancel();
                 timeout.cancel();
                 timeout = null;
@@ -78,12 +78,12 @@ public final class AndroidSpeechRecognizer implements VoiceInteractionComponent.
         @Override
         public void startTimeout() {
             releaseTimeout();
-            logger.w(TAG, "VOICE - started timeout - AndroidSpeechRecognitionAdapter");
+            logger.w(TAG, "ANDROID VOICE - started timeout");
             timeout = new Timer();
             task = new TimerTask() {
                 @Override
                 public void run() {
-                    logger.w(TAG, "VOICE - reached timeout - AndroidSpeechRecognitionAdapter");
+                    logger.w(TAG, "ANDROID VOICE - reached timeout");
                     executorService.submit(() -> {
                         lock.lock();
                         try {
@@ -103,7 +103,7 @@ public final class AndroidSpeechRecognizer implements VoiceInteractionComponent.
         private void cleanup() {
             elapsedTime = System.currentTimeMillis();
             intents = 0;
-            logger.v(TAG, "VOICE - cleanup elapsedTime & partial intents - AndroidSpeechRecognitionAdapter");
+            logger.v(TAG, "ANDROID VOICE - cleanup elapsedTime & partial intents");
         }
 
         @Override
@@ -131,13 +131,13 @@ public final class AndroidSpeechRecognizer implements VoiceInteractionComponent.
 
         @Override
         public void onError(int error) {
-            logger.e(TAG, "VOICE - error: " + getErrorType(error));
+            logger.e(TAG, "ANDROID VOICE - error: " + getErrorType(error));
             // We consider 2 sec as timeout for non speech
             boolean stoppedTooEarly = (System.currentTimeMillis() - elapsedTime) < VoiceInteractionComponent.MIN_VOICE_RECOGNITION_TIME_LISTENING;
             // Start checking for the error
             OnRecognizerError errorListener = getOnError();
             int soundLevel = getSoundLevel();
-            logger.v(TAG, "VOICE - Sound Level: " + getSoundLevelAsString(soundLevel));
+            logger.v(TAG, "ANDROID VOICE - Sound Level: " + getSoundLevelAsString(soundLevel));
             // Restart the recognizer
             cancel();
             if (errorListener != null) {
@@ -161,7 +161,7 @@ public final class AndroidSpeechRecognizer implements VoiceInteractionComponent.
                             RECOGNIZER_UNKNOWN_ERROR :
                             RECOGNIZER_RETRY_ERROR, error);
                 }
-                else { // Restore VOICE
+                else { // Restore ANDROID VOICE
                     errorListener.execute(RECOGNIZER_UNKNOWN_ERROR, error);
                 }
             }
@@ -170,25 +170,25 @@ public final class AndroidSpeechRecognizer implements VoiceInteractionComponent.
         @Override
         public void onResults(Bundle results) {
             releaseTimeout();
-            if (getOnResults() == null && getOnMostConfidentResult() == null) return;
+            OnRecognizerResults resultsListener = getOnResults();
+            OnRecognizerMostConfidentResult mostConfidentResult = getOnMostConfidentResult();
+            if (resultsListener == null && mostConfidentResult == null) return;
             List<String> textResults = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
             float[] confidences = results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
             if (textResults != null && (textResults.size() > 1 || (!textResults.isEmpty() && textResults.get(0).length() > 0))) {
-                OnRecognizerResults resultsListener = getOnResults();
-                OnRecognizerMostConfidentResult mostConfidentResult = getOnMostConfidentResult();
                 reset();
                 if (resultsListener != null) {
-                    logger.v(TAG, "VOICE - results: " + textResults);
+                    logger.v(TAG, "ANDROID VOICE - results: " + textResults);
                     resultsListener.execute(textResults, confidences);
                 }
                 if (mostConfidentResult != null) {
                     String result = selectMostConfidentResult(textResults, confidences);
-                    logger.v(TAG, "VOICE - confident result: " + result);
+                    logger.v(TAG, "ANDROID VOICE - confident result: " + result);
                     mostConfidentResult.execute(result);
                 }
             }
             else {
-                logger.e(TAG, "VOICE - NO results");
+                logger.e(TAG, "ANDROID VOICE - NO results");
                 OnRecognizerError listener = getOnError();
                 reset();
                 if (listener != null) listener.execute(RECOGNIZER_EMPTY_RESULTS_ERROR, -1);
@@ -204,7 +204,7 @@ public final class AndroidSpeechRecognizer implements VoiceInteractionComponent.
             List<String> textResults = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
             float[] confidences = partialResults.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
             if (textResults != null && (textResults.size() > 1 || (!textResults.isEmpty() && textResults.get(0).length() > 0))) {
-                logger.v(TAG, "VOICE - partial results: " + textResults);
+                logger.v(TAG, "ANDROID VOICE - partial results: " + textResults);
                 listener.execute(textResults, confidences);
             }
         }
@@ -252,7 +252,7 @@ public final class AndroidSpeechRecognizer implements VoiceInteractionComponent.
         setRmsDebug(false);
         setNoSoundThreshold(0);
         setLowSoundThreshold(0);
-        logger.i(TAG, "VOICE - released");
+        logger.i(TAG, "ANDROID VOICE - released");
     }
 
     @Override
@@ -262,7 +262,7 @@ public final class AndroidSpeechRecognizer implements VoiceInteractionComponent.
             recognitionListener.reset();
             bluetoothSco.stopSco();
             if (speechRecognizer != null) {
-                logger.w(TAG, "VOICE - do stop");
+                logger.w(TAG, "ANDROID VOICE - do stop");
                 try {
                     mainHandler.post(() -> {
                         speechRecognizer.stopListening();
@@ -281,7 +281,7 @@ public final class AndroidSpeechRecognizer implements VoiceInteractionComponent.
     public void cancel() {
         recognitionListener.reset();
         if (speechRecognizer != null) {
-            logger.w(TAG, "VOICE - do cancel");
+            logger.w(TAG, "ANDROID VOICE - do cancel");
             speechRecognizer.setRecognitionListener(null);
             speechRecognizer.cancel();
         }
@@ -291,7 +291,7 @@ public final class AndroidSpeechRecognizer implements VoiceInteractionComponent.
     public void shutdown() {
         executorService.submit(() -> {
             lock.lock();
-            logger.w(TAG, "VOICE - shutting down");
+            logger.w(TAG, "ANDROID VOICE - shutting down");
             recognitionListener.reset();
             bluetoothSco.stopSco();
             // Destroy current SpeechRecognizer
@@ -302,7 +302,7 @@ public final class AndroidSpeechRecognizer implements VoiceInteractionComponent.
                             speechRecognizer.setRecognitionListener(null);
                             speechRecognizer.destroy();
                             speechRecognizer = null;
-                            logger.v(TAG, "VOICE - speechRecognizer destroyed");
+                            logger.v(TAG, "ANDROID VOICE - speechRecognizer destroyed");
                         }
                     }
                     catch (Exception ignore) {}
@@ -319,35 +319,35 @@ public final class AndroidSpeechRecognizer implements VoiceInteractionComponent.
 
     @Override
     public void listen(RecognizerListenerContract... listeners) {
-        logger.i(TAG, "VOICE - start conversation");
+        logger.i(TAG, "ANDROID VOICE - start listening");
         handleListeners(listeners);
         // Check whether Sco is connected or required
-        logger.i(TAG, "VOICE - is bluetooth Sco required: " +
+        logger.i(TAG, "ANDROID VOICE - is bluetooth Sco required: " +
                 Boolean.toString(config.isBluetoothScoRequired()));
         if (config.isBluetoothScoRequired() && !bluetoothSco.isBluetoothScoOn()) {
             // Sco Listener
             BluetoothScoListener listener = new BluetoothScoListener() {
                 @Override
                 public void onConnected() {
-                    logger.w(TAG, "VOICE - Sco onConnected");
+                    logger.w(TAG, "ANDROID VOICE - Sco onConnected");
                     startListening();
                 }
 
                 @Override
                 public void onDisconnected() {
-                    logger.w(TAG, "VOICE - Sco onDisconnected");
+                    logger.w(TAG, "ANDROID VOICE - Sco onDisconnected");
                     if (bluetoothSco.isBluetoothScoOn()) {
-                        logger.w(TAG, "VOICE - shutdown from Sco");
+                        logger.w(TAG, "ANDROID VOICE - shutdown from Sco");
                         shutdown();
                     }
                 }
             };
             // Start Bluetooth Sco
             bluetoothSco.startSco(listener);
-            logger.v(TAG, "VOICE - waiting for bluetooth sco connection");
+            logger.v(TAG, "ANDROID VOICE - waiting for bluetooth sco connection");
         }
         else {
-            logger.v(TAG, "VOICE - bluetooth sco is: " + (bluetoothSco.isBluetoothScoOn() ? "on" : "off"));
+            logger.v(TAG, "ANDROID VOICE - bluetooth sco is: " + (bluetoothSco.isBluetoothScoOn() ? "on" : "off"));
             startListening();
         }
     }
@@ -359,13 +359,13 @@ public final class AndroidSpeechRecognizer implements VoiceInteractionComponent.
                 mainHandler.post(() -> {
                     if (speechRecognizer == null) {
                         speechRecognizer = recognizerCreator.create();
-                        logger.v(TAG, "VOICE - created");
+                        logger.v(TAG, "ANDROID VOICE - created");
                     }
                     recognitionListener.startTimeout();
                     recognitionListener.setRmsDebug(rmsDebug);
                     if (noSoundThreshold > 0) recognitionListener.setNoSoundThreshold(noSoundThreshold);
                     if (lowSoundThreshold > 0) recognitionListener.setLowSoundThreshold(lowSoundThreshold);
-                    logger.i(TAG, "VOICE - start listening");
+                    logger.i(TAG, "ANDROID VOICE - start listening");
                     speechRecognizer.setRecognitionListener(recognitionListener);
                     //adjustVolumeForBeep();
                     speechRecognizer.startListening(speechRecognizerIntent);

@@ -35,7 +35,7 @@ public class AndroidAudioHandler {
     // Log stuff
     private ILogger logger;
 
-    AndroidAudioHandler(AudioManager audioManager,
+    public AndroidAudioHandler(AudioManager audioManager,
                         VoiceConfig configuration,
                         ILogger logger) {
         this.audioManager = audioManager;
@@ -50,13 +50,13 @@ public class AndroidAudioHandler {
                 .setLegacyStreamType(getMainStreamType());
     }
 
-    int getMainStreamType() {
+    public int getMainStreamType() {
         return configuration.isBluetoothScoRequired() ?
                 AudioManager.STREAM_VOICE_CALL :
                 AudioManager.STREAM_MUSIC;
     }
 
-    void requestAudioFocus(boolean exclusive) {
+    public void requestAudioFocus(boolean exclusive) {
         if (requestAudioExclusive && !exclusive) {
             abandonAudioFocus();
         }
@@ -65,7 +65,7 @@ public class AndroidAudioHandler {
         else requestAudioFocusMayDuck();
     }
 
-    void abandonAudioFocus() {
+    public void abandonAudioFocus() {
         abandonAudioFocusMayDuck();
         abandonAudioFocusExclusive();
     }
@@ -134,7 +134,7 @@ public class AndroidAudioHandler {
         }
     }
 
-    void setAudioMode() {
+    public void setAudioMode() {
         audioMode = audioManager.getMode();
         audioManager.setMode(configuration.isBluetoothScoRequired() ?
                 AudioManager.MODE_IN_CALL :
@@ -149,7 +149,7 @@ public class AndroidAudioHandler {
         //else { audioManager.setSpeakerphoneOn(true); }
     }
 
-    void unsetAudioMode() {
+    public void unsetAudioMode() {
         audioManager.setMode(audioMode);
 
         // Enabling this option, the audio is not rooted to the speakers if the sco is activated

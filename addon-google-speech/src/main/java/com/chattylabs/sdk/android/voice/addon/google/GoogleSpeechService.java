@@ -71,6 +71,11 @@ public class GoogleSpeechService extends Service {
     public interface Listener {
 
         /**
+         * Called when the SpeechGrpc.SpeechStub is ready
+         */
+        void onSpeechReady();
+
+        /**
          * Called when a new piece of text was recognized by the Speech API.
          *
          * @param text    The text.
@@ -212,6 +217,9 @@ public class GoogleSpeechService extends Service {
         if (mApi == null) {
             Log.w(TAG, "API not ready. Ignoring the request.");
             return;
+        }
+        for (Listener listener : mListeners) {
+            listener.onSpeechReady();
         }
         // Configure the API
         mRequestObserver = mApi.streamingRecognize(mResponseObserver);

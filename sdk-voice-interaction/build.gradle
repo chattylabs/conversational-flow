@@ -18,6 +18,10 @@ version = android.defaultConfig.versionName
 
 android {
     //compileSdkVersion 21
+
+    sourceSets {
+        main.java.srcDirs += '../sdk-core/src/main/java'
+    }
 }
 
 dependencies {
@@ -26,8 +30,8 @@ dependencies {
     api 'com.google.dagger:dagger:2.15'
     kapt 'com.google.dagger:dagger-compiler:2.15'
     // SDK
-    api 'com.chattylabs.sdk.android:common:+'
-    implementation project(':sdk-core')
+    implementation 'com.chattylabs.sdk.android:common:+'
+    //implementation project(':sdk-core')
 }
 
 publish {

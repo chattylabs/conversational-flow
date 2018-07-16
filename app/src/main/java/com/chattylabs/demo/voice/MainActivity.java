@@ -25,14 +25,15 @@ import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer;
 import com.chattylabs.sdk.android.voice.Peripheral;
 import com.chattylabs.sdk.android.voice.TextFilterForUrl;
-import com.chattylabs.sdk.android.voice.core.VoiceInteractionComponent;
+import com.chattylabs.sdk.android.voice.VoiceConfig;
+import com.chattylabs.sdk.android.voice.VoiceInteractionComponent;
 
 import javax.inject.Inject;
 
 import dagger.android.support.DaggerAppCompatActivity;
 
-import static com.chattylabs.sdk.android.voice.core.VoiceInteractionComponent.SpeechRecognizer;
-import static com.chattylabs.sdk.android.voice.core.VoiceInteractionComponent.SpeechSynthesizer;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.SpeechRecognizer;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.SpeechSynthesizer;
 
 
 public class MainActivity extends DaggerAppCompatActivity {
@@ -67,6 +68,8 @@ public class MainActivity extends DaggerAppCompatActivity {
         initActions();
         peripheral = new Peripheral((AudioManager) getSystemService(AUDIO_SERVICE));
         //voiceInteractionComponent = VoiceInteractionModule.provideVoiceInteractionComponent();
+        voiceInteractionComponent.updateVoiceConfig(builder ->
+                builder.setRecognizerServiceType(() -> VoiceConfig.RECOGNIZER_SERVICE_GOOGLE_SPEECH).build());
         voiceInteractionComponent.setup(this, status -> {
             if (status.isAvailable()) {
                 voiceInteractionComponent.getSpeechSynthesizer(this)
@@ -256,7 +259,7 @@ public class MainActivity extends DaggerAppCompatActivity {
                 Toast.makeText(this, "Not connected to a Bluetooth device", Toast.LENGTH_LONG).show();
                 return;
             }
-            voiceInteractionComponent.updateVoiceConfiguration(
+            voiceInteractionComponent.updateVoiceConfig(
                     builder -> {
                         builder.setBluetoothScoRequired(() ->
                                 peripheral.get(Peripheral.Type.BLUETOOTH).isConnected() && isChecked);

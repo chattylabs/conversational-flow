@@ -19,6 +19,10 @@ version = android.defaultConfig.versionName
 
 android {
     //compileSdkVersion 21
+
+//    sourceSets {
+//        main.java.srcDirs += '../sdk-core/src/main/java'
+//    }
 }
 
 ext {
@@ -59,8 +63,8 @@ dependencies {
     kapt 'com.google.dagger:dagger-compiler:2.15'
 
     // SDK
-    api 'com.chattylabs.sdk.android:common:+'
-    implementation project(':sdk-core')
+    implementation 'com.chattylabs.sdk.android:common:+'
+    api project(':sdk-core')
 
     // gRPC
     implementation "io.grpc:grpc-okhttp:$grpcVersion"
