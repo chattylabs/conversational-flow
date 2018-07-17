@@ -107,29 +107,20 @@ Create the different message and action nodes you will use throughout the conver
 VoiceMessage question = VoiceMessage.newBuilder().setText("Do you need help?").build();
  
 // We define the expected replies from the user.
-String[] expected = new String[]{ "Yes", "I think so" };
-VoiceAction replies = VoiceAction.newBuilder()
-    .setExpectedResults(expected)
-    .setOnMatch(matchedResult -> {
-        conversation.next();
-    }).build();
- 
-// We define the response according to the reply received from the user.
-VoiceMessage response = VoiceMessage.newBuilder()
-    .setText("Great!, I'll show you next some more information...")
-    .build();
+String[] expected = new String[]{ "Yes", "I think so", "Sure" };
+VoiceAction replies = VoiceAction.newBuilder().setExpectedResults(expected)
+                                 .setOnMatch(matchedResult -> conversation::next)
+                                 .build();
 ```
 Now add all the nodes as part of the conversation instance.
 ```java
 conversation.addNode(question);
 conversation.addNode(replies);
-conversation.addNode(response);
 ```
 Prepare and connect the nodes into the conversation flow.
 ```java
 Flow flow = conversation.prepare();
 flow.from(question).to(replies);
-flow.from(replies).to(response);
  
 // Start the conversation out loud!
 conversation.start(message);
