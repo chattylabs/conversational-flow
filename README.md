@@ -101,7 +101,9 @@ First, retrieve a new instance of a Conversation.
 ```java
 Conversation conversation = voiceInteractionComponent.createConversation(context);
 ```
-Create the different message and action nodes you will use throughout the conversation.
+
+Next, create the message and action nodes you expect to use during the conversation.
+
 ```java
 // We create a first message node. This will be the root node of the conversation.
 VoiceMessage question = VoiceMessage.newBuilder().setText("Do you need help?").build();
@@ -112,18 +114,22 @@ VoiceAction replies = VoiceAction.newBuilder().setExpectedResults(expected)
                                  .setOnMatch(matchedResult -> conversation::next)
                                  .build();
 ```
-Now add all the nodes as part of the conversation instance.
+
+Now add the nodes into the conversation.
+
 ```java
 conversation.addNode(question);
 conversation.addNode(replies);
 ```
-Prepare and connect the nodes into the conversation flow.
+
+Prepare and connect the nodes.
+
 ```java
 Flow flow = conversation.prepare();
 flow.from(question).to(replies);
  
 // Start the conversation out loud!
-conversation.start(message);
+conversation.start(question);
 ```
 
 This is the resulting node graph:
