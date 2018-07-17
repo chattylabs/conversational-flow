@@ -1,4 +1,4 @@
-package com.chattylabs.sdk.android.voice.addon.google;
+package com.chattylabs.sdk.android.voice;
 
 import android.app.Application;
 import android.content.ComponentName;
@@ -12,11 +12,6 @@ import android.text.TextUtils;
 
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.common.internal.ILogger;
-import com.chattylabs.sdk.android.voice.AndroidAudioHandler;
-import com.chattylabs.sdk.android.voice.BluetoothSco;
-import com.chattylabs.sdk.android.voice.BluetoothScoListener;
-import com.chattylabs.sdk.android.voice.VoiceConfig;
-import com.chattylabs.sdk.android.voice.VoiceInteractionComponent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -280,7 +275,7 @@ public class GoogleSpeechRecognizer implements VoiceInteractionComponent.SpeechR
         }
     };
 
-    public GoogleSpeechRecognizer(Application application,
+    GoogleSpeechRecognizer(Application application,
                                   VoiceConfig config,
                                   AndroidAudioHandler audioHandler,
                                   BluetoothSco bluetoothSco, ILogger logger) {

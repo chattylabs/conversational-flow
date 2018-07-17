@@ -1,10 +1,9 @@
-package com.chattylabs.sdk.android.voice.addon.google;
+package com.chattylabs.sdk.android.voice;
 
 import android.os.Bundle;
 import android.support.annotation.CallSuper;
 
 import com.chattylabs.sdk.android.common.Tag;
-import com.chattylabs.sdk.android.voice.VoiceInteractionComponent;
 
 abstract class GoogleSpeechRecognitionAdapter {
     private static final String TAG = Tag.make("GoogleSpeechRecognitionAdapter");

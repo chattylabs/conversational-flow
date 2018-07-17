@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.chattylabs.sdk.android.voice.addon.google;
+package com.chattylabs.sdk.android.voice;
 
 import android.app.Service;
 import android.content.Context;
@@ -30,8 +30,6 @@ import android.support.annotation.RawRes;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.chattylabs.sdk.android.voice.DefaultAccessToken;
-import com.chattylabs.sdk.android.voice.HelperAccessToken;
 import com.google.auth.Credentials;
 import com.google.auth.oauth2.AccessToken;
 import com.google.auth.oauth2.GoogleCredentials;

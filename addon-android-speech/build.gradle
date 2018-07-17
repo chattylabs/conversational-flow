@@ -16,20 +16,25 @@ apply from: '../buildsystem/android.gradle'
 group = 'com.chattylabs.sdk.android'
 version = android.defaultConfig.versionName
 
+android {
+    //compileSdkVersion 21
+}
+
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
     // Dagger
     api 'com.google.dagger:dagger:2.15'
     kapt 'com.google.dagger:dagger-compiler:2.15'
     // SDK
     api 'com.chattylabs.sdk.android:common:+'
+    api project(":sdk-voice-interaction")
 }
 
 publish {
     userOrg = 'chattylabs'
     groupId = project.group
-    artifactId = project.name.replace("sdk-", "")
+    artifactId = project.name
     publishVersion = project.version
-    desc = 'Voice Interaction Component (ChattyLabs SDK)'
+    desc = 'Android Speech addon for the Voice Interaction Component (ChattyLabs SDK)'
     website = 'https://github.com/chattylabs/android-sdk-voice-interaction'
 }

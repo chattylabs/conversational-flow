@@ -84,29 +84,55 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
         if (audioHandler == null) audioHandler = new AndroidAudioHandler(audioManager, voiceConfig, logger);
         if (bluetoothSco == null) bluetoothSco = new BluetoothSco(application, audioManager, logger);
         if (speechSynthesizer == null) {
-            speechSynthesizer =
-                    new AndroidSpeechSynthesizer(application, voiceConfig, audioHandler, bluetoothSco, logger);
+            try {
+            //if (voiceConfig.getRecognizerServiceType() == VoiceConfig.SYNTHESIZER_SERVICE_ANDROID_BUILTIN) {
+            String className = "com.chattylabs.sdk.android.voice.addon.AndroidSpeechSynthesizer";
+                Class cls = Class.forName(className);
+                //noinspection unchecked
+                Constructor constructor = cls.getConstructor(Application.class,
+                        VoiceConfig.class,
+                        AndroidAudioHandler.class,
+                        BluetoothSco.class, ILogger.class);
+                speechSynthesizer = (SpeechSynthesizer) constructor.newInstance(application,
+                        voiceConfig, audioHandler, bluetoothSco, logger);
+            //}
+            } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException
+                    | InstantiationException | InvocationTargetException e) {
+                logger.logException(e);
+                throw new RuntimeException("Have you forgot to add the addon dependency?");
+            }
         }
         if (speechRecognizer == null) {
-            if (voiceConfig.getRecognizerServiceType() == VoiceConfig.RECOGNIZER_SERVICE_ANDROID_BUILTIN)
-                speechRecognizer = new AndroidSpeechRecognizer(
-                        application, voiceConfig, audioHandler, bluetoothSco,
-                        () -> android.speech.SpeechRecognizer.createSpeechRecognizer(application), logger);
-            else if (voiceConfig.getRecognizerServiceType() == VoiceConfig.RECOGNIZER_SERVICE_GOOGLE_SPEECH) {
-                String className = "com.chattylabs.sdk.android.voice.addon.google.GoogleSpeechRecognizer";
-                try {
-                    Class cls = Class.forName(className);
-                    Constructor constructor = cls.getConstructor(Application.class,
-                            VoiceConfig.class,
-                            AndroidAudioHandler.class,
-                            BluetoothSco.class, ILogger.class);
-                    speechRecognizer = (SpeechRecognizer) constructor.newInstance(application,
-                            voiceConfig, audioHandler, bluetoothSco, logger);
-                } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException
-                        | InstantiationException | InvocationTargetException e) {
-                    logger.logException(e);
-                    throw new RuntimeException("Have you forgot to add the GoogleSpeechRecognizer dependency?");
+            try {
+                if (voiceConfig.getRecognizerServiceType() == VoiceConfig.RECOGNIZER_SERVICE_ANDROID_BUILTIN) {
+                    String className = "com.chattylabs.sdk.android.voice.addon.AndroidSpeechRecognizer";
+                        Class cls = Class.forName(className);
+                        //noinspection unchecked
+                        Constructor constructor = cls.getConstructor(Application.class,
+                                VoiceConfig.class,
+                                AndroidAudioHandler.class,
+                                BluetoothSco.class, SpeechRecognizerCreator.class, ILogger.class);
+                        speechRecognizer = (SpeechRecognizer) constructor.newInstance(application,
+                                voiceConfig, audioHandler, bluetoothSco,
+                                (SpeechRecognizerCreator) () ->
+                                        android.speech.SpeechRecognizer.createSpeechRecognizer(application),
+                                logger);
                 }
+                else if (voiceConfig.getRecognizerServiceType() == VoiceConfig.RECOGNIZER_SERVICE_GOOGLE_SPEECH) {
+                    String className = "com.chattylabs.sdk.android.voice.addon.google.GoogleSpeechRecognizer";
+                        Class cls = Class.forName(className);
+                        //noinspection unchecked
+                        Constructor constructor = cls.getConstructor(Application.class,
+                                VoiceConfig.class,
+                                AndroidAudioHandler.class,
+                                BluetoothSco.class, ILogger.class);
+                        speechRecognizer = (SpeechRecognizer) constructor.newInstance(application,
+                                voiceConfig, audioHandler, bluetoothSco, logger);
+                }
+            } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException
+                    | InstantiationException | InvocationTargetException e) {
+                logger.logException(e);
+                throw new RuntimeException("Have you forgot to add the addon dependency?");
             }
         }
         if (phoneStateHandler == null) phoneStateHandler = new PhoneStateHandler(application, logger);

@@ -21,10 +21,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.MIN_VOICE_RECOGNITION_TIME_LISTENING;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnRecognizerReady;
 import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnRecognizerError;
 import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnRecognizerMostConfidentResult;
 import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnRecognizerPartialResults;
+import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnRecognizerReady;
 import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnRecognizerResults;
 import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.RECOGNIZER_AFTER_PARTIALS_ERROR;
 import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.RECOGNIZER_EMPTY_RESULTS_ERROR;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.chattylabs.sdk.android.voice.addon.google;
+package com.chattylabs.sdk.android.voice;
 
 import android.media.AudioFormat;
 import android.media.AudioRecord;

@@ -2,7 +2,7 @@ package com.chattylabs.sdk.android.voice;
 
 import android.speech.tts.UtteranceProgressListener;
 
-public abstract class AndroidSpeechSynthesizerUtteranceAdapter extends UtteranceProgressListener {
+abstract class AndroidSpeechSynthesizerUtteranceAdapter extends UtteranceProgressListener {
     private VoiceInteractionComponent.OnSynthesizerStart onStartedListener;
     private VoiceInteractionComponent.OnSynthesizerDone onDoneListener;
     private VoiceInteractionComponent.OnSynthesizerError onErrorListener;

@@ -1,9 +1,9 @@
 # Voice Interaction Component
 
-Voice Interaction Core: [![Latest version](https://api.bintray.com/packages/chattylabs/maven/voice-interaction/images/download.svg?label=Latest%20version)](https://bintray.com/chattylabs/maven/voice-interaction/_latestVersion) 
+Voice Interaction: [![Latest version](https://api.bintray.com/packages/chattylabs/maven/voice-interaction/images/download.svg?label=Latest%20version)](https://bintray.com/chattylabs/maven/voice-interaction/_latestVersion) 
 ![Build Status](https://app.bitrise.io/app/ad178a030b96de53/status.svg?token=Om0YDuYQ4vGPjsP0c_EbYQ&branch=master)
 
-Addon Android Defaults: [![Latest version](https://api.bintray.com/packages/chattylabs/maven/voice-interaction/images/download.svg?label=Latest%20version)](https://bintray.com/chattylabs/maven/voice-interaction/_latestVersion) 
+Addon Android Speech: [![Latest version](https://api.bintray.com/packages/chattylabs/maven/voice-interaction/images/download.svg?label=Latest%20version)](https://bintray.com/chattylabs/maven/voice-interaction/_latestVersion) 
 ![Build Status](https://app.bitrise.io/app/ad178a030b96de53/status.svg?token=Om0YDuYQ4vGPjsP0c_EbYQ&branch=master)
 
 Addon Google Speech: [![Latest version](https://api.bintray.com/packages/chattylabs/maven/voice-interaction/images/download.svg?label=Latest%20version)](https://bintray.com/chattylabs/maven/voice-interaction/_latestVersion) 
@@ -48,10 +48,11 @@ repositories {
 }
  
 dependencies {
-    implementation 'com.chattylabs.sdk.android:voice-interaction-core:x.y.z'
-    implementation 'com.chattylabs.sdk.android:addon-android-defaults:x.y.z'
-    
-    // Optional
+    // Required
+    implementation 'com.chattylabs.sdk.android:voice-interaction:x.y.z'
+    // You can now use either one or another, or combine both addons
+    // It has been split to reduce the size of the library
+    implementation 'com.chattylabs.sdk.android:addon-android-speech:x.y.z'
     implementation 'com.chattylabs.sdk.android:addon-google-speech:x.y.z'
 }
 ```
@@ -103,42 +104,32 @@ Conversation conversation = voiceInteractionComponent.createConversation(context
 Create the different message and action nodes you will use throughout the conversation.
 ```java
 // We create a first message node. This will be the root node of the conversation.
-VoiceMessage message = VoiceMessage.newBuilder().setText("Do you need help?").build();
+VoiceMessage question = VoiceMessage.newBuilder().setText("Do you need help?").build();
  
-// We define the expected positives replies from the user.
-String[] expectedPositives = new String[]{ "Yes", "I think so" };
-VoiceAction actionOnPositives = VoiceAction.newBuilder().setExpectedResults(expectedPositives)
-                                .setOnMatch(matchedResult -> {
-                                    conversation.next();
-                                }).build();
+// We define the expected replies from the user.
+String[] expected = new String[]{ "Yes", "I think so" };
+VoiceAction replies = VoiceAction.newBuilder()
+    .setExpectedResults(expected)
+    .setOnMatch(matchedResult -> {
+        conversation.next();
+    }).build();
  
-// We define the expected negatives replies from the user.
-String[] expectedNegatives = new String[]{ "No", "I don't think so" };
-VoiceAction actionOnNegatives = VoiceAction.newBuilder().setExpectedResults(expectedNegatives)
-                                .setOnMatch(matchedResult -> {
-                                    conversation.next();
-                                }).build();
- 
-// We define the responses according to the reply received from the user.
-VoiceMessage messageOnPositives = VoiceMessage.newBuilder()
-                    .setText("Great!, I'll show you some more information...").build();
-VoiceMessage messageOnNegatives = VoiceMessage.newBuilder()
-                    .setText("Ok, you can ask me anytime!").build();
+// We define the response according to the reply received from the user.
+VoiceMessage response = VoiceMessage.newBuilder()
+    .setText("Great!, I'll show you next some more information...")
+    .build();
 ```
 Now add all the nodes as part of the conversation instance.
 ```java
-conversation.addNode(message);
-conversation.addNode(actionOnPositives);
-conversation.addNode(actionOnNegatives);
-conversation.addNode(messageOnPositives);
-conversation.addNode(messageOnNegatives);
+conversation.addNode(question);
+conversation.addNode(replies);
+conversation.addNode(response);
 ```
 Prepare and connect the nodes into the conversation flow.
 ```java
 Flow flow = conversation.prepare();
-flow.from(message).to(actionOnPositives, actionOnPositives);
-flow.from(actionOnPositives).to(messageOnPositives);
-flow.from(actionOnNegatives).to(messageOnNegatives);
+flow.from(question).to(replies);
+flow.from(replies).to(response);
  
 // Start the conversation out loud!
 conversation.start(message);
@@ -148,7 +139,13 @@ This is the resulting node graph:
 
 <p align="center"><img src="assets/demo-sample.jpg" alt="demo-sample"/></p>
 
+Of course this is a very simple example of the capabilities of the Voice Interaction Component, 
+which is only limited by the way you can combine its functionality.
+<br/>There are several configurations you can apply to the nodes, and different node types to use;
+for instance, you could make a question and then collect a speech from the user, or you could
+create multiple action nodes that directed to other responses or even other actions.
 
+Take a look at the wiki page to [know more]().
 
 ## Demo
 After you have cloned this demo project, run the following command on a terminal console. 

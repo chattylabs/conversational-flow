@@ -79,7 +79,8 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
     private ILogger logger;
 
     AndroidSpeechSynthesizer(Application application, VoiceConfig configuration,
-                             AndroidAudioHandler audioHandler, BluetoothSco bluetoothSco, ILogger logger) {
+                                    AndroidAudioHandler audioHandler,
+                                    BluetoothSco bluetoothSco, ILogger logger) {
         this.application = application;
         this.listenersMap = new LinkedHashMap<>();
         this.queue = new LinkedHashMap<>();
