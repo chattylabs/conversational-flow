@@ -10,7 +10,7 @@
 Part of the [Voice User Interaction SDK]().
 
 The library wraps and combines isolated platform resources and builds 
-a **Component** capable of create a communication flow with ease.
+a **Software Component** capable of create a communication flow with ease.
 
 Besides, it also lets you choose between different providers like Android, Google Cloud, (Amazon, Wit.ai, Temi, Bing Speech, IBM, ...)
 
