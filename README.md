@@ -1,10 +1,10 @@
 # Conversational Flow Component - Android
 
 |                   	        | TYPE  	| VERSION 	                | STATUS 	             | COVERAGE  |
-|---------------------------    |-------	|----------------------	    |--------------------    |:--------: |
-| `conversational-flow-core` 	| Core  	| ![Latest version][i1]	    | ![Build Status][i4]    | 0%        |
-| `addon-android-speech`    	| Addon 	| ![Latest version][i2]     | ![Build Status][i5]    | 0%        |
-| `addon-google-speech`     	| Addon 	| ![Latest version][i3]     | ![Build Status][i6]    | 0%        |
+|---------------------------    |:-------:	|----------------------	    |--------------------    |:--------: |
+| `conversational-flow-core` 	| _core_  	| ![Latest version][i1]	    | ![Build Status][i4]    | 0%        |
+| `addon-android-speech`    	| _addon_ 	| ![Latest version][i2]     | ![Build Status][i5]    | 0%        |
+| `addon-google-speech`     	| _addon_	| ![Latest version][i3]     | ![Build Status][i6]    | 0%        |
 
 
 Part of the [Voice User Interaction SDK]().
