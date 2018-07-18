@@ -27,14 +27,14 @@ dependencies {
     kapt 'com.google.dagger:dagger-compiler:2.15'
     // SDK
     api 'com.chattylabs.sdk.android:common:+'
-    api project(":sdk-voice-interaction")
+    api project(':sdk-conversational-flow-core')
 }
 
 publish {
     userOrg = 'chattylabs'
     groupId = project.group
-    artifactId = project.name
+    artifactId = project.name.replace("sdk-", "")
     publishVersion = project.version
-    desc = 'Android Speech addon for the Voice Interaction Component (ChattyLabs SDK)'
-    website = 'https://github.com/chattylabs/android-sdk-voice-interaction'
+    desc = 'Android Speech Addon for the Conversational Flow Component (VUI SDK)'
+    website = 'https://github.com/chattylabs/sdk-conversational-flow'
 }

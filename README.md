@@ -1,13 +1,13 @@
 # Conversational Flow Component - Android
 
-|                   	        | TYPE  	| VERSION 	                | STATUS 	          |
-|-------------------	        |-------	|----------------------	    |-------------------- |
-| `conversational-flow-core` 	| Core  	| ![Latest version][i1]	    | ![Build Status][i4] |
-| `addon-android-speech`    	| Addon 	| ![Latest version][i2]     | ![Build Status][i5] |
-| `addon-google-speech`     	| Addon 	| ![Latest version][i3]     | ![Build Status][i6] |
+|                   	        | TYPE  	| VERSION 	                | STATUS 	          |     | COVERAGE 	   |
+|-------------------	        |-------	|----------------------	    |-------------------- |	    |:------------:|
+| `conversational-flow-core` 	| Core  	| ![Latest version][i1]	    | ![Build Status][i4] |	    | 0%           |
+| `addon-android-speech`    	| Addon 	| ![Latest version][i2]     | ![Build Status][i5] |	    | 0%           |
+| `addon-google-speech`     	| Addon 	| ![Latest version][i3]     | ![Build Status][i6] |	    | 0%           |
 
 
-Part of the [ChattyLabs Voice User Interaction SDK]().
+Part of the [Voice User Interaction SDK]().
 
 The library wraps and combines isolated platform resources and builds 
 a **Component** capable of create a communication flow with ease.

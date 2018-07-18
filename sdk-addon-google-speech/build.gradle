@@ -60,7 +60,7 @@ dependencies {
 
     // SDK
     api 'com.chattylabs.sdk.android:common:+'
-    api project(":sdk-voice-interaction")
+    api project(':sdk-conversational-flow-core')
 
     // Google Cloud
     implementation "com.google.cloud:google-cloud-texttospeech:0.53.0-beta"
@@ -81,8 +81,8 @@ dependencies {
 publish {
     userOrg = 'chattylabs'
     groupId = project.group
-    artifactId = project.name
+    artifactId = project.name.replace("sdk-", "")
     publishVersion = project.version
-    desc = 'Google Speech addon for the Voice Interaction Component (ChattyLabs SDK)'
-    website = 'https://github.com/chattylabs/android-sdk-voice-interaction'
+    desc = 'Google Speech Addon for the Conversational Flow Component (VUI SDK)'
+    website = 'https://github.com/chattylabs/sdk-conversational-flow'
 }
