@@ -1,4 +1,4 @@
-# Voice Interaction Component
+# Conversational Flow Component - Android
 
 |                   	| TYPE  	| VERSION 	                | STATUS 	          |
 |-------------------	|-------	|----------------------	    |-------------------- |
@@ -7,16 +7,16 @@
 | Google Speech     	| Addon 	| ![Latest version][i3]     | ![Build Status][i6] |
 
 
-This library is a Component part of the [ChattyLabs SDK]().
+Part of the [ChattyLabs Voice User Interaction SDK]().
 
-The library wraps and combines single Android resources like _TextToSpeech_ or _SpeechRecognizer_ and builds 
-a **Conversational Component** capable of create a communication flow with ease.
+The library wraps and combines isolated platform resources and builds 
+a **Component** capable of create a communication flow with ease.
 
-Besides, it also lets you choose between different providers like Google Cloud or Amazon.
+Besides, it also lets you choose between different providers like Android, Google Cloud, (Amazon, Wit.ai, Temi, Bing Speech, IBM, ...)
 
 <p align="center"><img src="assets/demo-sample.jpg" alt="demo-sample"/></p>
 
-## Why choosing this SDK?
+## Why choosing this library?
 
 Some devices don't have configured the resources you need to run a conversation in your app, 
 a developer needs to learn and test quite a lot before even to start coding for voice capabilities, noise is impacting 
