@@ -32,6 +32,7 @@ Also, you can choose from the following providers:
     - [SpeechRecognizer](https://developer.android.com/reference/android/speech/SpeechRecognizer)
 - [Google Cloud Components](https://cloud.google.com/)
     - [Speech-To-Text](https://cloud.google.com/speech-to-text/)
+    - [Text-To-Speech](https://cloud.google.com/text-to-speech/)
     
     
 ## Prerequisites
