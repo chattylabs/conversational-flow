@@ -1,6 +1,5 @@
 package com.chattylabs.sdk.android.voice;
 
-import android.app.Application;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -162,7 +161,7 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
 
     @SuppressWarnings("unchecked")
     interface SpeechSynthesizer {
-        void setup(Application application, OnSynthesizerInitialised onSynthesizerInitialised);
+        void setup(OnSynthesizerInitialised onSynthesizerInitialised);
 
         void addFilter(TextFilter filter);
 

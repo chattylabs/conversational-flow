@@ -62,6 +62,9 @@ dependencies {
     api 'com.chattylabs.sdk.android:common:+'
     api project(":sdk-voice-interaction")
 
+    // Google Cloud
+    implementation "com.google.cloud:google-cloud-texttospeech:0.53.0-beta"
+
     // gRPC
     implementation "io.grpc:grpc-okhttp:$grpcVersion"
     implementation "io.grpc:grpc-protobuf-lite:$grpcVersion"

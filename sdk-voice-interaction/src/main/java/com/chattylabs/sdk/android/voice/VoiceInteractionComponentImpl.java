@@ -163,7 +163,7 @@ final class VoiceInteractionComponentImpl implements VoiceInteractionComponent {
     public void setup(Context context, OnSetup onSetup) {
         Application application = (Application) context.getApplicationContext();
         init(application);
-        speechSynthesizer.setup(application, synthesizerStatus -> {
+        speechSynthesizer.setup(synthesizerStatus -> {
             int androidRecognizerStatus = android.speech.SpeechRecognizer.isRecognitionAvailable(application) ?
                     RECOGNIZER_AVAILABLE : RECOGNIZER_NOT_AVAILABLE;
             int speechRecognizerStatus = voiceConfig.getRecognizerServiceType() ==

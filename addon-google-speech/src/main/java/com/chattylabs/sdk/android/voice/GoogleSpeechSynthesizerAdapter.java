@@ -1,8 +1,6 @@
 package com.chattylabs.sdk.android.voice;
 
-import android.speech.tts.UtteranceProgressListener;
-
-abstract class AndroidSpeechSynthesizerUtteranceAdapter extends UtteranceProgressListener {
+abstract class GoogleSpeechSynthesizerAdapter {
     private VoiceInteractionComponent.OnSynthesizerStart onStartedListener;
     private VoiceInteractionComponent.OnSynthesizerDone onDoneListener;
     private VoiceInteractionComponent.OnSynthesizerError onErrorListener;
@@ -11,7 +9,7 @@ abstract class AndroidSpeechSynthesizerUtteranceAdapter extends UtteranceProgres
         return onStartedListener != null ? onStartedListener : item -> {};
     }
 
-    public AndroidSpeechSynthesizerUtteranceAdapter setOnStartedListener(VoiceInteractionComponent.OnSynthesizerStart onStartedListener) {
+    public GoogleSpeechSynthesizerAdapter setOnStartedListener(VoiceInteractionComponent.OnSynthesizerStart onStartedListener) {
         this.onStartedListener = onStartedListener;
         return this;
     }
@@ -20,7 +18,7 @@ abstract class AndroidSpeechSynthesizerUtteranceAdapter extends UtteranceProgres
         return onDoneListener != null ? onDoneListener : item -> {};
     }
 
-    public AndroidSpeechSynthesizerUtteranceAdapter setOnDoneListener(VoiceInteractionComponent.OnSynthesizerDone onDoneListener) {
+    public GoogleSpeechSynthesizerAdapter setOnDoneListener(VoiceInteractionComponent.OnSynthesizerDone onDoneListener) {
         this.onDoneListener = onDoneListener;
         return this;
     }
@@ -29,7 +27,7 @@ abstract class AndroidSpeechSynthesizerUtteranceAdapter extends UtteranceProgres
         return onErrorListener != null ? onErrorListener : (item1, item2) -> {};
     }
 
-    public AndroidSpeechSynthesizerUtteranceAdapter setOnErrorListener(VoiceInteractionComponent.OnSynthesizerError onErrorListener) {
+    public GoogleSpeechSynthesizerAdapter setOnErrorListener(VoiceInteractionComponent.OnSynthesizerError onErrorListener) {
         this.onErrorListener = onErrorListener;
         return this;
     }
@@ -40,24 +38,12 @@ abstract class AndroidSpeechSynthesizerUtteranceAdapter extends UtteranceProgres
     protected void startTimeout(String utteranceId) {
     }
 
-    /**
-     * @inherited
-     */
-    @Override
     public void onStart(String utteranceId) {
     }
 
-    /**
-     * @inherited
-     */
-    @Override
     public void onDone(String utteranceId) {
     }
 
-    /**
-     * @inherited
-     */
-    @Override @SuppressWarnings("deprecation")
-    final public void onError(String utteranceId) {
+    public void onError(String utteranceId, int errorCode) {
     }
 }

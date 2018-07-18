@@ -71,7 +71,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
     private String lastQueueId;
     private Application application;
     private TextToSpeech tts; // released
-    private AndroidSpeechSynthesizerUtteranceAdapter utteranceListener; // released
+    private AndroidSpeechSynthesizerAdapter utteranceListener; // released
     private AndroidAudioHandler audioHandler;
     private BluetoothSco bluetoothSco;
 
@@ -93,7 +93,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
     }
 
     @Override
-    public void playText(String text, String queueId, SynthesizerListenerContract... listeners) {
+    public <T extends VoiceInteractionComponent.SynthesizerListenerContract> void playText(String text, String queueId, T... listeners) {
         playText(text, queueId, generateUtteranceListener(listeners));
     }
 
@@ -137,10 +137,10 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
     }
 
     @Override
-    public void playText(String text, SynthesizerListenerContract... listeners) {
+    public <T extends VoiceInteractionComponent.SynthesizerListenerContract> void playText(String text, T... listeners) {
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
         logger.i(TAG, "TTS - prepare to immediately playText \"" + text + "\" - " + utteranceId);
-        AndroidSpeechSynthesizerUtteranceAdapter listener = generateUtteranceListener(listeners);
+        AndroidSpeechSynthesizerAdapter listener = generateUtteranceListener(listeners);
         if (listenersMap.containsKey(utteranceId)) {
             utteranceId = utteranceId + "_" + listenersMap.size();
         }
@@ -164,11 +164,11 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
     }
 
     @Override
-    public void playSilence(long durationInMillis, String queueId, SynthesizerListenerContract... listeners) {
+    public  <T extends VoiceInteractionComponent.SynthesizerListenerContract> void playSilence(long durationInMillis, String queueId, T... listeners) {
         if (durationInMillis <= 0) throw new IllegalArgumentException("Silence duration must be greater than 0");
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
         logger.i(TAG, "TTS - play silence with Queue: <" + queueId + "> - " + utteranceId);
-        AndroidSpeechSynthesizerUtteranceAdapter listener = generateUtteranceListener(listeners);
+        AndroidSpeechSynthesizerAdapter listener = generateUtteranceListener(listeners);
         if (listenersMap.containsKey(utteranceId)) {
             utteranceId = utteranceId + "_" + listenersMap.size();
         }
@@ -202,11 +202,11 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
     }
 
     @Override
-    public void playSilence(long durationInMillis, SynthesizerListenerContract... listeners) {
+    public  <T extends VoiceInteractionComponent.SynthesizerListenerContract> void playSilence(long durationInMillis, T... listeners) {
         if (durationInMillis <= 0) throw new IllegalArgumentException("Silence duration must be greater than 0");
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
         logger.i(TAG, "TTS - play silence immediately - " + utteranceId);
-        AndroidSpeechSynthesizerUtteranceAdapter listener = generateUtteranceListener(listeners);
+        AndroidSpeechSynthesizerAdapter listener = generateUtteranceListener(listeners);
         if (listenersMap.containsKey(utteranceId)) {
             utteranceId = utteranceId + "_" + listenersMap.size();
         }
@@ -228,8 +228,8 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
         }, null);
     }
 
-    private AndroidSpeechSynthesizerUtteranceAdapter generateUtteranceListener(@NonNull SynthesizerListenerContract... listeners) {
-        AndroidSpeechSynthesizerUtteranceAdapter listener = new AndroidSpeechSynthesizerUtteranceAdapter()
+    private AndroidSpeechSynthesizerAdapter generateUtteranceListener(@NonNull SynthesizerListenerContract... listeners) {
+        AndroidSpeechSynthesizerAdapter listener = new AndroidSpeechSynthesizerAdapter()
         {
             @Override
             public void onStart(String utteranceId) {
@@ -520,8 +520,8 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
         }
     }
 
-    private AndroidSpeechSynthesizerUtteranceAdapter initUtterancesListener(OnSynthesizerInitialised onCheckLanguageInit) {
-        return new AndroidSpeechSynthesizerUtteranceAdapter() {
+    private AndroidSpeechSynthesizerAdapter initUtterancesListener(OnSynthesizerInitialised onCheckLanguageInit) {
+        return new AndroidSpeechSynthesizerAdapter() {
 
             private long timestamp;
             private TimerTask task;
@@ -646,7 +646,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
                 reviewAgain = false;
                 shutdown();
                 logger.v(TAG, "TTS - double checking!");
-                setup(application, onInit);
+                setup(onInit);
             }
             else {
                 reviewAgain = true;
@@ -688,9 +688,8 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
     }
 
     @Override
-    public void setup(Application application, OnSynthesizerInitialised onSynthesizerInitialised) {
+    public void setup(OnSynthesizerInitialised onSynthesizerInitialised) {
         logger.i(TAG, "TTS - setup and check language");
-        this.application = application;
         try {
             initTts(status -> {
                 if (status == TextToSpeech.SUCCESS) {
