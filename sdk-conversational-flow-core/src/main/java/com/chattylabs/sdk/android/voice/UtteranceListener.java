@@ -14,6 +14,10 @@ interface UtteranceListener {
 
     UtteranceListener setOnErrorListener(ConversationalFlowComponent.OnSynthesizerError onErrorListener);
 
+    void clearTimeout();
+
+    void startTimeout(String utteranceId);
+
     void onStart(String utteranceId);
 
     void onDone(String utteranceId);
