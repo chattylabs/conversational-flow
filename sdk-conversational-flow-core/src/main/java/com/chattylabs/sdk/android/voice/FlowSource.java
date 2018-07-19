@@ -2,6 +2,6 @@ package com.chattylabs.sdk.android.voice;
 
 import android.support.annotation.NonNull;
 
-public interface EdgeSource {
-    EdgeTarget from(@NonNull VoiceNode node);
+public interface FlowSource {
+    FlowTarget from(@NonNull VoiceNode node);
 }

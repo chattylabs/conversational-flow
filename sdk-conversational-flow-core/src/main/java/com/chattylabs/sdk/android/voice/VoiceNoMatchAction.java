@@ -7,7 +7,7 @@ public class VoiceNoMatchAction implements VoiceActionContract {
     public final String lowSoundErrorMessage;
     public final String listeningErrorMessage;
     public final String unexpectedErrorMessage;
-    public final VoiceInteractionComponent.Consumer<List<String>> onNotMatched;
+    public final ConversationalFlowComponent.Consumer<List<String>> onNotMatched;
 
     private VoiceNoMatchAction(Builder builder) {
         retry = builder.retry;
@@ -26,7 +26,7 @@ public class VoiceNoMatchAction implements VoiceActionContract {
         private String lowSoundErrorMessage;
         private String listeningErrorMessage;
         private String unexpectedErrorMessage;
-        private VoiceInteractionComponent.Consumer<List<String>> onNotMatched;
+        private ConversationalFlowComponent.Consumer<List<String>> onNotMatched;
 
         private Builder() {}
 
@@ -50,7 +50,7 @@ public class VoiceNoMatchAction implements VoiceActionContract {
             return this;
         }
 
-        public Builder setOnNotMatched(VoiceInteractionComponent.Consumer<List<String>> onNotMatched) {
+        public Builder setOnNotMatched(ConversationalFlowComponent.Consumer<List<String>> onNotMatched) {
             this.onNotMatched = onNotMatched;
             return this;
         }

@@ -4,13 +4,13 @@ import android.support.annotation.RawRes;
 
 import java.util.Date;
 
-public class DefaultAccessToken {
+public class AccessTokenDefault {
 
     private final String tokenValue;
     private final Long expirationTimeMillis;
     private final @RawRes int rawResourceId;
 
-    public DefaultAccessToken(@RawRes int rawResourceId) {
+    public AccessTokenDefault(@RawRes int rawResourceId) {
         tokenValue = null;
         expirationTimeMillis = null;
         this.rawResourceId = rawResourceId;
@@ -20,7 +20,7 @@ public class DefaultAccessToken {
      * @param tokenValue String representation of the access token.
      * @param expirationTime Time when access token will expire.
      */
-    public DefaultAccessToken(String tokenValue, Date expirationTime) {
+    public AccessTokenDefault(String tokenValue, Date expirationTime) {
         this.tokenValue = tokenValue;
         this.expirationTimeMillis = (expirationTime == null) ? null : expirationTime.getTime();
         this.rawResourceId = 0;

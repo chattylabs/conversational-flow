@@ -1,33 +1,33 @@
 package com.chattylabs.sdk.android.voice;
 
 abstract class GoogleSpeechSynthesizerAdapter {
-    private VoiceInteractionComponent.OnSynthesizerStart onStartedListener;
-    private VoiceInteractionComponent.OnSynthesizerDone onDoneListener;
-    private VoiceInteractionComponent.OnSynthesizerError onErrorListener;
+    private ConversationalFlowComponent.OnSynthesizerStart onStartedListener;
+    private ConversationalFlowComponent.OnSynthesizerDone onDoneListener;
+    private ConversationalFlowComponent.OnSynthesizerError onErrorListener;
 
-    public VoiceInteractionComponent.OnSynthesizerStart getOnStartedListener() {
+    public ConversationalFlowComponent.OnSynthesizerStart getOnStartedListener() {
         return onStartedListener != null ? onStartedListener : item -> {};
     }
 
-    public GoogleSpeechSynthesizerAdapter setOnStartedListener(VoiceInteractionComponent.OnSynthesizerStart onStartedListener) {
+    public GoogleSpeechSynthesizerAdapter setOnStartedListener(ConversationalFlowComponent.OnSynthesizerStart onStartedListener) {
         this.onStartedListener = onStartedListener;
         return this;
     }
 
-    public VoiceInteractionComponent.OnSynthesizerDone getOnDoneListener() {
+    public ConversationalFlowComponent.OnSynthesizerDone getOnDoneListener() {
         return onDoneListener != null ? onDoneListener : item -> {};
     }
 
-    public GoogleSpeechSynthesizerAdapter setOnDoneListener(VoiceInteractionComponent.OnSynthesizerDone onDoneListener) {
+    public GoogleSpeechSynthesizerAdapter setOnDoneListener(ConversationalFlowComponent.OnSynthesizerDone onDoneListener) {
         this.onDoneListener = onDoneListener;
         return this;
     }
 
-    public VoiceInteractionComponent.OnSynthesizerError getOnErrorListener() {
+    public ConversationalFlowComponent.OnSynthesizerError getOnErrorListener() {
         return onErrorListener != null ? onErrorListener : (item1, item2) -> {};
     }
 
-    public GoogleSpeechSynthesizerAdapter setOnErrorListener(VoiceInteractionComponent.OnSynthesizerError onErrorListener) {
+    public GoogleSpeechSynthesizerAdapter setOnErrorListener(ConversationalFlowComponent.OnSynthesizerError onErrorListener) {
         this.onErrorListener = onErrorListener;
         return this;
     }

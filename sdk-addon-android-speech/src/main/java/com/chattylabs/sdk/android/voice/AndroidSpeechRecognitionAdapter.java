@@ -22,11 +22,11 @@ abstract class AndroidSpeechRecognitionAdapter implements RecognitionListener {
     static final int LOW_SOUND = 2;
     static final int NORMAL_SOUND = 3;
 
-    private VoiceInteractionComponent.OnRecognizerReady onReady;
-    private VoiceInteractionComponent.OnRecognizerResults onResults;
-    private VoiceInteractionComponent.OnRecognizerPartialResults onPartialResults;
-    private VoiceInteractionComponent.OnRecognizerMostConfidentResult onMostConfidentResult;
-    private VoiceInteractionComponent.OnRecognizerError onError;
+    private ConversationalFlowComponent.OnRecognizerReady onReady;
+    private ConversationalFlowComponent.OnRecognizerResults onResults;
+    private ConversationalFlowComponent.OnRecognizerPartialResults onPartialResults;
+    private ConversationalFlowComponent.OnRecognizerMostConfidentResult onMostConfidentResult;
+    private ConversationalFlowComponent.OnRecognizerError onError;
 
     private boolean tryAgain;
     private int soundLevel = UNKNOWN;
@@ -36,44 +36,44 @@ abstract class AndroidSpeechRecognitionAdapter implements RecognitionListener {
     private int lowSoundIntents;
     private int normalSoundIntents;
 
-    public void setOnReady(VoiceInteractionComponent.OnRecognizerReady onReady) {
+    public void setOnReady(ConversationalFlowComponent.OnRecognizerReady onReady) {
         this.onReady = onReady;
     }
 
-    public VoiceInteractionComponent.OnRecognizerResults getOnResults() {
+    public ConversationalFlowComponent.OnRecognizerResults getOnResults() {
         return onResults;
     }
 
-    public AndroidSpeechRecognitionAdapter setOnResults(VoiceInteractionComponent.OnRecognizerResults onResults) {
+    public AndroidSpeechRecognitionAdapter setOnResults(ConversationalFlowComponent.OnRecognizerResults onResults) {
         this.onResults = onResults;
         return this;
     }
 
-    public VoiceInteractionComponent.OnRecognizerPartialResults getOnPartialResults() {
+    public ConversationalFlowComponent.OnRecognizerPartialResults getOnPartialResults() {
         return onPartialResults;
     }
 
     public AndroidSpeechRecognitionAdapter setOnPartialResults(
-            VoiceInteractionComponent.OnRecognizerPartialResults onPartialResults) {
+            ConversationalFlowComponent.OnRecognizerPartialResults onPartialResults) {
         this.onPartialResults = onPartialResults;
         return this;
     }
 
-    public VoiceInteractionComponent.OnRecognizerMostConfidentResult getOnMostConfidentResult() {
+    public ConversationalFlowComponent.OnRecognizerMostConfidentResult getOnMostConfidentResult() {
         return onMostConfidentResult;
     }
 
     public AndroidSpeechRecognitionAdapter setOnMostConfidentResult(
-            VoiceInteractionComponent.OnRecognizerMostConfidentResult onMostConfidentResult) {
+            ConversationalFlowComponent.OnRecognizerMostConfidentResult onMostConfidentResult) {
         this.onMostConfidentResult = onMostConfidentResult;
         return this;
     }
 
-    public VoiceInteractionComponent.OnRecognizerError getOnError() {
+    public ConversationalFlowComponent.OnRecognizerError getOnError() {
         return onError;
     }
 
-    public AndroidSpeechRecognitionAdapter setOnError(VoiceInteractionComponent.OnRecognizerError onError) {
+    public AndroidSpeechRecognitionAdapter setOnError(ConversationalFlowComponent.OnRecognizerError onError) {
         this.onError = onError;
         return this;
     }

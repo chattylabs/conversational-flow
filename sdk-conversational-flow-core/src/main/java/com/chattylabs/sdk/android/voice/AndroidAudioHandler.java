@@ -38,9 +38,9 @@ public class AndroidAudioHandler {
     public AndroidAudioHandler(AudioManager audioManager,
                         VoiceConfig configuration,
                         ILogger logger) {
+        this.logger = logger;
         this.audioManager = audioManager;
         this.configuration = configuration;
-        this.logger = logger;
         this.audioAttributes = new AudioAttributes.Builder()
                 .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                 .setUsage(configuration.isBluetoothScoRequired() ?
@@ -76,8 +76,7 @@ public class AndroidAudioHandler {
             setAudioMode();
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
                 requestAudioFocusMayDuck = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(
-                        null,
-                        getMainStreamType(),
+                        null, getMainStreamType(),
                         AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
             } else {
                 focusRequestMayDuck = new AudioFocusRequest
@@ -107,8 +106,7 @@ public class AndroidAudioHandler {
             setAudioMode();
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
                 requestAudioFocusExclusive = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(
-                        null,
-                        getMainStreamType(),
+                        null, getMainStreamType(),
                         AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE);
 
             } else {
@@ -185,5 +183,21 @@ public class AndroidAudioHandler {
         audioManager.setStreamVolume(AudioManager.STREAM_NOTIFICATION, notifVolume, 0);
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, musicVolume, 0);
         audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL, callVolume, 0);
+    }
+
+    public boolean isBluetoothScoAvailableOffCall() {
+        return audioManager.isBluetoothScoAvailableOffCall();
+    }
+
+    public void setBluetoothScoOn(boolean on) {
+        audioManager.setBluetoothScoOn(on);
+    }
+
+    public void startBluetoothSco() {
+        audioManager.startBluetoothSco();
+    }
+
+    public void stopBluetoothSco() {
+        audioManager.stopBluetoothSco();
     }
 }

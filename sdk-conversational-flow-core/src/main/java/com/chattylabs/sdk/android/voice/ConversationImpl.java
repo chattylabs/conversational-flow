@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-class ConversationImpl implements Conversation {
+class ConversationImpl extends Flow.Edge implements Conversation {
     private final String TAG = Tag.make("Conversation");
 
     // Data
@@ -21,8 +21,8 @@ class ConversationImpl implements Conversation {
     private final SimpleArrayMap<VoiceNode, ArrayList<VoiceNode>> graph = new SimpleArrayMap<>();
 
     // Resources
-    private VoiceInteractionComponent.SpeechSynthesizer speechSynthesizer;
-    private VoiceInteractionComponent.SpeechRecognizer speechRecognizer;
+    private ConversationalFlowComponent.SpeechSynthesizer speechSynthesizer;
+    private ConversationalFlowComponent.SpeechRecognizer speechRecognizer;
     private Flow flow;
     private VoiceNode current;
     private int flags;
@@ -30,8 +30,8 @@ class ConversationImpl implements Conversation {
     // Log stuff
     private ILogger logger;
 
-    ConversationImpl(VoiceInteractionComponent.SpeechSynthesizer speechSynthesizer,
-                     VoiceInteractionComponent.SpeechRecognizer speechRecognizer,
+    ConversationImpl(ConversationalFlowComponent.SpeechSynthesizer speechSynthesizer,
+                     ConversationalFlowComponent.SpeechRecognizer speechRecognizer,
                      ILogger logger) {
         this.speechSynthesizer = speechSynthesizer;
         this.speechRecognizer = speechRecognizer;
@@ -60,13 +60,13 @@ class ConversationImpl implements Conversation {
     }
 
     @Override
-    public EdgeSource prepare() {
+    public Flow prepare() {
         if (flow == null) flow = new Flow(this);
         return flow;
     }
 
     @Override
-    public void addEdge(@NonNull VoiceNode node, @NonNull VoiceNode incomingEdge) {
+    void addEdge(@NonNull VoiceNode node, @NonNull VoiceNode incomingEdge) {
         if (!graph.containsKey(node) || !graph.containsKey(incomingEdge)) {
             throw new IllegalArgumentException("All nodes must be present in the graph " +
                     "before being added as an edge");
@@ -104,7 +104,7 @@ class ConversationImpl implements Conversation {
                 current = message;
                 speechSynthesizer.playText(
                         message.text,
-                        (VoiceInteractionComponent.OnSynthesizerDone) utteranceId -> {
+                        (ConversationalFlowComponent.OnSynthesizerDone) utteranceId -> {
                             if (message.onSuccess != null) {
                                 message.onSuccess.run();
                             }
@@ -125,36 +125,36 @@ class ConversationImpl implements Conversation {
                     logger.v(TAG, "Conversation - running Capture");
                     // Listen Only
                     speechRecognizer.listen(
-                            (VoiceInteractionComponent.OnRecognizerMostConfidentResult) result -> {
+                            (ConversationalFlowComponent.OnRecognizerMostConfidentResult) result -> {
                                 current = captureAction[0];
-                                VoiceInteractionComponent.Consumer<String> consumer = captureAction[0].onCaptured;
+                                ConversationalFlowComponent.Consumer<String> consumer = captureAction[0].onCaptured;
                                 if (consumer != null) consumer.accept(result);
                                 else next();
                             },
-                            (VoiceInteractionComponent.OnRecognizerError) (error, originalError) -> {
+                            (ConversationalFlowComponent.OnRecognizerError) (error, originalError) -> {
                                 logger.e(TAG, "Conversation - listening Capture error");
-                                boolean unexpected = error == VoiceInteractionComponent.RECOGNIZER_STOPPED_TOO_EARLY_ERROR;
-                                boolean isLowSound = error == VoiceInteractionComponent.RECOGNIZER_LOW_SOUND_ERROR;
-                                boolean isNoSound = error == VoiceInteractionComponent.RECOGNIZER_NO_SOUND_ERROR;
+                                boolean unexpected = error == ConversationalFlowComponent.RECOGNIZER_STOPPED_TOO_EARLY_ERROR;
+                                boolean isLowSound = error == ConversationalFlowComponent.RECOGNIZER_LOW_SOUND_ERROR;
+                                boolean isNoSound = error == ConversationalFlowComponent.RECOGNIZER_NO_SOUND_ERROR;
                                 if (noMatchAction[0] != null)
                                     noMatch(noMatchAction[0], unexpected, isLowSound, isNoSound, null);
                             });
                 } else {
                     logger.v(TAG, "Conversation - running Actions");
                     speechRecognizer.listen(
-                            (VoiceInteractionComponent.OnRecognizerResults) (results, confidences) -> {
-                                String result = VoiceInteractionComponent.selectMostConfidentResult(results, confidences);
+                            (ConversationalFlowComponent.OnRecognizerResults) (results, confidences) -> {
+                                String result = ConversationalFlowComponent.selectMostConfidentResult(results, confidences);
                                 processResults(Collections.singletonList(result), actions, false);
                             },
-                            (VoiceInteractionComponent.OnRecognizerPartialResults) (results, confidences) -> {
-                                String result = VoiceInteractionComponent.selectMostConfidentResult(results, confidences);
+                            (ConversationalFlowComponent.OnRecognizerPartialResults) (results, confidences) -> {
+                                String result = ConversationalFlowComponent.selectMostConfidentResult(results, confidences);
                                 processResults(Collections.singletonList(result), actions, true);
                             },
-                            (VoiceInteractionComponent.OnRecognizerError) (error, originalError) -> {
+                            (ConversationalFlowComponent.OnRecognizerError) (error, originalError) -> {
                                 logger.e(TAG, "Conversation - listening Action error");
-                                boolean unexpected = error == VoiceInteractionComponent.RECOGNIZER_STOPPED_TOO_EARLY_ERROR;
-                                boolean isLowSound = error == VoiceInteractionComponent.RECOGNIZER_LOW_SOUND_ERROR;
-                                boolean isNoSound = error == VoiceInteractionComponent.RECOGNIZER_NO_SOUND_ERROR;
+                                boolean unexpected = error == ConversationalFlowComponent.RECOGNIZER_STOPPED_TOO_EARLY_ERROR;
+                                boolean isLowSound = error == ConversationalFlowComponent.RECOGNIZER_LOW_SOUND_ERROR;
+                                boolean isNoSound = error == ConversationalFlowComponent.RECOGNIZER_NO_SOUND_ERROR;
                                 if (noMatchAction[0] != null)
                                     noMatch(noMatchAction[0], unexpected, isLowSound, isNoSound, null);
                             });
@@ -173,7 +173,7 @@ class ConversationImpl implements Conversation {
                 VoiceAction action = (VoiceAction) n;
                 if (results != null && !results.isEmpty() && results.get(0).length() > 0) {
                     List<String> expected = Arrays.asList(action.expectedResults);
-                    boolean matches = VoiceInteractionComponent.anyMatch(results, expected);
+                    boolean matches = ConversationalFlowComponent.anyMatch(results, expected);
                     if (matches) {
                         logger.i(TAG, "Conversation - matched with: " + expected);
                         speechRecognizer.cancel();
@@ -225,7 +225,7 @@ class ConversationImpl implements Conversation {
 
     private void play(String text, Runnable runnable) {
         // TODO: implement onError
-        speechSynthesizer.playText(text, (VoiceInteractionComponent.OnSynthesizerDone) utteranceId -> runnable.run());
+        speechSynthesizer.playText(text, (ConversationalFlowComponent.OnSynthesizerDone) utteranceId -> runnable.run());
     }
 
     @NonNull

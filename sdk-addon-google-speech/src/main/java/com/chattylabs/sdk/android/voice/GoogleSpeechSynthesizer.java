@@ -11,7 +11,6 @@ import com.chattylabs.sdk.android.common.internal.ILogger;
 import com.google.cloud.texttospeech.v1beta1.AudioConfig;
 import com.google.cloud.texttospeech.v1beta1.AudioEncoding;
 import com.google.cloud.texttospeech.v1beta1.SsmlVoiceGender;
-import com.google.cloud.texttospeech.v1beta1.SynthesizeSpeechResponse;
 import com.google.cloud.texttospeech.v1beta1.TextToSpeechClient;
 import com.google.cloud.texttospeech.v1beta1.VoiceSelectionParams;
 
@@ -23,10 +22,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.*;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.DEFAULT_QUEUE_ID;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.SYNTHESIZER_AVAILABLE;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.SYNTHESIZER_NOT_AVAILABLE_ERROR;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.*;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.DEFAULT_QUEUE_ID;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SYNTHESIZER_AVAILABLE;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SYNTHESIZER_NOT_AVAILABLE_ERROR;
 
 public class GoogleSpeechSynthesizer implements SpeechSynthesizer {
     private static final String TAG = Tag.make("GoogleSpeechSynthesizer");
