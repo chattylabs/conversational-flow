@@ -9,7 +9,6 @@ import android.text.TextUtils;
 
 import com.chattylabs.sdk.android.common.RequiredPermissions;
 import com.chattylabs.sdk.android.common.Tag;
-import com.chattylabs.sdk.android.common.internal.ILogger;
 
 import java.util.List;
 import java.util.Objects;
@@ -150,6 +149,8 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
 
         void shutdown();
 
+        void release();
+
         void cancel();
 
         void setRmsDebug(boolean debug);
@@ -164,6 +165,8 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
         void setup(OnSynthesizerInitialised onSynthesizerInitialised);
 
         void addFilter(TextFilter filter);
+
+        List<TextFilter> getFilters();
 
         <T extends SynthesizerListenerContract> void playText(String text, String queueId, T... listeners);
 
@@ -182,6 +185,8 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
         void resume();
 
         void shutdown();
+
+        void release();
 
         boolean isEmpty();
 

@@ -1,47 +1,51 @@
 package com.chattylabs.sdk.android.voice;
 
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.*;
+
 abstract class GoogleSpeechSynthesizerAdapter implements UtteranceListener {
-    private ConversationalFlowComponent.OnSynthesizerStart onStartedListener;
-    private ConversationalFlowComponent.OnSynthesizerDone onDoneListener;
-    private ConversationalFlowComponent.OnSynthesizerError onErrorListener;
+    private OnSynthesizerStart onStartedListener;
+    private OnSynthesizerDone onDoneListener;
+    private OnSynthesizerError onErrorListener;
 
     @Override
-    public ConversationalFlowComponent.OnSynthesizerStart getOnStartedListener() {
+    public OnSynthesizerStart getOnStartedListener() {
         return onStartedListener != null ? onStartedListener : item -> {};
     }
 
     @Override
-    public GoogleSpeechSynthesizerAdapter setOnStartedListener(ConversationalFlowComponent.OnSynthesizerStart onStartedListener) {
+    public GoogleSpeechSynthesizerAdapter setOnStartedListener(OnSynthesizerStart onStartedListener) {
         this.onStartedListener = onStartedListener;
         return this;
     }
 
     @Override
-    public ConversationalFlowComponent.OnSynthesizerDone getOnDoneListener() {
+    public OnSynthesizerDone getOnDoneListener() {
         return onDoneListener != null ? onDoneListener : item -> {};
     }
 
     @Override
-    public GoogleSpeechSynthesizerAdapter setOnDoneListener(ConversationalFlowComponent.OnSynthesizerDone onDoneListener) {
+    public GoogleSpeechSynthesizerAdapter setOnDoneListener(OnSynthesizerDone onDoneListener) {
         this.onDoneListener = onDoneListener;
         return this;
     }
 
     @Override
-    public ConversationalFlowComponent.OnSynthesizerError getOnErrorListener() {
+    public OnSynthesizerError getOnErrorListener() {
         return onErrorListener != null ? onErrorListener : (item1, item2) -> {};
     }
 
     @Override
-    public GoogleSpeechSynthesizerAdapter setOnErrorListener(ConversationalFlowComponent.OnSynthesizerError onErrorListener) {
+    public GoogleSpeechSynthesizerAdapter setOnErrorListener(OnSynthesizerError onErrorListener) {
         this.onErrorListener = onErrorListener;
         return this;
     }
 
-    protected void clearTimeout() {
+    @Override
+    public void clearTimeout() {
     }
 
-    protected void startTimeout(String utteranceId) {
+    @Override
+    public void startTimeout(String utteranceId) {
     }
 
     @Override

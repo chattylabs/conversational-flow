@@ -2,67 +2,62 @@ package com.chattylabs.sdk.android.voice;
 
 import android.speech.tts.UtteranceProgressListener;
 
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.*;
+
 abstract class AndroidSpeechSynthesizerAdapter extends UtteranceProgressListener implements UtteranceListener {
-    private ConversationalFlowComponent.OnSynthesizerStart onStartedListener;
-    private ConversationalFlowComponent.OnSynthesizerDone onDoneListener;
-    private ConversationalFlowComponent.OnSynthesizerError onErrorListener;
+    private OnSynthesizerStart onStartedListener;
+    private OnSynthesizerDone onDoneListener;
+    private OnSynthesizerError onErrorListener;
 
     @Override
-    public ConversationalFlowComponent.OnSynthesizerStart getOnStartedListener() {
+    public OnSynthesizerStart getOnStartedListener() {
         return onStartedListener != null ? onStartedListener : item -> {};
     }
 
     @Override
-    public AndroidSpeechSynthesizerAdapter setOnStartedListener(ConversationalFlowComponent.OnSynthesizerStart onStartedListener) {
+    public AndroidSpeechSynthesizerAdapter setOnStartedListener(OnSynthesizerStart onStartedListener) {
         this.onStartedListener = onStartedListener;
         return this;
     }
 
     @Override
-    public ConversationalFlowComponent.OnSynthesizerDone getOnDoneListener() {
+    public OnSynthesizerDone getOnDoneListener() {
         return onDoneListener != null ? onDoneListener : item -> {};
     }
 
     @Override
-    public AndroidSpeechSynthesizerAdapter setOnDoneListener(ConversationalFlowComponent.OnSynthesizerDone onDoneListener) {
+    public AndroidSpeechSynthesizerAdapter setOnDoneListener(OnSynthesizerDone onDoneListener) {
         this.onDoneListener = onDoneListener;
         return this;
     }
 
     @Override
-    public ConversationalFlowComponent.OnSynthesizerError getOnErrorListener() {
+    public OnSynthesizerError getOnErrorListener() {
         return onErrorListener != null ? onErrorListener : (item1, item2) -> {};
     }
 
     @Override
-    public AndroidSpeechSynthesizerAdapter setOnErrorListener(ConversationalFlowComponent.OnSynthesizerError onErrorListener) {
+    public AndroidSpeechSynthesizerAdapter setOnErrorListener(OnSynthesizerError onErrorListener) {
         this.onErrorListener = onErrorListener;
         return this;
     }
 
-    protected void clearTimeout() {
+    @Override
+    public void clearTimeout() {
     }
 
-    protected void startTimeout(String utteranceId) {
+    @Override
+    public void startTimeout(String utteranceId) {
     }
 
-    /**
-     * @inherited
-     */
     @Override
     public void onStart(String utteranceId) {
     }
 
-    /**
-     * @inherited
-     */
     @Override
     public void onDone(String utteranceId) {
     }
 
-    /**
-     * @inherited
-     */
     @Override @SuppressWarnings("deprecation")
     final public void onError(String utteranceId) {
     }
