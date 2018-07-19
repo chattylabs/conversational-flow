@@ -1,8 +1,10 @@
 package com.chattylabs.sdk.android.voice;
 
 import android.app.Application;
+import android.media.MediaPlayer;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 
@@ -14,6 +16,7 @@ import com.google.cloud.texttospeech.v1beta1.SsmlVoiceGender;
 import com.google.cloud.texttospeech.v1beta1.TextToSpeechClient;
 import com.google.cloud.texttospeech.v1beta1.VoiceSelectionParams;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -30,37 +33,12 @@ import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SYNTH
 public class GoogleSpeechSynthesizer implements SpeechSynthesizer {
     private static final String TAG = Tag.make("GoogleSpeechSynthesizer");
 
-    // Constants
-    private static final String CHECKING_UTTERANCE_ID = BuildConfig.APPLICATION_ID + ".checking";
-    private static final String DEFAULT_UTTERANCE_ID = BuildConfig.APPLICATION_ID + ".utterance:";
-    private static final String TESTING_STRING = "<TESTING_STRING>";
-    private static final String MAP_UTTERANCE_ID = "utteranceId";
-    private static final String MAP_SILENCE = "silence";
-    private static final String MAP_MESSAGE = "message";
-    private static final String MAP_PARAMS = "params";
-    private static final int MAX_SPEECH_TIME = 60;
-
-    // Data
-    private final VoiceConfig configuration;
-    private final Map<String, UtteranceProgressListener> listenersMap;
-    private final Map<String, ConcurrentLinkedQueue<Map<String, Object>>> queue;
-    private final List<TextFilter> filters;
-    private final Object lock = new Object();
-
-    // States
-    private boolean isReady; // released
-    private boolean isOnHold; // released
-    private boolean isSpeaking; // released
-
     // Resources
-    private String queueId = DEFAULT_QUEUE_ID; // released
-    private String lastQueueId;
     private final Application application;
-    private final AndroidAudioHandler audioHandler;
-    private final BluetoothSco bluetoothSco;
     private TextToSpeechClient tts;
     private VoiceSelectionParams voice;
     private AudioConfig audioConfig;
+    private MediaPlayer mediaPlayer;
 
     // Log stuff
     private ILogger logger;
@@ -68,6 +46,7 @@ public class GoogleSpeechSynthesizer implements SpeechSynthesizer {
     GoogleSpeechSynthesizer(Application application,
                             VoiceConfig configuration,
                             AndroidAudioHandler audioHandler,
+                            MediaPlayer mediaPlayer,
                             BluetoothSco bluetoothSco, ILogger logger) {
         this.application = application;
         this.listenersMap = new LinkedHashMap<>();
@@ -76,6 +55,7 @@ public class GoogleSpeechSynthesizer implements SpeechSynthesizer {
         this.configuration = configuration;
         this.audioHandler = audioHandler;
         this.bluetoothSco = bluetoothSco;
+        this.mediaPlayer = mediaPlayer;
         this.logger = logger;
         //this.release();
     }
@@ -131,6 +111,65 @@ public class GoogleSpeechSynthesizer implements SpeechSynthesizer {
         return language.toString();
     }
 
+    private void handleListener(@NonNull String utteranceId, @NonNull GoogleSpeechSynthesizerAdapter listener) {
+        logger.v(TAG, "TTS - added utterance - " + utteranceId +
+                " - listener -> size:  " + listenersMap.size());
+        synchronized (lock) {
+            listenersMap.put(utteranceId, listener);
+        }
+    }
+
+    private void addToQueueSet(@NonNull String utteranceId, String message, long duration, @NonNull String queueId) {
+        Map<String, Object> map = new HashMap<>();
+        map.put(MAP_UTTERANCE_ID, utteranceId);
+        if (message != null) map.put(MAP_MESSAGE, message);
+        if (duration > 0) map.put(MAP_SILENCE, duration);
+        if (!queue.containsKey(queueId)) {
+            logger.v(TAG, "TTS - added queue: <" + queueId + "> - " + utteranceId);
+            lastQueueId = queueId;
+            synchronized (lock) {
+                queue.put(queueId, new ConcurrentLinkedQueue<>());
+            }
+        }
+        queue.get(queueId).add(map);
+        logger.v(TAG, "TTS - added message to queue <" + queueId + ">. Number of queues: " + queue.size());
+        logger.v(TAG, "TTS - messages in the queue <" + queueId + ">: " + queue.get(queueId).size());
+    }
+
+    private GoogleSpeechSynthesizerAdapter generateUtteranceListener(@NonNull SynthesizerListenerContract... listeners) {
+        GoogleSpeechSynthesizerAdapter listener = new GoogleSpeechSynthesizerAdapter()
+        {
+            @Override
+            public void onStart(String utteranceId) {
+                getOnStartedListener().execute(utteranceId);
+            }
+
+            @Override
+            public void onDone(String utteranceId) {
+                getOnDoneListener().execute(utteranceId);
+            }
+
+            @Override
+            public void onError(String utteranceId, int errorCode) {
+                getOnErrorListener().execute(utteranceId, errorCode);
+            }
+        };
+        if (listeners.length > 0) {
+            for (SynthesizerListenerContract item : listeners) {
+                if (item instanceof OnSynthesizerStart) {
+                    listener.setOnStartedListener((OnSynthesizerStart) item);
+                }
+                if (item instanceof OnSynthesizerDone) {
+                    listener.setOnDoneListener((OnSynthesizerDone) item);
+                }
+                if (item instanceof OnSynthesizerError) {
+                    listener.setOnErrorListener((OnSynthesizerError) item);
+                }
+            }
+        }
+        return listener;
+    }
+
     @Override
     public void addFilter(TextFilter filter) {
 
@@ -141,9 +180,67 @@ public class GoogleSpeechSynthesizer implements SpeechSynthesizer {
         playText(text, queueId, generateUtteranceListener(listeners));
     }
 
+    private void playText(String text, String queueId, GoogleSpeechSynthesizerAdapter listener) {
+        playText(text, queueId, listener, DEFAULT_UTTERANCE_ID + System.nanoTime());
+    }
+
+    private void playText(String text, String queueId, @Nullable GoogleSpeechSynthesizerAdapter listener, String utteranceId) {
+        logger.i(TAG, "TTS - prepare to playText \"" + text + "\" with Queue: <" + queueId + "> - " + utteranceId);
+        if (listenersMap.containsKey(utteranceId)) {
+            utteranceId = utteranceId + "_" + System.currentTimeMillis();
+        }
+        final String uId = utteranceId;
+        if (listener != null) handleListener(uId, listener);
+        addToQueueSet(uId, text, -1, queueId);
+        logger.i(TAG, "TTS - ready: " + Boolean.toString(isReady) +
+                " | speaking: " + Boolean.toString(isSpeaking) +
+                " | held: " + Boolean.toString(isOnHold) + " - " + utteranceId);
+        if (tts == null) {
+            initTts(status -> {
+                if (status == TextToSpeech.SUCCESS) {
+                    isReady = true;
+                    resume();
+                }
+                else {
+                    logger.e(TAG, "TTS - with queue status ERROR");
+                    if (listenersMap.containsKey(uId)) {
+                        GoogleSpeechSynthesizerAdapter progressListener;
+                        synchronized (lock) {
+                            progressListener = listenersMap.remove(uId);
+                        }
+                        progressListener.onError(uId, TextToSpeech.ERROR);
+                    }
+                }
+            }, null);
+        }
+        else if (isReady && !isSpeaking && !isOnHold) {
+            resume();
+        }
+    }
+
     @Override
     public <T extends SynthesizerListenerContract> void playText(String text, T... listeners) {
-
+        String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
+        logger.i(TAG, "TTS - prepare to immediately playText \"" + text + "\" - " + utteranceId);
+        GoogleSpeechSynthesizerAdapter listener = generateUtteranceListener(listeners);
+        if (listenersMap.containsKey(utteranceId)) {
+            utteranceId = utteranceId + "_" + listenersMap.size();
+        }
+        handleListener(utteranceId, listener);
+        Map<String, Object> map = new HashMap<>();
+        map.put(MAP_UTTERANCE_ID, utteranceId);
+        map.put(MAP_MESSAGE, text);
+        logger.i(TAG, "TTS - ready: " + Boolean.toString(isReady) +
+                " | speaking: " + Boolean.toString(isSpeaking) + " - " + utteranceId);
+        initTts(status -> {
+            if (status == TextToSpeech.SUCCESS) {
+                playTheCurrentQueue(map);
+            }
+            else {
+                logger.e(TAG, "TTS - no queue status ERROR");
+                shutdown();
+            }
+        }, null);
     }
 
     @Override
@@ -157,22 +254,7 @@ public class GoogleSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     @Override
-    public void releaseCurrentQueue() {
-
-    }
-
-    @Override
-    public void holdCurrentQueue() {
-
-    }
-
-    @Override
     public void stop() {
-
-    }
-
-    @Override
-    public void resume() {
 
     }
 

@@ -39,56 +39,24 @@ import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SYNTH
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SYNTHESIZER_UNKNOWN_ERROR;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SynthesizerListenerContract;
 
-public final class AndroidSpeechSynthesizer implements ConversationalFlowComponent.SpeechSynthesizer {
+public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
     private static final String TAG = Tag.make("AndroidSpeechSynthesizer");
 
-    // Constants
-    private static final String CHECKING_UTTERANCE_ID = BuildConfig.APPLICATION_ID + ".checking";
-    private static final String DEFAULT_UTTERANCE_ID = BuildConfig.APPLICATION_ID + ".utterance:";
-    private static final String TESTING_STRING = "<TESTING_STRING>";
-    private static final String MAP_UTTERANCE_ID = "utteranceId";
-    private static final String MAP_SILENCE = "silence";
-    private static final String MAP_MESSAGE = "message";
-    private static final String MAP_PARAMS = "params";
-    private static final int MAX_SPEECH_TIME = 60;
-
-    // Data
-    private final VoiceConfig configuration;
-    private final Map<String, UtteranceProgressListener> listenersMap;
-    private final Map<String, ConcurrentLinkedQueue<Map<String, Object>>> queue;
-    private final List<TextFilter> filters;
-    private final Object lock = new Object();
-
     // States
-    private boolean isReady; // released
-    private boolean isOnHold; // released
-    private boolean isSpeaking; // released
-    private boolean reviewAgain; // released
     private boolean triedToDownloadTtsData; // released
 
     // Resources
-    private String queueId = DEFAULT_QUEUE_ID; // released
-    private String lastQueueId;
     private Application application;
     private TextToSpeech tts; // released
     private AndroidSpeechSynthesizerAdapter utteranceListener; // released
-    private AndroidAudioHandler audioHandler;
-    private BluetoothSco bluetoothSco;
 
-    // Log stuff
-    private ILogger logger;
-
-    AndroidSpeechSynthesizer(Application application, VoiceConfig configuration,
-                                    AndroidAudioHandler audioHandler,
-                                    BluetoothSco bluetoothSco, ILogger logger) {
+    AndroidSpeechSynthesizer(Application application,
+                             VoiceConfig configuration,
+                             AndroidAudioHandler audioHandler,
+                             BluetoothSco bluetoothSco,
+                             ILogger logger) {
+        super(configuration, audioHandler, bluetoothSco, logger);
         this.application = application;
-        this.listenersMap = new LinkedHashMap<>();
-        this.queue = new LinkedHashMap<>();
-        this.filters = new LinkedList<>();
-        this.configuration = configuration;
-        this.audioHandler = audioHandler;
-        this.bluetoothSco = bluetoothSco;
-        this.logger = logger;
         this.release();
     }
 
@@ -263,89 +231,6 @@ public final class AndroidSpeechSynthesizer implements ConversationalFlowCompone
     }
 
     @Override
-    public void releaseCurrentQueue() {
-        isOnHold = false;
-    }
-
-    @Override
-    public void holdCurrentQueue() {
-        isOnHold = true;
-    }
-
-    @Override
-    public void resume() {
-        if (isSpeaking) return;
-        initTts(status -> {
-            if (status == TextToSpeech.SUCCESS) {
-                logger.i(TAG, "TTS - resume queue: <" + queueId + ">");
-                checkForEmptyCurrentQueue();
-                if (!isEmpty()) {
-                    isSpeaking = true;
-                    // Gets and plays the current message in the queue
-                    playTheCurrentQueue(queue.get(queueId).poll());
-                }
-            }
-            else {
-                logger.e(TAG, "TTS - status ERROR");
-                shutdown();
-            }
-        }, null);
-    }
-
-    private void checkForEmptyCurrentQueue() {
-        if (isCurrentQueueEmpty()) {
-            logger.v(TAG, "TTS - no more messages in the queue <" + queueId + ">");
-            moveToNextQueue();
-        }
-    }
-
-    private void playTheCurrentQueue(Map<String, Object> map) {
-        // Check whether Sco is connected or required
-        logger.i(TAG, "TTS - is bluetooth Sco required: " +
-                Boolean.toString(configuration.isBluetoothScoRequired()));
-        if (configuration.isBluetoothScoRequired() && !bluetoothSco.isBluetoothScoOn()) {
-            // Sco Listener
-            BluetoothScoListener listener = new BluetoothScoListener() {
-                @Override
-                public void onConnected() {
-                    logger.w(TAG, "TTS - Sco onConnected");
-                    runMap(map);
-                }
-
-                @Override
-                public void onDisconnected() {
-                    logger.w(TAG, "TTS - Sco onDisconnected");
-                    if (bluetoothSco.isBluetoothScoOn()) {
-                        logger.w(TAG, "TTS - shutting down from Sco listener");
-                        shutdown();
-                    }
-                }
-            };
-            // Start Bluetooth Sco
-            bluetoothSco.startSco(listener);
-            logger.v(TAG, "TTS - waiting for bluetooth sco connection");
-        }
-        else {
-            logger.v(TAG, "TTS - bluetooth sco is: " + (bluetoothSco.isBluetoothScoOn() ? "on" : "off"));
-            runMap(map);
-        }
-    }
-
-    private void runMap(Map<String, Object> map) {
-        audioHandler.requestAudioFocus(configuration.isAudioExclusiveRequiredForSynthesizer());
-        if (map.containsKey(MAP_MESSAGE)) {
-            //noinspection unchecked
-            executeOnTtsReady((String) map.get(MAP_UTTERANCE_ID),
-                    (String) map.get(MAP_MESSAGE),
-                    (HashMap<String, String>) map.get(MAP_PARAMS));
-        }
-        else if (map.containsKey(MAP_SILENCE)) {
-            //noinspection unchecked
-            playSilence((String) map.get(MAP_UTTERANCE_ID), (long) map.get(MAP_SILENCE));
-        }
-    }
-
-    @Override
     public void shutdown() {
         logger.w(TAG, "TTS - shutting down");
         stop();
@@ -398,92 +283,7 @@ public final class AndroidSpeechSynthesizer implements ConversationalFlowCompone
         logger.v(TAG, "TTS - states and resources released");
     }
 
-    @Override
-    public String getCurrentQueueId() {
-        return queueId;
-    }
 
-    @Override
-    public String getLastQueueId() {
-        return lastQueueId;
-    }
-
-    @Nullable
-    @Override
-    public String getNextQueueId() {
-        Set<String> keys = getQueueSet();
-        if (keys.size() > 1) {
-            return (String) keys.toArray()[1];
-        }
-        else {
-            return null;
-        }
-    }
-
-    @Override
-    public boolean isCurrentQueueEmpty() {
-        return !queue.containsKey(queueId) || queue.get(queueId).isEmpty();
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return queue.isEmpty() || (queue.containsKey(DEFAULT_QUEUE_ID) && queue.size() == 1 && queue.get(DEFAULT_QUEUE_ID).isEmpty());
-    }
-
-    @Override
-    public Set<String> getQueueSet() {
-        return queue.keySet();
-    }
-
-    private void moveToNextQueue() {
-        // is empty, still contains the queue id and it's not the default one
-        if (queue.containsKey(queueId) && !DEFAULT_QUEUE_ID.equals(queueId)) {
-            logger.v(TAG, "TTS - remove empty queue: <" + queueId + ">");
-            synchronized (lock) {
-                queue.remove(queueId);
-            }
-        }
-        boolean isLastQueueEqualToCurrent = Objects.equals(lastQueueId, queueId);
-        queueId = getNextQueueId();
-        if (queueId == null) {
-            queueId = DEFAULT_QUEUE_ID;
-            if (isLastQueueEqualToCurrent) {
-                logger.v(TAG, "TTS - update last queue from <" + lastQueueId + "> to <" + queueId + ">");
-                lastQueueId = queueId;
-            }
-        }
-        logger.v(TAG, "TTS - New queue: <" + queueId + ">");
-    }
-
-    @Override
-    public void addFilter(TextFilter filter) {
-        filters.add(filter);
-    }
-
-    private void handleListener(@NonNull String utteranceId, @NonNull UtteranceProgressListener listener) {
-        logger.v(TAG, "TTS - added utterance - " + utteranceId + " - listener -> size:  " + listenersMap.size());
-        synchronized (lock) {
-            listenersMap.put(utteranceId, listener);
-        }
-    }
-
-    private void addToQueueSet(@NonNull String utteranceId, String message, long duration, @Nullable HashMap<String, String> params, @NonNull String queueId) {
-        Map<String, Object> map = new HashMap<>();
-        map.put(MAP_UTTERANCE_ID, utteranceId);
-        if (message != null) map.put(MAP_MESSAGE, message);
-        if (duration > 0) map.put(MAP_SILENCE, duration);
-        if (params != null) map.put(MAP_PARAMS, params);
-        if (!queue.containsKey(queueId)) {
-            logger.v(TAG, "TTS - added queue: <" + queueId + "> - " + utteranceId);
-            lastQueueId = queueId;
-            synchronized (lock) {
-                queue.put(queueId, new ConcurrentLinkedQueue<>());
-            }
-        }
-        queue.get(queueId).add(map);
-        logger.v(TAG, "TTS - added message to queue <" + queueId + ">. Number of queues: " + queue.size());
-        logger.v(TAG, "TTS - messages in the queue <" + queueId + ">: " + queue.get(queueId).size());
-    }
 
     private HashMap<String, String> buildParams(@NonNull String utteranceId, @NonNull String audioStream) {
         HashMap<String, String> params = new LinkedHashMap<>();
@@ -496,7 +296,8 @@ public final class AndroidSpeechSynthesizer implements ConversationalFlowCompone
         return params;
     }
 
-    private void initTts(TextToSpeech.OnInitListener onInitListener,
+    @Override
+    protected void initTts(TextToSpeech.OnInitListener onInitListener,
                          OnSynthesizerInitialised onCheckLanguageInit) {
         if (tts == null) {
             isReady = false;
@@ -517,149 +318,6 @@ public final class AndroidSpeechSynthesizer implements ConversationalFlowCompone
         }
         else if (isReady) {
             onInitListener.onInit(TextToSpeech.SUCCESS);
-        }
-    }
-
-    private AndroidSpeechSynthesizerAdapter initUtterancesListener(OnSynthesizerInitialised onCheckLanguageInit) {
-        return new AndroidSpeechSynthesizerAdapter() {
-
-            private long timestamp;
-            private TimerTask task;
-            private Timer timer;
-
-            @Override
-            protected void clearTimeout() {
-                logger.i(TAG, "TTS - utterance timeout cleared!");
-                if (task != null) task.cancel();
-                if (timer != null) timer.cancel();
-            }
-
-            @Override
-            protected void startTimeout(String utteranceId) {
-                logger.i(TAG, "TTS - started timeout! - " + utteranceId);
-                timer = new Timer();
-                task = new TimerTask() {
-                    @Override
-                    public void run() {
-                        if (tts == null || !tts.isSpeaking()) {
-                            logger.e(TAG, "TTS - is null or not speaking && reached timeout! - " + utteranceId);
-                            stop();
-                            onDone(utteranceId);
-                        }
-                        else {
-                            if ((System.currentTimeMillis() - timestamp) > TimeUnit.SECONDS.toMillis(MAX_SPEECH_TIME)) {
-                                logger.e(TAG, "TTS - exceeded " + MAX_SPEECH_TIME + " sec! - " + utteranceId);
-                                stop();
-                                onDone(utteranceId);
-                            }
-                            else {
-                                clearTimeout();
-                                startTimeout(utteranceId);
-                            }
-                        }
-                    }
-                };
-                timer.schedule(task, TimeUnit.SECONDS.toMillis(10));
-            }
-
-            @Override
-            public void onStart(String utteranceId) {
-                logger.v(TAG, "TTS - on start -> utterance - " + utteranceId + " - listener size: " + listenersMap.size());
-
-                startTimeout(utteranceId);
-                timestamp = System.currentTimeMillis();
-
-                if (listenersMap.size() > 0) {
-                    UtteranceProgressListener listener = listenersMap.get(utteranceId);
-                    if (listener != null) {
-                        listener.onStart(utteranceId);
-                    }
-                }
-            }
-
-            @Override
-            public void onDone(String utteranceId) {
-                clearTimeout();
-                if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
-                    logger.v(TAG, "TTS - on done <" + queueId + "> -> go to setup language - " + utteranceId);
-                    checkLanguage(onCheckLanguageInit, true);
-                }
-                else {
-                    logger.v(TAG, "TTS - check For Empty Queue <" + queueId + "> - " + utteranceId);
-                    isSpeaking = false;
-                    checkForEmptyCurrentQueue();
-                    if (isCurrentQueueEmpty()) {
-                        stop();
-                        logger.i(TAG, "TTS - Stream Finished. - " + utteranceId);
-                    }
-                    if (listenersMap.size() > 0) {
-                        UtteranceProgressListener listener;
-                        synchronized (lock) {
-                            listener = listenersMap.remove(utteranceId);
-                        }
-                        logger.v(TAG, "TTS - Execute listener onDone <" + queueId + "> - " + utteranceId);
-                        if (listener != null) listener.onDone(utteranceId);
-                    }
-                }
-            }
-
-            @Override
-            @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-            public void onError(String utteranceId, int errorCode) {
-                clearTimeout();
-                logger.e(TAG, "TTS - on error -> stop timeout -> utterance - " + utteranceId + " - listener size: " + listenersMap.size());
-                logger.e(TAG, "TTS - error code: " + getErrorType(errorCode) + " - " + utteranceId);
-                if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
-                    shutdown();
-                    if (errorCode == TextToSpeech.ERROR_NOT_INSTALLED_YET) {
-                        onCheckLanguageInit.execute(SYNTHESIZER_NOT_AVAILABLE_ERROR);
-                    }
-                    else {
-                        onCheckLanguageInit.execute(SYNTHESIZER_UNKNOWN_ERROR);
-                    }
-                }
-                else {
-                    isSpeaking = false;
-                    checkForEmptyCurrentQueue();
-                    if (isCurrentQueueEmpty()) {
-                        stop();
-                        logger.i(TAG, "TTS - ERROR - Stream Finished. - " + utteranceId);
-                    }
-                    if (listenersMap.size() > 0) {
-                        UtteranceProgressListener listener;
-                        synchronized (lock) {
-                            listener = listenersMap.remove(utteranceId);
-                        }
-                        if (listener != null) {
-                            listener.onError(utteranceId, errorCode);
-                        }
-                    }
-                }
-            }
-        };
-    }
-
-    private void checkLanguage(OnSynthesizerInitialised onInit, boolean fromUtterance) {
-        int result = tts.isLanguageAvailable(Locale.getDefault());
-        if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-            if (reviewAgain && !fromUtterance) {
-                reviewAgain = false;
-                shutdown();
-                logger.v(TAG, "TTS - double checking!");
-                setup(onInit);
-            }
-            else {
-                reviewAgain = true;
-                shutdown();
-                logger.v(TAG, "TTS - checking error");
-                onInit.execute(SYNTHESIZER_LANGUAGE_NOT_SUPPORTED_ERROR);
-            }
-        }
-        else {
-            // Everything has gone well!
-            logger.i(TAG, "TTS - checking has passed!");
-            shutdown();
-            onInit.execute(SYNTHESIZER_AVAILABLE);
         }
     }
 
@@ -719,7 +377,8 @@ public final class AndroidSpeechSynthesizer implements ConversationalFlowCompone
         }
     }
 
-    private void executeOnTtsReady(String utteranceId, String text, HashMap<String, String> params) {
+    @Override
+    protected void executeOnTtsReady(String utteranceId, String text, HashMap<String, String> params) {
         //noinspection ConstantConditions
         String finalText = HtmlUtils.from(text).toString();
 
@@ -743,7 +402,32 @@ public final class AndroidSpeechSynthesizer implements ConversationalFlowCompone
         }
     }
 
-    private void playSilence(String utteranceId, long durationInMillis) {
+    private void checkLanguage(OnSynthesizerInitialised onInit, boolean fromUtterance) {
+        int result = tts.isLanguageAvailable(Locale.getDefault());
+        if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+            if (reviewAgain && !fromUtterance) {
+                reviewAgain = false;
+                shutdown();
+                logger.v(getTag(), "TTS - double checking!");
+                setup(onInit);
+            }
+            else {
+                reviewAgain = true;
+                shutdown();
+                logger.v(getTag(), "TTS - checking error");
+                onInit.execute(SYNTHESIZER_LANGUAGE_NOT_SUPPORTED_ERROR);
+            }
+        }
+        else {
+            // Everything has gone well!
+            logger.i(getTag(), "TTS - checking has passed!");
+            shutdown();
+            onInit.execute(SYNTHESIZER_AVAILABLE);
+        }
+    }
+
+    @Override
+    protected void playSilence(String utteranceId, long durationInMillis) {
         logger.i(TAG, "TTS - play internal silence - " + utteranceId);
         initTts(status -> {
             if (status == TextToSpeech.SUCCESS) {
