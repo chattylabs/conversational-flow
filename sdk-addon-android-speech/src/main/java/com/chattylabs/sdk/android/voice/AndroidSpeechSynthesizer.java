@@ -13,10 +13,10 @@ import com.chattylabs.sdk.android.common.HtmlUtils;
 import com.chattylabs.sdk.android.common.StringUtils;
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.common.internal.ILogger;
-import com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnSynthesizerDone;
-import com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnSynthesizerError;
-import com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnSynthesizerInitialised;
-import com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnSynthesizerStart;
+import com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerDone;
+import com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerError;
+import com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerInitialised;
+import com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerStart;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -31,15 +31,15 @@ import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.DEFAULT_QUEUE_ID;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.SYNTHESIZER_AVAILABLE;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.SYNTHESIZER_AVAILABLE_BUT_INACTIVE;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.SYNTHESIZER_LANGUAGE_NOT_SUPPORTED_ERROR;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.SYNTHESIZER_NOT_AVAILABLE_ERROR;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.SYNTHESIZER_UNKNOWN_ERROR;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.SynthesizerListenerContract;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.DEFAULT_QUEUE_ID;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SYNTHESIZER_AVAILABLE;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SYNTHESIZER_AVAILABLE_BUT_INACTIVE;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SYNTHESIZER_LANGUAGE_NOT_SUPPORTED_ERROR;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SYNTHESIZER_NOT_AVAILABLE_ERROR;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SYNTHESIZER_UNKNOWN_ERROR;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SynthesizerListenerContract;
 
-public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent.SpeechSynthesizer {
+public final class AndroidSpeechSynthesizer implements ConversationalFlowComponent.SpeechSynthesizer {
     private static final String TAG = Tag.make("AndroidSpeechSynthesizer");
 
     // Constants
@@ -93,7 +93,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
     }
 
     @Override
-    public <T extends VoiceInteractionComponent.SynthesizerListenerContract> void playText(String text, String queueId, T... listeners) {
+    public <T extends ConversationalFlowComponent.SynthesizerListenerContract> void playText(String text, String queueId, T... listeners) {
         playText(text, queueId, generateUtteranceListener(listeners));
     }
 
@@ -137,7 +137,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
     }
 
     @Override
-    public <T extends VoiceInteractionComponent.SynthesizerListenerContract> void playText(String text, T... listeners) {
+    public <T extends ConversationalFlowComponent.SynthesizerListenerContract> void playText(String text, T... listeners) {
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
         logger.i(TAG, "TTS - prepare to immediately playText \"" + text + "\" - " + utteranceId);
         AndroidSpeechSynthesizerAdapter listener = generateUtteranceListener(listeners);
@@ -164,7 +164,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
     }
 
     @Override
-    public  <T extends VoiceInteractionComponent.SynthesizerListenerContract> void playSilence(long durationInMillis, String queueId, T... listeners) {
+    public  <T extends ConversationalFlowComponent.SynthesizerListenerContract> void playSilence(long durationInMillis, String queueId, T... listeners) {
         if (durationInMillis <= 0) throw new IllegalArgumentException("Silence duration must be greater than 0");
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
         logger.i(TAG, "TTS - play silence with Queue: <" + queueId + "> - " + utteranceId);
@@ -202,7 +202,7 @@ public final class AndroidSpeechSynthesizer implements VoiceInteractionComponent
     }
 
     @Override
-    public  <T extends VoiceInteractionComponent.SynthesizerListenerContract> void playSilence(long durationInMillis, T... listeners) {
+    public  <T extends ConversationalFlowComponent.SynthesizerListenerContract> void playSilence(long durationInMillis, T... listeners) {
         if (durationInMillis <= 0) throw new IllegalArgumentException("Silence duration must be greater than 0");
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
         logger.i(TAG, "TTS - play silence immediately - " + utteranceId);

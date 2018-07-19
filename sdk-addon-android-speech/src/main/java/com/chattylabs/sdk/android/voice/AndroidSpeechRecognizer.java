@@ -11,7 +11,7 @@ import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.common.internal.ILogger;
 import com.chattylabs.sdk.android.common.internal.android.AndroidHandler;
 import com.chattylabs.sdk.android.common.internal.android.AndroidHandlerImpl;
-import com.chattylabs.sdk.android.voice.VoiceInteractionComponent.SpeechRecognizerCreator;
+import com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SpeechRecognizerCreator;
 
 import java.util.List;
 import java.util.Timer;
@@ -20,24 +20,24 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.MIN_VOICE_RECOGNITION_TIME_LISTENING;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnRecognizerError;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnRecognizerMostConfidentResult;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnRecognizerPartialResults;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnRecognizerReady;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.OnRecognizerResults;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.RECOGNIZER_AFTER_PARTIALS_ERROR;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.RECOGNIZER_EMPTY_RESULTS_ERROR;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.RECOGNIZER_LOW_SOUND_ERROR;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.RECOGNIZER_NO_SOUND_ERROR;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.RECOGNIZER_RETRY_ERROR;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.RECOGNIZER_STOPPED_TOO_EARLY_ERROR;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.RECOGNIZER_UNAVAILABLE_ERROR;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.RECOGNIZER_UNKNOWN_ERROR;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.RecognizerListenerContract;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.selectMostConfidentResult;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.MIN_VOICE_RECOGNITION_TIME_LISTENING;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerError;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerMostConfidentResult;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerPartialResults;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerReady;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerResults;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RECOGNIZER_AFTER_PARTIALS_ERROR;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RECOGNIZER_EMPTY_RESULTS_ERROR;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RECOGNIZER_LOW_SOUND_ERROR;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RECOGNIZER_NO_SOUND_ERROR;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RECOGNIZER_RETRY_ERROR;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RECOGNIZER_STOPPED_TOO_EARLY_ERROR;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RECOGNIZER_UNAVAILABLE_ERROR;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RECOGNIZER_UNKNOWN_ERROR;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RecognizerListenerContract;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.selectMostConfidentResult;
 
-public final class AndroidSpeechRecognizer implements VoiceInteractionComponent.SpeechRecognizer {
+public final class AndroidSpeechRecognizer implements ConversationalFlowComponent.SpeechRecognizer {
     private static final String TAG = Tag.make("AndroidSpeechRecognizer");
 
     private final ReentrantLock lock = new ReentrantLock();
@@ -133,7 +133,7 @@ public final class AndroidSpeechRecognizer implements VoiceInteractionComponent.
         public void onError(int error) {
             logger.e(TAG, "ANDROID VOICE - error: " + getErrorType(error));
             // We consider 2 sec as timeout for non speech
-            boolean stoppedTooEarly = (System.currentTimeMillis() - elapsedTime) < VoiceInteractionComponent.MIN_VOICE_RECOGNITION_TIME_LISTENING;
+            boolean stoppedTooEarly = (System.currentTimeMillis() - elapsedTime) < ConversationalFlowComponent.MIN_VOICE_RECOGNITION_TIME_LISTENING;
             // Start checking for the error
             OnRecognizerError errorListener = getOnError();
             int soundLevel = getSoundLevel();

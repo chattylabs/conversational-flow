@@ -8,50 +8,50 @@ import com.chattylabs.sdk.android.common.Tag;
 abstract class GoogleSpeechRecognitionAdapter {
     private static final String TAG = Tag.make("GoogleSpeechRecognitionAdapter");
 
-    private VoiceInteractionComponent.OnRecognizerReady onReady;
-    private VoiceInteractionComponent.OnRecognizerResults onResults;
-    private VoiceInteractionComponent.OnRecognizerPartialResults onPartialResults;
-    private VoiceInteractionComponent.OnRecognizerMostConfidentResult onMostConfidentResult;
-    private VoiceInteractionComponent.OnRecognizerError onError;
+    private ConversationalFlowComponent.OnRecognizerReady onReady;
+    private ConversationalFlowComponent.OnRecognizerResults onResults;
+    private ConversationalFlowComponent.OnRecognizerPartialResults onPartialResults;
+    private ConversationalFlowComponent.OnRecognizerMostConfidentResult onMostConfidentResult;
+    private ConversationalFlowComponent.OnRecognizerError onError;
 
-    public void setOnReady(VoiceInteractionComponent.OnRecognizerReady onReady) {
+    public void setOnReady(ConversationalFlowComponent.OnRecognizerReady onReady) {
         this.onReady = onReady;
     }
 
-    public VoiceInteractionComponent.OnRecognizerResults getOnResults() {
+    public ConversationalFlowComponent.OnRecognizerResults getOnResults() {
         return onResults;
     }
 
-    public GoogleSpeechRecognitionAdapter setOnResults(VoiceInteractionComponent.OnRecognizerResults onResults) {
+    public GoogleSpeechRecognitionAdapter setOnResults(ConversationalFlowComponent.OnRecognizerResults onResults) {
         this.onResults = onResults;
         return this;
     }
 
-    public VoiceInteractionComponent.OnRecognizerPartialResults getOnPartialResults() {
+    public ConversationalFlowComponent.OnRecognizerPartialResults getOnPartialResults() {
         return onPartialResults;
     }
 
     public GoogleSpeechRecognitionAdapter setOnPartialResults(
-            VoiceInteractionComponent.OnRecognizerPartialResults onPartialResults) {
+            ConversationalFlowComponent.OnRecognizerPartialResults onPartialResults) {
         this.onPartialResults = onPartialResults;
         return this;
     }
 
-    public VoiceInteractionComponent.OnRecognizerMostConfidentResult getOnMostConfidentResult() {
+    public ConversationalFlowComponent.OnRecognizerMostConfidentResult getOnMostConfidentResult() {
         return onMostConfidentResult;
     }
 
     public GoogleSpeechRecognitionAdapter setOnMostConfidentResult(
-            VoiceInteractionComponent.OnRecognizerMostConfidentResult onMostConfidentResult) {
+            ConversationalFlowComponent.OnRecognizerMostConfidentResult onMostConfidentResult) {
         this.onMostConfidentResult = onMostConfidentResult;
         return this;
     }
 
-    public VoiceInteractionComponent.OnRecognizerError getOnError() {
+    public ConversationalFlowComponent.OnRecognizerError getOnError() {
         return onError;
     }
 
-    public GoogleSpeechRecognitionAdapter setOnError(VoiceInteractionComponent.OnRecognizerError onError) {
+    public GoogleSpeechRecognitionAdapter setOnError(ConversationalFlowComponent.OnRecognizerError onError) {
         this.onError = onError;
         return this;
     }

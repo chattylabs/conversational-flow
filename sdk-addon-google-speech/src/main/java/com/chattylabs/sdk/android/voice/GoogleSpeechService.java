@@ -107,7 +107,7 @@ public class GoogleSpeechService extends Service {
     private final SpeechBinder mBinder = new SpeechBinder();
     private final ArrayList<Listener> mListeners = new ArrayList<>();
     private volatile AccessTokenTask mAccessTokenTask;
-    private HelperAccessToken mHelperAccessToken;
+    private AccessTokenHelper mAccessTokenHelper;
     private SpeechGrpc.SpeechStub mApi;
     private static Handler mHandler;
 
@@ -208,8 +208,8 @@ public class GoogleSpeechService extends Service {
         mListeners.remove(listener);
     }
 
-    public void setAccessTokenDelegate(HelperAccessToken helperAccessToken) {
-        mHelperAccessToken = helperAccessToken;
+    public void setAccessTokenDelegate(AccessTokenHelper accessTokenHelper) {
+        mAccessTokenHelper = accessTokenHelper;
     }
 
     /**
@@ -295,11 +295,11 @@ public class GoogleSpeechService extends Service {
                 }
             }
 
-            if (mHelperAccessToken == null) throw new NullPointerException("You must provide a " +
-                    HelperAccessToken.class);
+            if (mAccessTokenHelper == null) throw new NullPointerException("You must provide a " +
+                    AccessTokenHelper.class);
 
             AccessToken token = null;
-            final DefaultAccessToken retrievedToken = mHelperAccessToken.get();
+            final AccessTokenDefault retrievedToken = mAccessTokenHelper.get();
             if (retrievedToken.getTokenValue() != null && retrievedToken.getExpirationTime() != null)
                 token = new AccessToken(retrievedToken.getTokenValue(), retrievedToken.getExpirationTime());
             else if (retrievedToken.getRawResourceId() > 0) {

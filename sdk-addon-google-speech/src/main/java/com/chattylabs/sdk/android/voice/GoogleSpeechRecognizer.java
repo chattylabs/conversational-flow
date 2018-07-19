@@ -21,14 +21,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.MIN_VOICE_RECOGNITION_TIME_LISTENING;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.RECOGNIZER_AFTER_PARTIALS_ERROR;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.RECOGNIZER_EMPTY_RESULTS_ERROR;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.RECOGNIZER_STOPPED_TOO_EARLY_ERROR;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.RECOGNIZER_UNKNOWN_ERROR;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.selectMostConfidentResult;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.MIN_VOICE_RECOGNITION_TIME_LISTENING;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RECOGNIZER_AFTER_PARTIALS_ERROR;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RECOGNIZER_EMPTY_RESULTS_ERROR;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RECOGNIZER_STOPPED_TOO_EARLY_ERROR;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RECOGNIZER_UNKNOWN_ERROR;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.selectMostConfidentResult;
 
-public class GoogleSpeechRecognizer implements VoiceInteractionComponent.SpeechRecognizer {
+public class GoogleSpeechRecognizer implements ConversationalFlowComponent.SpeechRecognizer {
     private static final String TAG = Tag.make("GoogleSpeechRecognizer");
 
     private final ReentrantLock lock = new ReentrantLock();
@@ -197,9 +197,9 @@ public class GoogleSpeechRecognizer implements VoiceInteractionComponent.SpeechR
         public void onError(int error) {
             //logger.e(TAG, "ANDROID VOICE - error: " + getErrorType(error));
             // We consider 2 sec as timeout for non speech
-            boolean stoppedTooEarly = (System.currentTimeMillis() - elapsedTime) < VoiceInteractionComponent.MIN_VOICE_RECOGNITION_TIME_LISTENING;
+            boolean stoppedTooEarly = (System.currentTimeMillis() - elapsedTime) < ConversationalFlowComponent.MIN_VOICE_RECOGNITION_TIME_LISTENING;
             // Start checking for the error
-            VoiceInteractionComponent.OnRecognizerError errorListener = getOnError();
+            ConversationalFlowComponent.OnRecognizerError errorListener = getOnError();
             //int soundLevel = getSoundLevel();
             //logger.v(TAG, "ANDROID VOICE - Sound Level: " + getSoundLevelAsString(soundLevel));
             // Restart the recognizer
@@ -235,8 +235,8 @@ public class GoogleSpeechRecognizer implements VoiceInteractionComponent.SpeechR
         @Override
         public void onResults(Bundle results) {
             releaseTimeout();
-            VoiceInteractionComponent.OnRecognizerResults resultsListener = getOnResults();
-            VoiceInteractionComponent.OnRecognizerMostConfidentResult mostConfidentResult = getOnMostConfidentResult();
+            ConversationalFlowComponent.OnRecognizerResults resultsListener = getOnResults();
+            ConversationalFlowComponent.OnRecognizerMostConfidentResult mostConfidentResult = getOnMostConfidentResult();
             if (resultsListener == null && mostConfidentResult == null) return;
             List<String> textResults = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
             float[] confidences = results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
@@ -254,7 +254,7 @@ public class GoogleSpeechRecognizer implements VoiceInteractionComponent.SpeechR
             }
             else {
                 logger.e(TAG, "GOOGLE VOICE - NO results");
-                VoiceInteractionComponent.OnRecognizerError listener = getOnError();
+                ConversationalFlowComponent.OnRecognizerError listener = getOnError();
                 reset();
                 if (listener != null) listener.execute(RECOGNIZER_EMPTY_RESULTS_ERROR, -1);
             }
@@ -264,7 +264,7 @@ public class GoogleSpeechRecognizer implements VoiceInteractionComponent.SpeechR
         public void onPartialResults(Bundle partialResults) {
             releaseTimeout();
             intents++;
-            VoiceInteractionComponent.OnRecognizerPartialResults listener = getOnPartialResults();
+            ConversationalFlowComponent.OnRecognizerPartialResults listener = getOnPartialResults();
             if (listener == null) return;
             List<String> textResults = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
             float[] confidences = partialResults.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
@@ -288,7 +288,7 @@ public class GoogleSpeechRecognizer implements VoiceInteractionComponent.SpeechR
     }
 
     @Override
-    public <T extends VoiceInteractionComponent.RecognizerListenerContract> void listen(
+    public <T extends ConversationalFlowComponent.RecognizerListenerContract> void listen(
              T... listeners) {
         logger.i(TAG, "GOOGLE VOICE - start listening");
         handleListeners(listeners);
@@ -354,24 +354,24 @@ public class GoogleSpeechRecognizer implements VoiceInteractionComponent.SpeechR
         });
     }
 
-    private void handleListeners(VoiceInteractionComponent.RecognizerListenerContract... listeners) {
+    private void handleListeners(ConversationalFlowComponent.RecognizerListenerContract... listeners) {
         recognitionListener.reset();
         if (listeners != null && listeners.length > 0) {
-            for (VoiceInteractionComponent.RecognizerListenerContract item : listeners) {
-                if (item instanceof VoiceInteractionComponent.OnRecognizerReady) {
-                    recognitionListener.setOnReady((VoiceInteractionComponent.OnRecognizerReady) item);
+            for (ConversationalFlowComponent.RecognizerListenerContract item : listeners) {
+                if (item instanceof ConversationalFlowComponent.OnRecognizerReady) {
+                    recognitionListener.setOnReady((ConversationalFlowComponent.OnRecognizerReady) item);
                 }
-                else if (item instanceof VoiceInteractionComponent.OnRecognizerResults) {
-                    recognitionListener.setOnResults((VoiceInteractionComponent.OnRecognizerResults) item);
+                else if (item instanceof ConversationalFlowComponent.OnRecognizerResults) {
+                    recognitionListener.setOnResults((ConversationalFlowComponent.OnRecognizerResults) item);
                 }
-                else if (item instanceof VoiceInteractionComponent.OnRecognizerMostConfidentResult) {
-                    recognitionListener.setOnMostConfidentResult((VoiceInteractionComponent.OnRecognizerMostConfidentResult) item);
+                else if (item instanceof ConversationalFlowComponent.OnRecognizerMostConfidentResult) {
+                    recognitionListener.setOnMostConfidentResult((ConversationalFlowComponent.OnRecognizerMostConfidentResult) item);
                 }
-                else if (item instanceof VoiceInteractionComponent.OnRecognizerPartialResults) {
-                    recognitionListener.setOnPartialResults((VoiceInteractionComponent.OnRecognizerPartialResults) item);
+                else if (item instanceof ConversationalFlowComponent.OnRecognizerPartialResults) {
+                    recognitionListener.setOnPartialResults((ConversationalFlowComponent.OnRecognizerPartialResults) item);
                 }
-                else if (item instanceof VoiceInteractionComponent.OnRecognizerError) {
-                    recognitionListener.setOnError((VoiceInteractionComponent.OnRecognizerError) item);
+                else if (item instanceof ConversationalFlowComponent.OnRecognizerError) {
+                    recognitionListener.setOnError((ConversationalFlowComponent.OnRecognizerError) item);
                 }
             }
         }

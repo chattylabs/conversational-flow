@@ -25,15 +25,15 @@ public class BluetoothSco {
 
     // Resources
     private Application application;
-    private AudioManager audioManager;
-    private BluetoothScoReceiver bluetoothScoReceiver;
+    private AndroidAudioHandler audioHandler;
+    private BluetoothScoReceiver bluetoothScoReceiver = new BluetoothScoReceiver();
 
     // Log stuff
     private ILogger logger;
 
-    public BluetoothSco(Application application, AudioManager audioManager, ILogger logger) {
+    public BluetoothSco(Application application, AndroidAudioHandler audioHandler, ILogger logger) {
         this.application = application;
-        this.audioManager = audioManager;
+        this.audioHandler = audioHandler;
         this.logger = logger;
         bluetoothScoReceiver = new BluetoothScoReceiver(logger);
     }
@@ -79,19 +79,19 @@ public class BluetoothSco {
 
     public void startSco(BluetoothScoListener bluetoothScoListener) {
         registerReceiver(bluetoothScoListener);
-        if (audioManager.isBluetoothScoAvailableOffCall() && !isBluetoothScoOn) {
+        if (audioHandler.isBluetoothScoAvailableOffCall() && !isBluetoothScoOn) {
             isBluetoothScoOn = true;
-            audioManager.setBluetoothScoOn(true);
-            audioManager.startBluetoothSco();
+            audioHandler.setBluetoothScoOn(true);
+            audioHandler.startBluetoothSco();
             logger.v(TAG, "start bluetooth sco");
         }
     }
 
     public void stopSco() {
-        if (audioManager.isBluetoothScoAvailableOffCall() && isBluetoothScoOn) {
+        if (audioHandler.isBluetoothScoAvailableOffCall() && isBluetoothScoOn) {
             isBluetoothScoOn = false;
-            audioManager.setBluetoothScoOn(false);
-            audioManager.stopBluetoothSco();
+            audioHandler.setBluetoothScoOn(false);
+            audioHandler.stopBluetoothSco();
             lock.lock();
             try {
                 condition.await(5, TimeUnit.SECONDS);

@@ -26,7 +26,7 @@ public class VoiceConfig {
     private LazyProvider<Boolean> audioExclusiveRequiredForRecognizer;
     private ServiceTypeLazyProvider recognizerServiceType;
     private ServiceTypeLazyProvider synthesizerServiceType;
-    private LazyProvider<HelperAccessToken> googleAccessToken;
+    private LazyProvider<AccessTokenHelper> googleAccessToken;
 
     private VoiceConfig(Builder builder) {
         bluetoothScoRequired = builder.bluetoothScoRequired;
@@ -59,7 +59,7 @@ public class VoiceConfig {
         return synthesizerServiceType.get();
     }
 
-    public HelperAccessToken getGoogleAccessToken() {
+    public AccessTokenHelper getGoogleAccessToken() {
         return googleAccessToken.provide();
     }
 
@@ -69,7 +69,7 @@ public class VoiceConfig {
         private LazyProvider<Boolean> audioExclusiveRequiredForRecognizer;
         private ServiceTypeLazyProvider recognizerServiceType;
         private ServiceTypeLazyProvider synthesizerServiceType;
-        private LazyProvider<HelperAccessToken> googleAccessToken;
+        private LazyProvider<AccessTokenHelper> googleAccessToken;
 
         public Builder() {
         }
@@ -108,7 +108,7 @@ public class VoiceConfig {
             return this;
         }
 
-        public Builder setGoogleAccessToken(LazyProvider<HelperAccessToken> lazyProvider) {
+        public Builder setGoogleAccessToken(LazyProvider<AccessTokenHelper> lazyProvider) {
             this.googleAccessToken = lazyProvider;
             return this;
         }

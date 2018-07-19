@@ -6,9 +6,9 @@ import android.support.annotation.NonNull;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-public interface Conversation extends Flow.Edge {
+public interface Conversation {
 
-    int FLAG_ENABLE_ERROR_MESSAGE_ON_LOW_SOUND = 0x8F4E00;
+    int FLAG_ENABLE_ERROR_MESSAGE_ON_LOW_SOUND = 1;
 
     @IntDef({FLAG_ENABLE_ERROR_MESSAGE_ON_LOW_SOUND})
     @Retention(RetentionPolicy.SOURCE)
@@ -22,10 +22,7 @@ public interface Conversation extends Flow.Edge {
 
     void addNode(@NonNull VoiceNode node);
 
-    @Override
-    void addEdge(@NonNull VoiceNode node, @NonNull VoiceNode incomingEdge);
-
-    EdgeSource prepare();
+    Flow prepare();
 
     void start(VoiceNode root);
 
