@@ -23,18 +23,18 @@ import com.chattylabs.sdk.android.common.HtmlUtils;
 import com.chattylabs.sdk.android.common.PermissionsHelper;
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer;
-import com.chattylabs.sdk.android.voice.DefaultAccessToken;
+import com.chattylabs.sdk.android.voice.AccessTokenDefault;
 import com.chattylabs.sdk.android.voice.Peripheral;
 import com.chattylabs.sdk.android.voice.TextFilterForUrl;
 import com.chattylabs.sdk.android.voice.VoiceConfig;
-import com.chattylabs.sdk.android.voice.VoiceInteractionComponent;
+import com.chattylabs.sdk.android.voice.ConversationalFlowComponent;
 
 import javax.inject.Inject;
 
 import dagger.android.support.DaggerAppCompatActivity;
 
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.SpeechRecognizer;
-import static com.chattylabs.sdk.android.voice.VoiceInteractionComponent.SpeechSynthesizer;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SpeechRecognizer;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SpeechSynthesizer;
 
 
 public class MainActivity extends DaggerAppCompatActivity {
@@ -58,7 +58,7 @@ public class MainActivity extends DaggerAppCompatActivity {
     private CheckBox scoCheck;
 
     // Components
-    @Inject VoiceInteractionComponent voiceInteractionComponent;
+    @Inject ConversationalFlowComponent conversationalFlowComponent;
     private Peripheral peripheral;
 
     @Override
@@ -69,21 +69,21 @@ public class MainActivity extends DaggerAppCompatActivity {
         initActions();
         peripheral = new Peripheral((AudioManager) getSystemService(AUDIO_SERVICE));
 
-        //voiceInteractionComponent = VoiceInteractionModule.provideVoiceInteractionComponent();
+        //conversationalFlowComponent = ConversationalFlowModule.provideComponent();
 
-        voiceInteractionComponent.updateVoiceConfig(builder ->
+        conversationalFlowComponent.updateVoiceConfig(builder ->
                 builder.setRecognizerServiceType(() -> VoiceConfig.RECOGNIZER_SERVICE_GOOGLE_SPEECH)
-                        .setGoogleAccessToken(() -> () -> new DefaultAccessToken(R.raw.credential))
+                        .setGoogleAccessToken(() -> () -> new AccessTokenDefault(R.raw.credential))
                         .build());
 
-        voiceInteractionComponent.setup(this, status -> {
+        conversationalFlowComponent.setup(this, status -> {
             if (status.isAvailable()) {
-                voiceInteractionComponent.getSpeechSynthesizer(this)
+                conversationalFlowComponent.getSpeechSynthesizer(this)
                         .addFilter(new TextFilterForUrl());
             }
         });
 
-        PermissionsHelper.check(this, voiceInteractionComponent.requiredPermissions());
+        PermissionsHelper.check(this, conversationalFlowComponent.requiredPermissions());
         //UpdateManager.register(this);
     }
 
@@ -102,7 +102,7 @@ public class MainActivity extends DaggerAppCompatActivity {
             queue.clear();
             text.setText(null);
             execution.setText(null);
-            voiceInteractionComponent.shutdown();
+            conversationalFlowComponent.shutdown();
         });
         proceed.setOnClickListener((View v) -> {
             representQueue(-1);
@@ -148,12 +148,12 @@ public class MainActivity extends DaggerAppCompatActivity {
     }
 
     private void play(String text, int index) {
-        SpeechSynthesizer synthesizer = voiceInteractionComponent.getSpeechSynthesizer(this);
+        SpeechSynthesizer synthesizer = conversationalFlowComponent.getSpeechSynthesizer(this);
         synthesizer.playText(text, "default",
-                (VoiceInteractionComponent.OnSynthesizerStart) s -> {
+                (ConversationalFlowComponent.OnSynthesizerStart) s -> {
                     representQueue(index);
                 },
-                (VoiceInteractionComponent.OnSynthesizerDone) s -> {
+                (ConversationalFlowComponent.OnSynthesizerDone) s -> {
                     Log.i(TAG, "on Done index: " + index);
                     Pair<Integer, String> next = queue.get(index + 1);
                     if (next != null && next.first == LISTEN) {
@@ -162,37 +162,37 @@ public class MainActivity extends DaggerAppCompatActivity {
                     } else {
                         synthesizer.resume();
                         if (synthesizer.isEmpty()) {
-                            voiceInteractionComponent.shutdown();
+                            conversationalFlowComponent.shutdown();
                         }
                     }
                 });
     }
 
     private void listen(int index) {
-        SpeechRecognizer recognizer = voiceInteractionComponent.getSpeechRecognizer(this);
-        recognizer.listen((VoiceInteractionComponent.OnRecognizerReady) bundle -> {
+        SpeechRecognizer recognizer = conversationalFlowComponent.getSpeechRecognizer(this);
+        recognizer.listen((ConversationalFlowComponent.OnRecognizerReady) bundle -> {
             representQueue(index + 1);
-        }, (VoiceInteractionComponent.OnRecognizerMostConfidentResult) o -> {
+        }, (ConversationalFlowComponent.OnRecognizerMostConfidentResult) o -> {
             representQueue(-1);
             SparseArray<String> news = getChecks(new SparseArray<>(), index + 1);
             if (news.size() > 0) {
                 for (int a = 0; a < news.size(); a++) {
-                    if (VoiceInteractionComponent.matches(news.valueAt(a), o)) {
+                    if (ConversationalFlowComponent.matches(news.valueAt(a), o)) {
                         representQueue(news.keyAt(a));
                         break;
                     }
                 }
             }
-            SpeechSynthesizer synthesizer = voiceInteractionComponent.getSpeechSynthesizer(this);
+            SpeechSynthesizer synthesizer = conversationalFlowComponent.getSpeechSynthesizer(this);
             synthesizer.releaseCurrentQueue();
             synthesizer.resume();
             if (synthesizer.isEmpty()) {
-                voiceInteractionComponent.shutdown();
+                conversationalFlowComponent.shutdown();
             }
-        }, (VoiceInteractionComponent.OnRecognizerError) (i, i1) -> {
+        }, (ConversationalFlowComponent.OnRecognizerError) (i, i1) -> {
             Log.e(TAG, "Error " + i);
             Log.e(TAG, "Original Error " + AndroidSpeechSynthesizer.getErrorType(i1));
-            voiceInteractionComponent.shutdown();
+            conversationalFlowComponent.shutdown();
             runOnUiThread(() -> new AlertDialog.Builder(this)
                     .setTitle("Error")
                     .setMessage(AndroidSpeechSynthesizer.getErrorType(i1))
@@ -236,7 +236,7 @@ public class MainActivity extends DaggerAppCompatActivity {
     public void onDestroy() {
         super.onDestroy();
         //UpdateManager.unregister();
-        voiceInteractionComponent.shutdown();
+        conversationalFlowComponent.shutdown();
     }
 
     @Override
@@ -266,7 +266,7 @@ public class MainActivity extends DaggerAppCompatActivity {
                 Toast.makeText(this, "Not connected to a Bluetooth device", Toast.LENGTH_LONG).show();
                 return;
             }
-            voiceInteractionComponent.updateVoiceConfig(
+            conversationalFlowComponent.updateVoiceConfig(
                     builder -> {
                         builder.setBluetoothScoRequired(() ->
                                 peripheral.get(Peripheral.Type.BLUETOOTH).isConnected() && isChecked);

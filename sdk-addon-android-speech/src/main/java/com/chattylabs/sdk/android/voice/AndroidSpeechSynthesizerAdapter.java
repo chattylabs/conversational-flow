@@ -3,33 +3,33 @@ package com.chattylabs.sdk.android.voice;
 import android.speech.tts.UtteranceProgressListener;
 
 abstract class AndroidSpeechSynthesizerAdapter extends UtteranceProgressListener {
-    private VoiceInteractionComponent.OnSynthesizerStart onStartedListener;
-    private VoiceInteractionComponent.OnSynthesizerDone onDoneListener;
-    private VoiceInteractionComponent.OnSynthesizerError onErrorListener;
+    private ConversationalFlowComponent.OnSynthesizerStart onStartedListener;
+    private ConversationalFlowComponent.OnSynthesizerDone onDoneListener;
+    private ConversationalFlowComponent.OnSynthesizerError onErrorListener;
 
-    public VoiceInteractionComponent.OnSynthesizerStart getOnStartedListener() {
+    public ConversationalFlowComponent.OnSynthesizerStart getOnStartedListener() {
         return onStartedListener != null ? onStartedListener : item -> {};
     }
 
-    public AndroidSpeechSynthesizerAdapter setOnStartedListener(VoiceInteractionComponent.OnSynthesizerStart onStartedListener) {
+    public AndroidSpeechSynthesizerAdapter setOnStartedListener(ConversationalFlowComponent.OnSynthesizerStart onStartedListener) {
         this.onStartedListener = onStartedListener;
         return this;
     }
 
-    public VoiceInteractionComponent.OnSynthesizerDone getOnDoneListener() {
+    public ConversationalFlowComponent.OnSynthesizerDone getOnDoneListener() {
         return onDoneListener != null ? onDoneListener : item -> {};
     }
 
-    public AndroidSpeechSynthesizerAdapter setOnDoneListener(VoiceInteractionComponent.OnSynthesizerDone onDoneListener) {
+    public AndroidSpeechSynthesizerAdapter setOnDoneListener(ConversationalFlowComponent.OnSynthesizerDone onDoneListener) {
         this.onDoneListener = onDoneListener;
         return this;
     }
 
-    public VoiceInteractionComponent.OnSynthesizerError getOnErrorListener() {
+    public ConversationalFlowComponent.OnSynthesizerError getOnErrorListener() {
         return onErrorListener != null ? onErrorListener : (item1, item2) -> {};
     }
 
-    public AndroidSpeechSynthesizerAdapter setOnErrorListener(VoiceInteractionComponent.OnSynthesizerError onErrorListener) {
+    public AndroidSpeechSynthesizerAdapter setOnErrorListener(ConversationalFlowComponent.OnSynthesizerError onErrorListener) {
         this.onErrorListener = onErrorListener;
         return this;
     }

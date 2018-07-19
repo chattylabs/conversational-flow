@@ -6,7 +6,7 @@ public class VoiceAction implements VoiceActionContract {
     public final String id;
     public final boolean canMatchOnPartials;
     public final String[] expectedResults;
-    public final VoiceInteractionComponent.Consumer<List<String>> onMatched;
+    public final ConversationalFlowComponent.Consumer<List<String>> onMatched;
 
     private VoiceAction(Builder builder) {
         id = builder.id;
@@ -23,7 +23,7 @@ public class VoiceAction implements VoiceActionContract {
         private String id;
         private boolean canMatchOnPartials;
         private String[] expectedResults;
-        private VoiceInteractionComponent.Consumer<List<String>> onMatched;
+        private ConversationalFlowComponent.Consumer<List<String>> onMatched;
 
         private Builder() {}
 
@@ -42,7 +42,7 @@ public class VoiceAction implements VoiceActionContract {
             return this;
         }
 
-        public Builder setOnMatched(VoiceInteractionComponent.Consumer<List<String>> onMatched) {
+        public Builder setOnMatched(ConversationalFlowComponent.Consumer<List<String>> onMatched) {
             this.onMatched = onMatched;
             return this;
         }

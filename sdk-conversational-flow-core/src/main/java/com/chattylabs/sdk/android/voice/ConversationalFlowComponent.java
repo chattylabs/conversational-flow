@@ -22,8 +22,8 @@ import java.util.regex.Pattern;
  * Otherwise the last instance is used instead.
  */
 @dagger.Reusable
-public interface VoiceInteractionComponent extends RequiredPermissions {
-    String TAG = Tag.make("VoiceInteractionComponent");
+public interface ConversationalFlowComponent extends RequiredPermissions {
+    String TAG = Tag.make("ConversationalFlowComponent");
 
     String DEFAULT_QUEUE_ID = "default_queue";
 
@@ -250,8 +250,6 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
      * Main Component Contract
      */
 
-    void setLogger(ILogger logger);
-
     void setup(Context context, OnSetup onSetup);
 
     void setVoiceConfig(VoiceConfig voiceConfiguration);
@@ -262,7 +260,7 @@ public interface VoiceInteractionComponent extends RequiredPermissions {
 
     SpeechRecognizer getSpeechRecognizer(Context context);
 
-    Conversation createConversation(Context context);
+    Conversation create(Context context);
 
     void stop();
 

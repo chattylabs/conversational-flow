@@ -30,7 +30,7 @@ public class PhoneStateHandler {
         return isPhoneStateReceiverRegistered;
     }
 
-    void registerReceiver(PhoneStateListener listener) {
+    void registerReceiver(PhoneStateListenerAdapter listener) {
         if (!isPhoneStateReceiverRegistered) {
             logger.v(TAG, "register for phone state receiver");
             IntentFilter phoneFilter = new IntentFilter();
