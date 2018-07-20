@@ -26,7 +26,6 @@ public class VoiceConfig {
     private LazyProvider<Boolean> audioExclusiveRequiredForRecognizer;
     private ServiceTypeLazyProvider recognizerServiceType;
     private ServiceTypeLazyProvider synthesizerServiceType;
-    private LazyProvider<AccessTokenHelper> googleAccessToken;
 
     private VoiceConfig(Builder builder) {
         bluetoothScoRequired = builder.bluetoothScoRequired;
@@ -34,7 +33,6 @@ public class VoiceConfig {
         audioExclusiveRequiredForRecognizer = builder.audioExclusiveRequiredForRecognizer;
         recognizerServiceType = builder.recognizerServiceType;
         synthesizerServiceType = builder.synthesizerServiceType;
-        googleAccessToken = builder.googleAccessToken;
     }
 
     public boolean isBluetoothScoRequired() {
@@ -59,17 +57,12 @@ public class VoiceConfig {
         return synthesizerServiceType.get();
     }
 
-    public AccessTokenHelper getGoogleAccessToken() {
-        return googleAccessToken.provide();
-    }
-
     public static final class Builder {
         private LazyProvider<Boolean> bluetoothScoRequired;
         private LazyProvider<Boolean> audioExclusiveRequiredForSynthesizer;
         private LazyProvider<Boolean> audioExclusiveRequiredForRecognizer;
         private ServiceTypeLazyProvider recognizerServiceType;
         private ServiceTypeLazyProvider synthesizerServiceType;
-        private LazyProvider<AccessTokenHelper> googleAccessToken;
 
         public Builder() {
         }
@@ -80,7 +73,6 @@ public class VoiceConfig {
             this.audioExclusiveRequiredForRecognizer = copy.audioExclusiveRequiredForRecognizer;
             this.recognizerServiceType = copy.recognizerServiceType;
             this.synthesizerServiceType = copy.synthesizerServiceType;
-            this.googleAccessToken = copy.googleAccessToken;
         }
 
         public Builder setBluetoothScoRequired(LazyProvider<Boolean> lazyProvider) {
@@ -105,11 +97,6 @@ public class VoiceConfig {
 
         public Builder setSynthesizerServiceType(ServiceTypeLazyProvider lazyRecognizerServiceType) {
             this.synthesizerServiceType = lazyRecognizerServiceType;
-            return this;
-        }
-
-        public Builder setGoogleAccessToken(LazyProvider<AccessTokenHelper> lazyProvider) {
-            this.googleAccessToken = lazyProvider;
             return this;
         }
 

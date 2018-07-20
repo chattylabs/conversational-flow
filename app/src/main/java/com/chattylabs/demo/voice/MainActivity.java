@@ -1,11 +1,15 @@
 package com.chattylabs.demo.voice;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
+import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.util.Pair;
 import android.util.SparseArray;
@@ -23,7 +27,6 @@ import com.chattylabs.sdk.android.common.HtmlUtils;
 import com.chattylabs.sdk.android.common.PermissionsHelper;
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer;
-import com.chattylabs.sdk.android.voice.AccessTokenDefault;
 import com.chattylabs.sdk.android.voice.Peripheral;
 import com.chattylabs.sdk.android.voice.TextFilterForUrl;
 import com.chattylabs.sdk.android.voice.VoiceConfig;
@@ -37,7 +40,8 @@ import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.Speec
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SpeechSynthesizer;
 
 
-public class MainActivity extends DaggerAppCompatActivity {
+public class MainActivity extends DaggerAppCompatActivity
+        implements ActivityCompat.OnRequestPermissionsResultCallback {
     public static final String TAG = Tag.make(MainActivity.class);
 
     // Constants
@@ -59,6 +63,8 @@ public class MainActivity extends DaggerAppCompatActivity {
 
     // Components
     @Inject ConversationalFlowComponent conversationalFlowComponent;
+    private SpeechSynthesizer synthesizer;
+    private SpeechRecognizer recognizer;
     private Peripheral peripheral;
 
     @Override
@@ -72,19 +78,36 @@ public class MainActivity extends DaggerAppCompatActivity {
         //conversationalFlowComponent = ConversationalFlowModule.provideComponent();
 
         conversationalFlowComponent.updateVoiceConfig(builder ->
-                builder.setRecognizerServiceType(() -> VoiceConfig.RECOGNIZER_SERVICE_GOOGLE_SPEECH)
-                        .setGoogleAccessToken(() -> () -> new AccessTokenDefault(R.raw.credential))
+                builder.setRecognizerServiceType(() -> VoiceConfig.RECOGNIZER_SERVICE_ANDROID_BUILTIN)
+                        .setSynthesizerServiceType(() -> VoiceConfig.SYNTHESIZER_SERVICE_GOOGLE_BUILTIN)
                         .build());
 
-        conversationalFlowComponent.setup(this, status -> {
-            if (status.isAvailable()) {
-                conversationalFlowComponent.getSpeechSynthesizer(this)
-                        .addFilter(new TextFilterForUrl());
-            }
-        });
+        String[] perms = conversationalFlowComponent.requiredPermissions();
+        PermissionsHelper.check(this,
+                perms,
+                () -> onRequestPermissionsResult(
+                        PermissionsHelper.REQUEST_CODE, perms,
+                        new int[] {PackageManager.PERMISSION_GRANTED}));
 
-        PermissionsHelper.check(this, conversationalFlowComponent.requiredPermissions());
         //UpdateManager.register(this);
+    }
+
+    @SuppressLint("MissingPermission")
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (PermissionsHelper.isPermissionRequest(requestCode)) {
+            if (PermissionsHelper.isPermissionGranted(grantResults)) {
+                new Thread(() -> {
+                    conversationalFlowComponent.setup(this, status -> {
+                        if (status.isAvailable()) {
+                            recognizer = conversationalFlowComponent.getSpeechRecognizer(this);
+                            synthesizer = conversationalFlowComponent.getSpeechSynthesizer(this);
+                            synthesizer.addFilter(new TextFilterForUrl());
+                        }
+                    });
+                }).start();
+            }
+        }
     }
 
     private void initActions() {
@@ -148,12 +171,12 @@ public class MainActivity extends DaggerAppCompatActivity {
     }
 
     private void play(String text, int index) {
-        SpeechSynthesizer synthesizer = conversationalFlowComponent.getSpeechSynthesizer(this);
-        synthesizer.playText(text, "default",
-                (ConversationalFlowComponent.OnSynthesizerStart) s -> {
-                    representQueue(index);
-                },
-                (ConversationalFlowComponent.OnSynthesizerDone) s -> {
+        new Thread(() -> {
+            synthesizer.playText(text, "default",
+                    (ConversationalFlowComponent.OnSynthesizerStart) s -> {
+                        representQueue(index);
+                    },
+                    (ConversationalFlowComponent.OnSynthesizerDone) s -> {
                     Log.i(TAG, "on Done index: " + index);
                     Pair<Integer, String> next = queue.get(index + 1);
                     if (next != null && next.first == LISTEN) {
@@ -166,10 +189,11 @@ public class MainActivity extends DaggerAppCompatActivity {
                         }
                     }
                 });
+        }).start();
+
     }
 
     private void listen(int index) {
-        SpeechRecognizer recognizer = conversationalFlowComponent.getSpeechRecognizer(this);
         recognizer.listen((ConversationalFlowComponent.OnRecognizerReady) bundle -> {
             representQueue(index + 1);
         }, (ConversationalFlowComponent.OnRecognizerMostConfidentResult) o -> {
@@ -183,7 +207,6 @@ public class MainActivity extends DaggerAppCompatActivity {
                     }
                 }
             }
-            SpeechSynthesizer synthesizer = conversationalFlowComponent.getSpeechSynthesizer(this);
             synthesizer.releaseCurrentQueue();
             synthesizer.resume();
             if (synthesizer.isEmpty()) {

@@ -225,11 +225,11 @@ public final class AndroidSpeechRecognizer implements ConversationalFlowComponen
     // Log stuff
     private ILogger logger;
 
-    AndroidSpeechRecognizer(Application application, VoiceConfig config,
+    AndroidSpeechRecognizer(Application application, VoiceConfig configuration,
                             AndroidAudioHandler audioHandler, BluetoothSco bluetoothSco,
                             SpeechRecognizerCreator recognizerCreator, ILogger logger) {
         this.application = application;
-        this.config = config;
+        this.config = configuration;
         this.audioHandler = audioHandler;
         this.bluetoothSco = bluetoothSco;
         this.logger = logger;
@@ -244,7 +244,8 @@ public final class AndroidSpeechRecognizer implements ConversationalFlowComponen
         this.recognizerCreator = recognizerCreator;
     }
 
-    private void release() {
+    @Override
+    public void release() {
         if (mainHandler != null) {
             mainHandler.removeCallbacksAndMessages(null);
             executorService.submit(lock::unlock);

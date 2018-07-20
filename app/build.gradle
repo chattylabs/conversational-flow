@@ -46,6 +46,9 @@ dependencies {
     // SDK
     implementation 'net.hockeyapp.android:HockeySDK:5.1.0'
     implementation "com.chattylabs.sdk.android:common:+"
+    //implementation 'com.chattylabs.sdk.android:conversational-flow-core:+'
+    //implementation 'com.chattylabs.sdk.android:addon-android-speech:+'
+    //implementation 'com.chattylabs.sdk.android:addon-google-speech:+'
     implementation project(':sdk-conversational-flow-core')
     implementation project(':sdk-addon-android-speech')
     implementation project(':sdk-addon-google-speech')
@@ -56,11 +59,11 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 }
 
-task copySecretKey(type: Copy) {
-    def File secretKey = file "$System.env.GOOGLE_APPLICATION_CREDENTIALS"
-    from secretKey.getParent()
-    include secretKey.getName()
-    into 'src/main/res/raw'
-    rename secretKey.getName(), "credential.json"
-}
-preBuild.dependsOn(copySecretKey)
+//task copySecretKey(type: Copy) {
+//    def File secretKey = file "$System.env.GOOGLE_APPLICATION_CREDENTIALS"
+//    from secretKey.getParent()
+//    include secretKey.getName()
+//    into 'src/main/res/raw'
+//    rename secretKey.getName(), "credential.json"
+//}
+//preBuild.dependsOn(copySecretKey)

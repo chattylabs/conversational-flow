@@ -1,10 +1,13 @@
 package com.chattylabs.sdk.android.voice;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.support.annotation.RequiresPermission;
 import android.support.v4.content.ContextCompat;
 
 import com.chattylabs.sdk.android.common.internal.ILogger;
@@ -45,7 +48,7 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
         voiceConfig = new VoiceConfig.Builder()
                 .setBluetoothScoRequired(() -> false)
                 .setRecognizerServiceType(() -> VoiceConfig.RECOGNIZER_SERVICE_ANDROID_BUILTIN)
-                .setGoogleAccessToken(() -> () -> null)
+                .setSynthesizerServiceType(() -> VoiceConfig.SYNTHESIZER_SERVICE_ANDROID_BUILTIN)
                 .setAudioExclusiveRequiredForSynthesizer(() -> false)
                 .setAudioExclusiveRequiredForRecognizer(() -> true)
                 .build();
@@ -76,13 +79,11 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
     }
 
     private <T> T newInstance(String className, Object... parameters) throws
-            ClassNotFoundException, NoSuchMethodException, IllegalAccessException,
+            ClassNotFoundException, IllegalAccessException,
             InvocationTargetException, InstantiationException {
         Class cls = Class.forName(className);
-        Class<?>[] cs = new Class[parameters.length];
-        for (int a = 0; a < parameters.length; a++) cs[a] = parameters[a].getClass();
         //noinspection unchecked
-        Constructor constructor = cls.getConstructor(cs);
+        Constructor constructor = cls.getConstructors()[0];
         //noinspection unchecked
         return (T) constructor.newInstance(parameters);
     }
@@ -101,10 +102,13 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
             if (speechSynthesizer == null) {
                 if (voiceConfig.getSynthesizerServiceType() == VoiceConfig.SYNTHESIZER_SERVICE_ANDROID_BUILTIN) {
                     String className = "com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer";
-                    speechSynthesizer = newInstance(className, application, voiceConfig, audioHandler, bluetoothSco, logger);
+                    speechSynthesizer = newInstance(className, application, voiceConfig, audioHandler,
+                            bluetoothSco, logger);
                 }
                 else if (voiceConfig.getSynthesizerServiceType() == VoiceConfig.SYNTHESIZER_SERVICE_GOOGLE_BUILTIN) {
                     String className = "com.chattylabs.sdk.android.voice.GoogleSpeechSynthesizer";
+                    speechSynthesizer = newInstance(className, application, voiceConfig, audioHandler,
+                            bluetoothSco, new MediaPlayer(), logger);
                 }
             }
             if (speechRecognizer == null) {
@@ -112,14 +116,16 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
                     String className = "com.chattylabs.sdk.android.voice.AndroidSpeechRecognizer";
                     speechRecognizer = newInstance(className, application,
                             voiceConfig, audioHandler, bluetoothSco, (SpeechRecognizerCreator) () ->
-                                android.speech.SpeechRecognizer.createSpeechRecognizer(application), logger);
+                                android.speech.SpeechRecognizer.createSpeechRecognizer(application),
+                            logger);
                 }
                 else if (voiceConfig.getRecognizerServiceType() == VoiceConfig.RECOGNIZER_SERVICE_GOOGLE_SPEECH) {
                     String className = "com.chattylabs.sdk.android.voice.google.GoogleSpeechRecognizer";
-                    speechRecognizer = newInstance(className, application, voiceConfig, audioHandler, bluetoothSco, logger);
+                    speechRecognizer = newInstance(className, application, voiceConfig, audioHandler,
+                            bluetoothSco, logger);
                 }
             }
-        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException
+        } catch (ClassNotFoundException | IllegalAccessException
                 | InstantiationException | InvocationTargetException e) {
             logger.logException(e); throw new RuntimeException("Have you forgot to add addon the dependency?");
         }
@@ -149,17 +155,20 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
             int speechRecognizerStatus = voiceConfig.getRecognizerServiceType() ==
                     VoiceConfig.RECOGNIZER_SERVICE_GOOGLE_SPEECH ? RECOGNIZER_AVAILABLE : androidRecognizerStatus;
             onSetup.execute(new Status() {
+                @SuppressLint("MissingPermission")
                 @Override
                 public boolean isAvailable() {
-                    return synthesizerStatus == SYNTHESIZER_AVAILABLE &&
+                    return synthesizerStatus == SynthesizerListener.AVAILABLE &&
                            speechRecognizerStatus == RECOGNIZER_AVAILABLE;
                 }
 
+                @SuppressLint("MissingPermission")
                 @Override
                 public int getSynthesizerStatus() {
                     return synthesizerStatus;
                 }
 
+                @SuppressLint("MissingPermission")
                 @Override
                 public int getRecognizerStatus() {
                     return speechRecognizerStatus;
