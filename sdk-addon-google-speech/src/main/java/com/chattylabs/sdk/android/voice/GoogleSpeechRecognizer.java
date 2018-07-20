@@ -2,8 +2,6 @@ package com.chattylabs.sdk.android.voice;
 
 import android.app.Application;
 import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -12,13 +10,25 @@ import android.text.TextUtils;
 
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.common.internal.ILogger;
+import com.google.cloud.speech.v1beta1.AsyncRecognizeRequest;
+import com.google.cloud.speech.v1beta1.AsyncRecognizeResponse;
+import com.google.cloud.speech.v1beta1.RecognitionAudio;
+import com.google.cloud.speech.v1beta1.RecognitionConfig;
+import com.google.cloud.speech.v1beta1.SpeechClient;
+import com.google.cloud.speech.v1beta1.SpeechRecognitionResult;
+import com.google.cloud.speech.v1beta1.SyncRecognizeRequest;
+import com.google.cloud.speech.v1beta1.SyncRecognizeResponse;
+import com.google.protobuf.ByteString;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.MIN_VOICE_RECOGNITION_TIME_LISTENING;
@@ -39,87 +49,76 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
     private final AndroidAudioHandler audioHandler;
     private final BluetoothSco bluetoothSco;
     private final ExecutorService executorService;
-    private GoogleSpeechService mSpeechService;
 
     // Log stuff
     private ILogger logger;
 
     private VoiceRecorder mVoiceRecorder;
+    private SpeechClient speech;
+
     private final VoiceRecorder.Callback mVoiceCallback = new VoiceRecorder.Callback() {
 
         @Override
         public void onVoiceStart() {
-            if (mSpeechService != null) {
-                recognitionListener.onBeginningOfSpeech();
-                mSpeechService.startRecognizing(mVoiceRecorder.getSampleRate());
+            if (speech != null) {
+                recognitionListener.onReadyForSpeech(null);
             }
         }
 
         @Override
         public void onVoice(byte[] data, int size) {
-            if (mSpeechService != null) {
-                mSpeechService.recognize(data, size);
+            if (speech != null) {
+                RecognitionConfig.AudioEncoding encoding =
+                        RecognitionConfig.AudioEncoding.FLAC;
+                RecognitionConfig recognitionConfig = RecognitionConfig.newBuilder()
+                        .setEncoding(encoding)
+                        .setSampleRate(mVoiceRecorder.getSampleRate())
+                        .setLanguageCode(getDefaultLanguageCode())
+                        .build();
+                RecognitionAudio audio = RecognitionAudio.newBuilder()
+                        .setContent(ByteString.copyFrom(data, 0, size))
+                        .build();
+                SyncRecognizeRequest request = SyncRecognizeRequest.newBuilder()
+                        .setConfig(recognitionConfig)
+                        .setAudio(audio)
+                        .build();
+                SyncRecognizeResponse response = speech.syncRecognize(request);
+                if (response.getResultsCount() > 0) {
+                    SpeechRecognitionResult result = response.getResults(0);
+                    if (result.getAlternativesCount() > 0) {
+                        String text = result.getAlternatives(0).getTranscript();
+
+//                        if (!TextUtils.isEmpty(text)) {
+//                            Bundle bundle = new Bundle();
+//                            ArrayList<String> textList = new ArrayList<>();
+//                            textList.add(text);
+//                            bundle.putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION, textList);
+//                            bundle.putFloatArray(SpeechRecognizer.CONFIDENCE_SCORES, new float[]{1});
+//                            if (isFinal) {
+//                                mVoiceCallback.onVoiceEnd();
+//                                recognitionListener.onResults(bundle);
+//                            } else {
+//                                recognitionListener.onPartialResults(bundle);
+//                            }
+//                        }
+                    }
+                }
             }
         }
 
         @Override
         public void onVoiceError(int error) {
-            if (mSpeechService != null) {
+            if (speech != null) {
                 recognitionListener.onError(error);
             }
         }
 
         @Override
         public void onVoiceEnd() {
-            if (mSpeechService != null) {
+            if (speech != null) {
                 stopVoiceRecorder();
-                mSpeechService.finishRecognizing();
                 recognitionListener.onEndOfSpeech();
             }
-        }
-
-    };
-
-    private final GoogleSpeechService.Listener mSpeechServiceListener =
-            new GoogleSpeechService.Listener() {
-
-                @Override
-                public void onSpeechReady() {
-                    recognitionListener.onReadyForSpeech(null);
-                }
-
-                @Override
-                public void onSpeechRecognized(final String text, final boolean isFinal) {
-                    if (!TextUtils.isEmpty(text)) {
-                        Bundle bundle = new Bundle();
-                        ArrayList<String> textList = new ArrayList<>();
-                        textList.add(text);
-                        bundle.putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION, textList);
-                        bundle.putFloatArray(SpeechRecognizer.CONFIDENCE_SCORES, new float[]{1});
-                        if (isFinal) {
-                            mVoiceCallback.onVoiceEnd();
-                            recognitionListener.onResults(bundle);
-                        } else {
-                            recognitionListener.onPartialResults(bundle);
-                        }
-                    }
-                }
-            };
-
-    private final ServiceConnection mServiceConnection = new ServiceConnection() {
-
-        @Override
-        public void onServiceConnected(ComponentName componentName, IBinder binder) {
-            mSpeechService = GoogleSpeechService.from(binder);
-            mSpeechService.addListener(mSpeechServiceListener);
-            mSpeechService.setAccessTokenDelegate(config.getGoogleAccessToken());
-            mSpeechService.fetchAccessToken();
-            if (mVoiceRecorder == null) startVoiceRecorder();
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName componentName) {
-            mSpeechService = null;
         }
 
     };
@@ -276,11 +275,11 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
     };
 
     GoogleSpeechRecognizer(Application application,
-                                  VoiceConfig config,
-                                  AndroidAudioHandler audioHandler,
-                                  BluetoothSco bluetoothSco, ILogger logger) {
+                           VoiceConfig configuration,
+                           AndroidAudioHandler audioHandler,
+                           BluetoothSco bluetoothSco, ILogger logger) {
         this.application = application;
-        this.config = config;
+        this.config = configuration;
         this.audioHandler = audioHandler;
         this.bluetoothSco = bluetoothSco;
         this.logger = logger;
@@ -295,11 +294,15 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
         checkForBluetoothScoRequired(this::startListening);
     }
 
-    private void checkInitialized() {
-        // Prepare Cloud Speech API
-        application.bindService(new Intent(application, GoogleSpeechService.class),
-                mServiceConnection, Context.BIND_AUTO_CREATE);
-        //application.start
+    private String getDefaultLanguageCode() {
+        final Locale locale = Locale.getDefault();
+        final StringBuilder language = new StringBuilder(locale.getLanguage());
+        final String country = locale.getCountry();
+        if (!TextUtils.isEmpty(country)) {
+            language.append("-");
+            language.append(country);
+        }
+        return language.toString();
     }
 
     private void checkForBluetoothScoRequired(Runnable starter) {
@@ -337,17 +340,21 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
         executorService.submit(() -> {
             lock.lock();
             try {
-                checkInitialized();
                 recognitionListener.startTimeout();
+
 //                    recognitionListener.setRmsDebug(rmsDebug);
 //                    if (noSoundThreshold > 0) recognitionListener.setNoSoundThreshold(noSoundThreshold);
 //                    if (lowSoundThreshold > 0) recognitionListener.setLowSoundThreshold(lowSoundThreshold);
 //                    logger.i(TAG, "VOICE - start listening");
 //                    speechRecognizer.setRecognitionListener(recognitionListener);
-                if (mSpeechService != null)
-                    startVoiceRecorder();
+
+                if (this.speech == null) {
+                    try (SpeechClient speechClient = SpeechClient.create()) {
+                        this.speech = speechClient;
+                    }
+                }
+                startVoiceRecorder();
                 lock.unlock();
-//                });
             } catch (Exception e) {
                 lock.unlock();
             }
@@ -396,17 +403,32 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
     public void stop() {
         // Stop listening to voice
         stopVoiceRecorder();
+        if (speech != null) {
+            try {
+                speech.close();
+            } catch (Exception e) {
+                logger.logException(e);
+            }
+        }
     }
 
     @Override
     public void shutdown() {
         stop();
-
         // Stop Cloud Speech API
-        if (mSpeechService != null)
-            mSpeechService.removeListener(mSpeechServiceListener);
-        application.unbindService(mServiceConnection);
-        mSpeechService = null;
+        if (speech != null) {
+            speech.shutdown();
+            try {
+                speech.awaitTermination(2000, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                logger.logException(e);
+            }
+        }
+        speech = null;
+    }
+
+    @Override
+    public void release() {
     }
 
     @Override

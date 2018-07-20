@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.support.annotation.NonNull;
+import android.support.annotation.WorkerThread;
 
 import com.chattylabs.sdk.android.common.HtmlUtils;
 import com.chattylabs.sdk.android.common.StringUtils;
@@ -21,16 +22,12 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SYNTHESIZER_AVAILABLE;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SYNTHESIZER_AVAILABLE_BUT_INACTIVE;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SYNTHESIZER_LANGUAGE_NOT_SUPPORTED_ERROR;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SYNTHESIZER_NOT_AVAILABLE_ERROR;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SYNTHESIZER_UNKNOWN_ERROR;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SynthesizerListenerContract;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.*;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SynthesizerListener;
 
 public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
 
-    private static final String CHECKING_UTTERANCE_ID = BuildConfig.APPLICATION_ID + ".checking";
+    private static final String CHECKING_UTTERANCE_ID = "<CHECKING_UTTERANCE>";
     private static final String TESTING_STRING = "<TESTING_STRING>";
     private static final int MAX_SPEECH_TIME = 60;
 
@@ -43,6 +40,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
     // Resources
     private Application application;
     private TextToSpeech tts; // released
+    private OnSynthesizerSetup onSynthesizerSetup;
 
     AndroidSpeechSynthesizer(Application application,
                              VoiceConfig configuration,
@@ -54,40 +52,42 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
         this.release();
     }
 
+    @WorkerThread
     @Override
-    public void setup(OnSynthesizerInitialised onSynthesizerInitialised) {
+    public void setup(OnSynthesizerSetup onSynthesizerSetup) {
         logger.i(TAG, "TTS - setup and check language");
+        this.onSynthesizerSetup = onSynthesizerSetup;
         try {
             initTts(status -> {
-                if (status == TextToSpeech.SUCCESS) {
-                    tryToDownloadTtsData(onSynthesizerInitialised);
+                if (status == SynthesizerListener.SUCCESS) {
+                    tryToDownloadTtsData();
                 }
                 else {
                     if (isTtsNull()) {
                         release();
                         TextToSpeech _tts = new TextToSpeech(application, null);
                         if (_tts.getEngines().size() > 0) {
-                            onSynthesizerInitialised.execute(SYNTHESIZER_AVAILABLE_BUT_INACTIVE);
+                            onSynthesizerSetup.execute(SynthesizerListener.AVAILABLE_BUT_INACTIVE);
                         }
                         else {
-                            onSynthesizerInitialised.execute(SYNTHESIZER_NOT_AVAILABLE_ERROR);
+                            onSynthesizerSetup.execute(SynthesizerListener.NOT_AVAILABLE_ERROR);
                         }
                         _tts.shutdown();
                     }
                     else {
                         shutdown();
-                        onSynthesizerInitialised.execute(SYNTHESIZER_AVAILABLE_BUT_INACTIVE);
+                        onSynthesizerSetup.execute(SynthesizerListener.AVAILABLE_BUT_INACTIVE);
                     }
                 }
-            }, onSynthesizerInitialised);
+            });
         } catch (Exception e) {
             shutdown();
-            onSynthesizerInitialised.execute(SYNTHESIZER_NOT_AVAILABLE_ERROR);
+            onSynthesizerSetup.execute(SynthesizerListener.NOT_AVAILABLE_ERROR);
         }
     }
 
     @Override
-    public  <T extends ConversationalFlowComponent.SynthesizerListenerContract> void playSilence(long durationInMillis, String queueId, T... listeners) {
+    public  <T extends SynthesizerListener> void playSilence(long durationInMillis, String queueId, T... listeners) {
 //        if (durationInMillis <= 0) throw new IllegalArgumentException("Silence duration must be greater than 0");
 //        String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
 //        logger.i(TAG, "TTS - play silence with Queue: <" + queueId + "> - " + utteranceId);
@@ -104,7 +104,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
 //                " | held: " + Boolean.toString(isOnHold) + " - " + utteranceId);
 //        if (isTtsNull()) {
 //            initTts(status -> {
-//                if (status == TextToSpeech.SUCCESS) {
+//                if (status == SynthesizerListener.SUCCESS) {
 //                    resume();
 //                }
 //                else {
@@ -114,7 +114,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
 //                        synchronized (lock) {
 //                            utteranceProgressListener = listenersMap.remove(uId);
 //                        }
-//                        utteranceProgressListener.onError(uId, TextToSpeech.ERROR);
+//                        utteranceProgressListener.onError(uId, SynthesizerListener.ERROR);
 //                    }
 //                }
 //            }, null);
@@ -125,7 +125,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
     }
 
     @Override
-    public  <T extends ConversationalFlowComponent.SynthesizerListenerContract> void playSilence(long durationInMillis, T... listeners) {
+    public  <T extends SynthesizerListener> void playSilence(long durationInMillis, T... listeners) {
 //        if (durationInMillis <= 0) throw new IllegalArgumentException("Silence duration must be greater than 0");
 //        String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
 //        logger.i(TAG, "TTS - play silence immediately - " + utteranceId);
@@ -141,7 +141,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
 //        logger.i(TAG, "TTS - ready: " + Boolean.toString(isReady) +
 //                " | speaking: " + Boolean.toString(isSpeaking) + " - " + uId);
 //        initTts(status -> {
-//            if (status == TextToSpeech.SUCCESS) {
+//            if (status == SynthesizerListener.SUCCESS) {
 //                playTheCurrentQueue(map);
 //            }
 //            else {
@@ -152,7 +152,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
     }
 
     @Override
-    UtteranceListener createUtteranceListener(@NonNull SynthesizerListenerContract... listeners) {
+    UtteranceListener createUtteranceListener(@NonNull SynthesizerListener... listeners) {
         return new AndroidSpeechSynthesizerAdapter()
         {
             @Override
@@ -236,8 +236,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
     }
 
     @Override
-    void initTts(TextToSpeech.OnInitListener onInitListener,
-                         OnSynthesizerInitialised onCheckLanguageInit) {
+    void initTts(OnSynthesizerInitialised onSynthesizerInitialised) {
         if (isTtsNull()) {
             setReady(false);
             logger.i(TAG, "TTS - creating new instance of TextToSpeech.class");
@@ -249,18 +248,19 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
                     try {
                         tts.setLanguage(Locale.getDefault());
                     } catch (Exception ignored) {}
-                    onInitListener.onInit(status);
                 }
+                onSynthesizerInitialised.execute(status == TextToSpeech.SUCCESS ?
+                        SynthesizerListener.SUCCESS : SynthesizerListener.ERROR);
             });
-            setUtteranceListener(createUtterancesListener(onCheckLanguageInit));
+            setUtteranceListener(createUtterancesListener());
             tts.setOnUtteranceProgressListener((UtteranceProgressListener) getUtteranceListener());
         }
         else if (isReady()) {
-            onInitListener.onInit(TextToSpeech.SUCCESS);
+            onSynthesizerInitialised.execute(SynthesizerListener.SUCCESS);
         }
     }
 
-    private UtteranceListener createUtterancesListener(OnSynthesizerInitialised onCheckLanguageInit) {
+    private UtteranceListener createUtterancesListener() {
         return new AndroidSpeechSynthesizerAdapter() {
             private long timestamp;
             private TimerTask task;
@@ -321,7 +321,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
                 clearTimeout();
                 if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
                     logger.v(getTag(), "TTS - on done <" + getCurrentQueueId() + "> -> go to setup language - " + utteranceId);
-                    checkLanguage(onCheckLanguageInit, true);
+                    checkLanguage(true);
                 }
                 else {
                     logger.v(getTag(), "TTS - check For Empty Queue <" + getCurrentQueueId() + "> - " + utteranceId);
@@ -351,10 +351,10 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
                 if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
                     shutdown();
                     if (errorCode == TextToSpeech.ERROR_NOT_INSTALLED_YET) {
-                        onCheckLanguageInit.execute(SYNTHESIZER_NOT_AVAILABLE_ERROR);
+                        onSynthesizerSetup.execute(SynthesizerListener.NOT_AVAILABLE_ERROR);
                     }
                     else {
-                        onCheckLanguageInit.execute(SYNTHESIZER_UNKNOWN_ERROR);
+                        onSynthesizerSetup.execute(SynthesizerListener.UNKNOWN_ERROR);
                     }
                 }
                 else {
@@ -378,7 +378,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
         };
     }
 
-    private void tryToDownloadTtsData(OnSynthesizerInitialised onInit) {
+    private void tryToDownloadTtsData() {
         if (!triedToDownloadTtsData) {
             triedToDownloadTtsData = true;
             logger.v(TAG, "TTS - try to download audio data");
@@ -388,13 +388,13 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
             } catch (Exception e) {
                 logger.e(TAG, "error when downloading audio data: " + e.getMessage());
                 // Otherwise it reports the TextToSpeechStatus to the Callback
-                checkLanguage(onInit, false);
+                checkLanguage(false);
             }
         }
         else {
             logger.e(TAG, "TTS - try to download audio data - ERROR");
             shutdown();
-            onInit.execute(SYNTHESIZER_UNKNOWN_ERROR);
+            onSynthesizerSetup.execute(SynthesizerListener.UNKNOWN_ERROR);
         }
     }
 
@@ -427,27 +427,27 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
         }
     }
 
-    private void checkLanguage(OnSynthesizerInitialised onInit, boolean fromUtterance) {
+    private void checkLanguage(boolean fromUtterance) {
         int result = tts.isLanguageAvailable(Locale.getDefault());
         if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
             if (reviewAgain && !fromUtterance) {
                 reviewAgain = false;
                 shutdown();
                 logger.v(getTag(), "TTS - double checking!");
-                setup(onInit);
+                setup(onSynthesizerSetup);
             }
             else {
                 reviewAgain = true;
                 shutdown();
                 logger.v(getTag(), "TTS - checking error");
-                onInit.execute(SYNTHESIZER_LANGUAGE_NOT_SUPPORTED_ERROR);
+                onSynthesizerSetup.execute(SynthesizerListener.LANGUAGE_NOT_SUPPORTED_ERROR);
             }
         }
         else {
             // Everything has gone well!
             logger.i(getTag(), "TTS - checking has passed!");
             shutdown();
-            onInit.execute(SYNTHESIZER_AVAILABLE);
+            onSynthesizerSetup.execute(SynthesizerListener.AVAILABLE);
         }
     }
 
@@ -455,20 +455,20 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
     void playSilence(String utteranceId, long durationInMillis) {
         logger.i(TAG, "TTS - play internal silence - " + utteranceId);
         initTts(status -> {
-            if (status == TextToSpeech.SUCCESS) {
+            if (status == SynthesizerListener.SUCCESS) {
                 tts.playSilentUtterance(durationInMillis, TextToSpeech.QUEUE_ADD, utteranceId);
             }
             else {
                 logger.e(TAG, "TTS - silence status ERROR - " + utteranceId);
                 shutdown();
             }
-        }, null);
+        });
     }
 
     private void play(String utteranceId, String text, HashMap<String, String> params) {
         logger.i(TAG, "TTS - reading out loud: \"" + text + "\" - " + utteranceId);
         initTts(status -> {
-            if (status == TextToSpeech.SUCCESS) {
+            if (status == SynthesizerListener.SUCCESS) {
                 Bundle newParams = new Bundle();
                 String paramStream = params.get(TextToSpeech.Engine.KEY_PARAM_STREAM);
                 if (paramStream != null) {
@@ -480,7 +480,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
                 logger.e(TAG, "TTS - playText status ERROR - " + utteranceId);
                 shutdown();
             }
-        }, null);
+        });
     }
 
     public static String getErrorType(int error) {
