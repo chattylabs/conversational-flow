@@ -1,7 +1,3 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.chattylabs.sdk.android.voice" >
-
-    <application>
-        <service android:name=".GoogleSpeechService" />
-    </application>
+    package="com.chattylabs.sdk.android.voice.addon.google" >
 </manifest>

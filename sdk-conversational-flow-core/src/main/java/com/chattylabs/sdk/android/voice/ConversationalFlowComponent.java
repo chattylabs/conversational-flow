@@ -1,10 +1,13 @@
 package com.chattylabs.sdk.android.voice;
 
+import android.Manifest;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresPermission;
 import android.support.annotation.RestrictTo;
+import android.support.annotation.WorkerThread;
 import android.text.TextUtils;
 
 import com.chattylabs.sdk.android.common.RequiredPermissions;
@@ -25,13 +28,6 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
     String TAG = Tag.make("ConversationalFlowComponent");
 
     String DEFAULT_QUEUE_ID = "default_queue";
-
-    // Synthesizer codes
-    int SYNTHESIZER_AVAILABLE = 101;
-    int SYNTHESIZER_AVAILABLE_BUT_INACTIVE = 102;
-    int SYNTHESIZER_UNKNOWN_ERROR = 103;
-    int SYNTHESIZER_LANGUAGE_NOT_SUPPORTED_ERROR = 104;
-    int SYNTHESIZER_NOT_AVAILABLE_ERROR = 105;
 
     // Recognizer codes
     int RECOGNIZER_AVAILABLE = 201;
@@ -58,21 +54,35 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    interface SynthesizerListenerContract {}
+    interface SynthesizerListener {
+        // Synthesizer codes
+        int AVAILABLE = 101;
+        int AVAILABLE_BUT_INACTIVE = 102;
+        int UNKNOWN_ERROR = 103;
+        int LANGUAGE_NOT_SUPPORTED_ERROR = 104;
+        int NOT_AVAILABLE_ERROR = 105;
+        // Synthesizer initialization
+        int SUCCESS = 106;
+        int ERROR = 107;
+    }
 
-    interface OnSynthesizerError extends SynthesizerListenerContract {
+    interface OnSynthesizerError extends SynthesizerListener {
         void execute(String utteranceId, int errorCode);
     }
 
-    interface OnSynthesizerInitialised extends SynthesizerListenerContract {
+    interface OnSynthesizerSetup extends SynthesizerListener {
         void execute(int synthesizerStatus);
     }
 
-    interface OnSynthesizerStart extends SynthesizerListenerContract {
+    interface OnSynthesizerInitialised extends SynthesizerListener {
+        void execute(int synthesizerStatus);
+    }
+
+    interface OnSynthesizerStart extends SynthesizerListener {
         void execute(String utteranceId);
     }
 
-    interface OnSynthesizerDone extends SynthesizerListenerContract {
+    interface OnSynthesizerDone extends SynthesizerListener {
         void execute(String utteranceId);
     }
 
@@ -162,19 +172,20 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
 
     @SuppressWarnings("unchecked")
     interface SpeechSynthesizer {
-        void setup(OnSynthesizerInitialised onSynthesizerInitialised);
+        @WorkerThread
+        void setup(OnSynthesizerSetup onSynthesizerSetup);
 
         void addFilter(TextFilter filter);
 
         List<TextFilter> getFilters();
 
-        <T extends SynthesizerListenerContract> void playText(String text, String queueId, T... listeners);
+        <T extends SynthesizerListener> void playText(String text, String queueId, T... listeners);
 
-        <T extends SynthesizerListenerContract> void playText(String text, T... listeners);
+        <T extends SynthesizerListener> void playText(String text, T... listeners);
 
-        <T extends SynthesizerListenerContract> void playSilence(long durationInMillis, String queueId, T... listeners);
+        <T extends SynthesizerListener> void playSilence(long durationInMillis, String queueId, T... listeners);
 
-        <T extends SynthesizerListenerContract> void playSilence(long durationInMillis, T... listeners);
+        <T extends SynthesizerListener> void playSilence(long durationInMillis, T... listeners);
 
         void releaseCurrentQueue();
 
@@ -251,6 +262,8 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
      * Main Component Contract
      */
 
+    @WorkerThread
+    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     void setup(Context context, OnSetup onSetup);
 
     void setVoiceConfig(VoiceConfig voiceConfiguration);

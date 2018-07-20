@@ -1,6 +1,5 @@
 package com.chattylabs.sdk.android.voice;
 
-import android.speech.tts.TextToSpeech;
 import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -22,13 +21,13 @@ import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSyn
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerInitialised;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerStart;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SpeechSynthesizer;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SynthesizerListenerContract;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SynthesizerListener;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.TAG;
 
 abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
     // Constants
-    private static final String DEFAULT_UTTERANCE_ID = BuildConfig.APPLICATION_ID + ".utterance:";
+    private static final String DEFAULT_UTTERANCE_ID = "<DEFAULT_UTTERANCE>:";
     private static final String MAP_UTTERANCE_ID = "utteranceId";
     private static final String MAP_SILENCE = "silence";
     private static final String MAP_MESSAGE = "message";
@@ -109,9 +108,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
     abstract String getTag();
 
-    abstract void initTts(
-            TextToSpeech.OnInitListener onInitListener, 
-            OnSynthesizerInitialised onCheckLanguageInit);
+    abstract void initTts(OnSynthesizerInitialised onSynthesizerInitialised);
 
     abstract void executeOnTtsReady(
             String utteranceId, String text, HashMap<String, String> params);
@@ -125,12 +122,12 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     abstract boolean isTtsSpeaking();
 
     abstract UtteranceListener createUtteranceListener(
-            SynthesizerListenerContract[] listeners);
+            SynthesizerListener[] listeners);
 
     private UtteranceListener generateUtteranceListener(
-            UtteranceListener listener, SynthesizerListenerContract[] listeners) {
+            UtteranceListener listener, SynthesizerListener[] listeners) {
         if (listeners.length > 0) {
-            for (SynthesizerListenerContract item : listeners) {
+            for (SynthesizerListener item : listeners) {
                 if (item instanceof OnSynthesizerStart) {
                     listener.setOnStartedListener((OnSynthesizerStart) item);
                 }
@@ -146,7 +143,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     @Override
-    public <T extends ConversationalFlowComponent.SynthesizerListenerContract> void playText(String text, String queueId, T... listeners) {
+    public <T extends SynthesizerListener> void playText(String text, String queueId, T... listeners) {
         UtteranceListener listener = generateUtteranceListener(createUtteranceListener(listeners), listeners);
         playText(text, queueId, listener, DEFAULT_UTTERANCE_ID + System.nanoTime());
     }
@@ -165,21 +162,21 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
                 " | held: " + Boolean.toString(isOnHold) + " - " + utteranceId);
         if (isTtsNull()) {
             initTts(status -> {
-                if (status == TextToSpeech.SUCCESS) {
+                if (status == SynthesizerListener.SUCCESS) {
                     isReady = true;
                     resume();
                 }
                 else {
                     logger.e(TAG, "TTS - with queue status ERROR");
                     if (listenersMap.containsKey(uId)) {
-                        UtteranceListener utteranceProgressListener;
+                        UtteranceListener utteranceListener;
                         synchronized (lock) {
-                            utteranceProgressListener = listenersMap.remove(uId);
+                            utteranceListener = listenersMap.remove(uId);
                         }
-                        utteranceProgressListener.onError(uId, TextToSpeech.ERROR);
+                        utteranceListener.onError(uId, SynthesizerListener.ERROR);
                     }
                 }
-            }, null);
+            });
         }
         else if (isReady && !isSpeaking && !isOnHold) {
             resume();
@@ -187,7 +184,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     @Override
-    public <T extends ConversationalFlowComponent.SynthesizerListenerContract> void playText(String text, T... listeners) {
+    public <T extends SynthesizerListener> void playText(String text, T... listeners) {
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
         logger.i(TAG, "TTS - prepare to immediately playText \"" + text + "\" - " + utteranceId);
         UtteranceListener listener = generateUtteranceListener(createUtteranceListener(listeners), listeners);
@@ -203,14 +200,14 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         logger.i(TAG, "TTS - ready: " + Boolean.toString(isReady) +
                 " | speaking: " + Boolean.toString(isSpeaking) + " - " + utteranceId);
         initTts(status -> {
-            if (status == TextToSpeech.SUCCESS) {
+            if (status == SynthesizerListener.SUCCESS) {
                 playTheCurrentQueue(map);
             }
             else {
                 logger.e(TAG, "TTS - no queue status ERROR");
                 shutdown();
             }
-        }, null);
+        });
     }
 
     @Override
@@ -257,7 +254,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     public void resume() {
         if (isSpeaking) return;
         initTts(status -> {
-            if (status == TextToSpeech.SUCCESS) {
+            if (status == SynthesizerListener.SUCCESS) {
                 logger.i(getTag(), "TTS - resume queue: <" + queueId + ">");
                 checkForEmptyCurrentQueue();
                 if (!isEmpty()) {
@@ -270,7 +267,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
                 logger.e(getTag(), "TTS - status ERROR");
                 shutdown();
             }
-        }, null);
+        });
     }
 
     void checkForEmptyCurrentQueue() {
