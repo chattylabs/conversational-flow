@@ -6,7 +6,7 @@ apply from: '../buildsystem/android.gradle'
 
 android {
     defaultConfig {
-        applicationId "com.chattylabs.demo.voice.interaction"
+        applicationId "com.chattylabs.demo.voice_interaction.conversational_flow"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
         manifestPlaceholders = [HOCKEYAPP_APP_ID: "658862d7f4d34d89b96ae8356aafdb05"]
@@ -25,6 +25,10 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+//    packagingOptions {
+//        exclude 'META-INF/io.netty.versions.properties'
+//    }
 }
 
 dependencies {
@@ -59,11 +63,11 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 }
 
-//task copySecretKey(type: Copy) {
-//    def File secretKey = file "$System.env.GOOGLE_APPLICATION_CREDENTIALS"
-//    from secretKey.getParent()
-//    include secretKey.getName()
-//    into 'src/main/res/raw'
-//    rename secretKey.getName(), "credential.json"
-//}
-//preBuild.dependsOn(copySecretKey)
+task copySecretKey(type: Copy) {
+    def File secretKey = file "$System.env.GOOGLE_APPLICATION_CREDENTIALS"
+    from secretKey.getParent()
+    include secretKey.getName()
+    into 'src/main/res/raw'
+    rename secretKey.getName(), "credential.json"
+}
+preBuild.dependsOn(copySecretKey)

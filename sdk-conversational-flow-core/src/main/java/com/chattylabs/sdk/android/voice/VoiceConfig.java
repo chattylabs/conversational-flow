@@ -1,6 +1,7 @@
 package com.chattylabs.sdk.android.voice;
 
 import android.support.annotation.IntDef;
+import android.support.annotation.RawRes;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -26,6 +27,7 @@ public class VoiceConfig {
     private LazyProvider<Boolean> audioExclusiveRequiredForRecognizer;
     private ServiceTypeLazyProvider recognizerServiceType;
     private ServiceTypeLazyProvider synthesizerServiceType;
+    private RawResourceLazyProvider googleCredentialsResourceFile;
 
     private VoiceConfig(Builder builder) {
         bluetoothScoRequired = builder.bluetoothScoRequired;
@@ -33,18 +35,19 @@ public class VoiceConfig {
         audioExclusiveRequiredForRecognizer = builder.audioExclusiveRequiredForRecognizer;
         recognizerServiceType = builder.recognizerServiceType;
         synthesizerServiceType = builder.synthesizerServiceType;
+        googleCredentialsResourceFile = builder.googleCredentialsResourceFile;
     }
 
     public boolean isBluetoothScoRequired() {
-        return bluetoothScoRequired.provide();
+        return bluetoothScoRequired.get();
     }
 
     public boolean isAudioExclusiveRequiredForSynthesizer() {
-        return audioExclusiveRequiredForSynthesizer.provide();
+        return audioExclusiveRequiredForSynthesizer.get();
     }
 
     public boolean isAudioExclusiveRequiredForRecognizer() {
-        return audioExclusiveRequiredForRecognizer.provide();
+        return audioExclusiveRequiredForRecognizer.get();
     }
 
     @ServiceType
@@ -57,22 +60,29 @@ public class VoiceConfig {
         return synthesizerServiceType.get();
     }
 
+    @RawRes
+    public int getGoogleCredentialsResourceFile() {
+        return googleCredentialsResourceFile.get();
+    }
+
     public static final class Builder {
         private LazyProvider<Boolean> bluetoothScoRequired;
         private LazyProvider<Boolean> audioExclusiveRequiredForSynthesizer;
         private LazyProvider<Boolean> audioExclusiveRequiredForRecognizer;
         private ServiceTypeLazyProvider recognizerServiceType;
         private ServiceTypeLazyProvider synthesizerServiceType;
+        private RawResourceLazyProvider googleCredentialsResourceFile;
 
         public Builder() {
         }
 
         public Builder(VoiceConfig copy) {
-            this.bluetoothScoRequired = copy.bluetoothScoRequired;
-            this.audioExclusiveRequiredForSynthesizer = copy.audioExclusiveRequiredForSynthesizer;
-            this.audioExclusiveRequiredForRecognizer = copy.audioExclusiveRequiredForRecognizer;
-            this.recognizerServiceType = copy.recognizerServiceType;
-            this.synthesizerServiceType = copy.synthesizerServiceType;
+            bluetoothScoRequired = copy.bluetoothScoRequired;
+            audioExclusiveRequiredForSynthesizer = copy.audioExclusiveRequiredForSynthesizer;
+            audioExclusiveRequiredForRecognizer = copy.audioExclusiveRequiredForRecognizer;
+            recognizerServiceType = copy.recognizerServiceType;
+            synthesizerServiceType = copy.synthesizerServiceType;
+            googleCredentialsResourceFile = copy.googleCredentialsResourceFile;
         }
 
         public Builder setBluetoothScoRequired(LazyProvider<Boolean> lazyProvider) {
@@ -100,6 +110,11 @@ public class VoiceConfig {
             return this;
         }
 
+        public Builder setGoogleCredentialsResourceFile(RawResourceLazyProvider lazyProvider) {
+            this.googleCredentialsResourceFile = lazyProvider;
+            return this;
+        }
+
         public VoiceConfig build() {
             return new VoiceConfig(this);
         }
@@ -110,10 +125,14 @@ public class VoiceConfig {
     }
 
     public interface LazyProvider<T> {
-        T provide();
+        T get();
     }
 
     public interface ServiceTypeLazyProvider {
         @ServiceType int get();
+    }
+
+    public interface RawResourceLazyProvider {
+        @RawRes int get();
     }
 }
