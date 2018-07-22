@@ -1,31 +1,33 @@
 package com.chattylabs.sdk.android.voice;
 
 import android.app.Application;
-import android.content.ComponentName;
-import android.content.ServiceConnection;
+import android.content.Context;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.speech.SpeechRecognizer;
+import android.support.annotation.RawRes;
 import android.text.TextUtils;
 
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.common.internal.ILogger;
-import com.google.cloud.speech.v1beta1.AsyncRecognizeRequest;
-import com.google.cloud.speech.v1beta1.AsyncRecognizeResponse;
-import com.google.cloud.speech.v1beta1.RecognitionAudio;
-import com.google.cloud.speech.v1beta1.RecognitionConfig;
-import com.google.cloud.speech.v1beta1.SpeechClient;
-import com.google.cloud.speech.v1beta1.SpeechRecognitionResult;
-import com.google.cloud.speech.v1beta1.SyncRecognizeRequest;
-import com.google.cloud.speech.v1beta1.SyncRecognizeResponse;
+import com.google.api.gax.core.FixedCredentialsProvider;
+import com.google.auth.oauth2.GoogleCredentials;
+import com.google.auth.oauth2.ServiceAccountCredentials;
+import com.google.cloud.speech.v1.RecognitionAudio;
+import com.google.cloud.speech.v1.RecognitionConfig;
+import com.google.cloud.speech.v1.SpeechClient;
+import com.google.cloud.speech.v1.SpeechRecognitionResult;
+import com.google.cloud.speech.v1.SpeechSettings;
+import com.google.cloud.speech.v1.RecognizeRequest;
+import com.google.cloud.speech.v1.RecognizeResponse;
+import com.google.cloud.speech.v1.stub.SpeechStubSettings;
 import com.google.protobuf.ByteString;
 
-import java.util.ArrayList;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -72,17 +74,17 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
                         RecognitionConfig.AudioEncoding.FLAC;
                 RecognitionConfig recognitionConfig = RecognitionConfig.newBuilder()
                         .setEncoding(encoding)
-                        .setSampleRate(mVoiceRecorder.getSampleRate())
+                        .setSampleRateHertz(mVoiceRecorder.getSampleRate())
                         .setLanguageCode(getDefaultLanguageCode())
                         .build();
                 RecognitionAudio audio = RecognitionAudio.newBuilder()
                         .setContent(ByteString.copyFrom(data, 0, size))
                         .build();
-                SyncRecognizeRequest request = SyncRecognizeRequest.newBuilder()
+                RecognizeRequest request = RecognizeRequest.newBuilder()
                         .setConfig(recognitionConfig)
                         .setAudio(audio)
                         .build();
-                SyncRecognizeResponse response = speech.syncRecognize(request);
+                RecognizeResponse response = speech.recognize(request);
                 if (response.getResultsCount() > 0) {
                     SpeechRecognitionResult result = response.getResults(0);
                     if (result.getAlternativesCount() > 0) {
@@ -152,9 +154,11 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
                     executorService.submit(() -> {
                         lock.lock();
                         try {
-                            //mVoiceCallback.onVoiceEnd();
+                            //TODO mVoiceCallback.onVoiceEnd();
                             lock.unlock();
                         } catch (Exception e) {
+                            logger.logException(e);
+                        } finally {
                             lock.unlock();
                         }
                     });
@@ -349,16 +353,30 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
 //                    speechRecognizer.setRecognitionListener(recognitionListener);
 
                 if (this.speech == null) {
-                    try (SpeechClient speechClient = SpeechClient.create()) {
+                    try (SpeechClient speechClient = generateFromRawFile(
+                            application,
+                            config.getGoogleCredentialsResourceFile())) {
                         this.speech = speechClient;
                     }
                 }
                 startVoiceRecorder();
                 lock.unlock();
             } catch (Exception e) {
+                logger.logException(e);
+            } finally {
                 lock.unlock();
             }
         });
+    }
+
+    private SpeechClient generateFromRawFile(Context context, @RawRes int rawResourceId) throws IOException {
+        final InputStream stream = context.getResources().openRawResource(rawResourceId);
+        final GoogleCredentials credentials = ServiceAccountCredentials.fromStream(stream)
+                .createScoped(SpeechStubSettings.getDefaultServiceScopes());
+        return SpeechClient.create(SpeechSettings.newBuilder()
+                .setCredentialsProvider(
+                        FixedCredentialsProvider.create(credentials)
+                ).build());
     }
 
     private void handleListeners(ConversationalFlowComponent.RecognizerListenerContract... listeners) {

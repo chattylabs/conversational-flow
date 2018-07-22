@@ -9,6 +9,7 @@ public abstract class ConversationalFlowModule {
     @dagger.Reusable
     public static ConversationalFlowComponent provideComponent(ILogger logger) {
         ConversationalFlowComponent component = ConversationalFlowComponentImpl.Instance.get();
+        logger.setBuildDebug(BuildConfig.DEBUG);
         ((ConversationalFlowComponentImpl)component).setLogger(logger);
         return component;
     }
