@@ -2,17 +2,17 @@ package com.chattylabs.sdk.android.voice;
 
 interface UtteranceListener {
 
-    ConversationalFlowComponent.OnSynthesizerStart getOnStartedListener();
+    ConversationalFlowComponent.OnSynthesizerStart _getOnStartedListener();
 
-    UtteranceListener setOnStartedListener(ConversationalFlowComponent.OnSynthesizerStart onStartedListener);
+    UtteranceListener _setOnStartedListener(ConversationalFlowComponent.OnSynthesizerStart onStartedListener);
 
-    ConversationalFlowComponent.OnSynthesizerDone getOnDoneListener();
+    ConversationalFlowComponent.OnSynthesizerDone _getOnDoneListener();
 
-    UtteranceListener setOnDoneListener(ConversationalFlowComponent.OnSynthesizerDone onDoneListener);
+    UtteranceListener _setOnDoneListener(ConversationalFlowComponent.OnSynthesizerDone onDoneListener);
 
-    ConversationalFlowComponent.OnSynthesizerError getOnErrorListener();
+    ConversationalFlowComponent.OnSynthesizerError _getOnErrorListener();
 
-    UtteranceListener setOnErrorListener(ConversationalFlowComponent.OnSynthesizerError onErrorListener);
+    UtteranceListener _setOnErrorListener(ConversationalFlowComponent.OnSynthesizerError onErrorListener);
 
     void clearTimeout();
 

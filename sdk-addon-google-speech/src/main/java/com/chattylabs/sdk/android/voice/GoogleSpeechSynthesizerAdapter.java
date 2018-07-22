@@ -8,34 +8,34 @@ abstract class GoogleSpeechSynthesizerAdapter implements UtteranceListener {
     private OnSynthesizerError onErrorListener;
 
     @Override
-    public OnSynthesizerStart getOnStartedListener() {
+    public OnSynthesizerStart _getOnStartedListener() {
         return onStartedListener != null ? onStartedListener : item -> {};
     }
 
     @Override
-    public GoogleSpeechSynthesizerAdapter setOnStartedListener(OnSynthesizerStart onStartedListener) {
+    public GoogleSpeechSynthesizerAdapter _setOnStartedListener(OnSynthesizerStart onStartedListener) {
         this.onStartedListener = onStartedListener;
         return this;
     }
 
     @Override
-    public OnSynthesizerDone getOnDoneListener() {
+    public OnSynthesizerDone _getOnDoneListener() {
         return onDoneListener != null ? onDoneListener : item -> {};
     }
 
     @Override
-    public GoogleSpeechSynthesizerAdapter setOnDoneListener(OnSynthesizerDone onDoneListener) {
+    public GoogleSpeechSynthesizerAdapter _setOnDoneListener(OnSynthesizerDone onDoneListener) {
         this.onDoneListener = onDoneListener;
         return this;
     }
 
     @Override
-    public OnSynthesizerError getOnErrorListener() {
+    public OnSynthesizerError _getOnErrorListener() {
         return onErrorListener != null ? onErrorListener : (item1, item2) -> {};
     }
 
     @Override
-    public GoogleSpeechSynthesizerAdapter setOnErrorListener(OnSynthesizerError onErrorListener) {
+    public GoogleSpeechSynthesizerAdapter _setOnErrorListener(OnSynthesizerError onErrorListener) {
         this.onErrorListener = onErrorListener;
         return this;
     }

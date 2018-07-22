@@ -64,6 +64,7 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
         // Synthesizer initialization
         int SUCCESS = 106;
         int ERROR = 107;
+        int TIMEOUT = 108;
     }
 
     interface OnSynthesizerError extends SynthesizerListener {
@@ -179,12 +180,18 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
 
         List<TextFilter> getFilters();
 
+        void clearFilters();
+
+        @WorkerThread
         <T extends SynthesizerListener> void playText(String text, String queueId, T... listeners);
 
+        @WorkerThread
         <T extends SynthesizerListener> void playText(String text, T... listeners);
 
+        @WorkerThread
         <T extends SynthesizerListener> void playSilence(long durationInMillis, String queueId, T... listeners);
 
+        @WorkerThread
         <T extends SynthesizerListener> void playSilence(long durationInMillis, T... listeners);
 
         void releaseCurrentQueue();
@@ -279,4 +286,6 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
     void stop();
 
     void shutdown();
+
+    void reset();
 }

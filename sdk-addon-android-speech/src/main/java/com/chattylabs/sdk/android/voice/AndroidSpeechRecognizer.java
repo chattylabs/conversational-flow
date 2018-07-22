@@ -92,6 +92,7 @@ public final class AndroidSpeechRecognizer implements ConversationalFlowComponen
                                 executorService.submit(lock::unlock);
                             });
                         } catch (Exception e) {
+                            logger.logException(e);
                             lock.unlock();
                         }
                     });
@@ -270,6 +271,7 @@ public final class AndroidSpeechRecognizer implements ConversationalFlowComponen
                         executorService.submit(lock::unlock);
                     });
                 } catch (Exception e) {
+                    logger.logException(e);
                     lock.unlock();
                 }
             } else {
@@ -313,6 +315,7 @@ public final class AndroidSpeechRecognizer implements ConversationalFlowComponen
                     }
                 });
             } catch (Exception e) {
+                logger.logException(e);
                 lock.unlock();
             }
         });
@@ -373,6 +376,7 @@ public final class AndroidSpeechRecognizer implements ConversationalFlowComponen
                     executorService.submit(lock::unlock);
                 });
             } catch (Exception e) {
+                logger.logException(e);
                 lock.unlock();
             }
         });
