@@ -27,8 +27,8 @@ import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.Synth
 
 public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
 
-    private static final String CHECKING_UTTERANCE_ID = "<CHECKING_UTTERANCE>";
-    private static final String TESTING_STRING = "<TESTING_STRING>";
+    private static final String CHECKING_UTTERANCE_ID = "<CHECKING_UTTERANCE_ID>";
+    private static final String TESTING_STRING = "%%TESTING_STRING%%";
 
     private static final int MAX_SPEECH_TIME_SEC = 60;
 
@@ -206,8 +206,8 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
             private Timer timer;
 
             @Override
-            public void clearTimeout() {
-                logger.v(getTag(), "ANDROID TTS - utterance timeout cleared");
+            public void clearTimeout(String utteranceId) {
+                logger.v(getTag(), "ANDROID TTS[%s] - utterance timeout cleared", utteranceId);
                 if (task != null) task.cancel();
                 if (timer != null) timer.cancel();
             }
@@ -231,7 +231,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
                                 onError(utteranceId, SynthesizerListener.TIMEOUT);
                             }
                             else {
-                                clearTimeout();
+                                clearTimeout(utteranceId);
                                 startTimeout(utteranceId);
                             }
                         }
@@ -257,15 +257,15 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
 
             @Override
             public void onDone(String utteranceId) {
-                clearTimeout();
+                clearTimeout(utteranceId);
                 if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
                     logger.v(getTag(), "ANDROID TTS[%s] - on done <%s> -> go to setup language", utteranceId, getCurrentQueueId());
                     checkLanguage(true);
                 }
                 else {
                     logger.v(getTag(), "ANDROID TTS[%s] - on done <%s> - check for Empty Queue", utteranceId, getCurrentQueueId());
-                    checkForEmptyCurrentQueue();
-                    if (isCurrentQueueEmpty()) {
+                    moveToNextQueueIfNeeded();
+                    if (isEmpty()) {
                         stop();
                         logger.i(getTag(), "ANDROID TTS[%s] - on done <%s> - Stream Finished", utteranceId, getCurrentQueueId());
                     }
@@ -284,7 +284,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
             @Override
             @TargetApi(Build.VERSION_CODES.LOLLIPOP)
             public void onError(String utteranceId, int errorCode) {
-                clearTimeout();
+                clearTimeout(utteranceId);
                 logger.e(getTag(), "ANDROID TTS[%s] - on error <%s> -> stop timeout", utteranceId, getCurrentQueueId());
                 logger.e(getTag(), "ANDROID TTS[%s] - error code: %s", utteranceId, getErrorType(errorCode));
                 if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
@@ -297,8 +297,8 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
                     }
                 }
                 else {
-                    checkForEmptyCurrentQueue();
-                    if (isCurrentQueueEmpty()) {
+                    moveToNextQueueIfNeeded();
+                    if (isEmpty()) {
                         stop();
                         logger.i(getTag(), "ANDROID TTS[%s] - ERROR <%s> - Stream Finished", utteranceId, getCurrentQueueId());
                     }
@@ -324,7 +324,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
             logger.v(TAG, "ANDROID TTS - try to download audio data");
             try {
                 // Try downloading data voice!
-                super.playText(TESTING_STRING, "DOWNLOADING_TTS_DATA", null, CHECKING_UTTERANCE_ID);
+                super.playText(TESTING_STRING, DEFAULT_QUEUE_ID, null, CHECKING_UTTERANCE_ID);
             } catch (Exception e) {
                 logger.e(TAG, "error when downloading audio data: " + e.getMessage());
                 // Otherwise it reports the TextToSpeechStatus to the Callback
@@ -386,7 +386,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
         else {
             // Everything has gone well!
             logger.i(getTag(), "ANDROID TTS - checking has passed");
-            shutdown();
+            stop();
             onSynthesizerSetup.execute(SynthesizerListener.AVAILABLE);
         }
     }

@@ -28,6 +28,7 @@ import android.widget.Toast;
 import com.chattylabs.sdk.android.common.HtmlUtils;
 import com.chattylabs.sdk.android.common.PermissionsHelper;
 import com.chattylabs.sdk.android.common.Tag;
+import com.chattylabs.sdk.android.common.ThreadUtils;
 import com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer;
 import com.chattylabs.sdk.android.voice.ConversationalFlowComponent;
 import com.chattylabs.sdk.android.voice.GoogleSpeechSynthesizer;
@@ -68,6 +69,7 @@ public class MainActivity extends DaggerAppCompatActivity
     private ArrayAdapter<CharSequence> adapter;
     private CheckBox scoCheck;
     private Menu menu;
+    private ThreadUtils.SerialThread serialThread;
 
     // Components
     @Inject ConversationalFlowComponent component;
@@ -105,6 +107,7 @@ public class MainActivity extends DaggerAppCompatActivity
         initViews();
         initActions();
         peripheral = new Peripheral((AudioManager) getSystemService(AUDIO_SERVICE));
+        serialThread = ThreadUtils.newSerialThread();
 
         setup();
 
@@ -125,7 +128,7 @@ public class MainActivity extends DaggerAppCompatActivity
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (PermissionsHelper.isPermissionRequest(requestCode)) {
             if (PermissionsHelper.isPermissionGranted(grantResults)) {
-                new Thread(() -> {
+                serialThread.addTask(() -> {
                     //component = ConversationalFlowModule.provideComponent();
                     component.updateVoiceConfig(builder ->
                             builder .setGoogleCredentialsResourceFile(() -> R.raw.credential)
@@ -146,7 +149,7 @@ public class MainActivity extends DaggerAppCompatActivity
                             synthesizer.addFilter(new TextFilterForUrl());
                         }
                     });
-                }).start();
+                });
             }
         }
     }
@@ -223,18 +226,16 @@ public class MainActivity extends DaggerAppCompatActivity
                         synthesizer.holdCurrentQueue();
                         listen(index);
                     } else {
-                        synthesizer.resume();
                         if (synthesizer.isEmpty()) {
                             component.shutdown();
-                        }
+                        } else synthesizer.resume();
                     }
                 },
                 (OnSynthesizerError) (utteranceId, errorCode) -> {
                     if (errorCode == SynthesizerListener.UNKNOWN_ERROR) {
-                        synthesizer.resume();
                         if (synthesizer.isEmpty()) {
                             component.shutdown();
-                        }
+                        } else synthesizer.resume();
                     } else {
                         component.shutdown();
                     }
@@ -256,10 +257,9 @@ public class MainActivity extends DaggerAppCompatActivity
                 }
             }
             synthesizer.releaseCurrentQueue();
-            synthesizer.resume();
             if (synthesizer.isEmpty()) {
                 component.shutdown();
-            }
+            } else synthesizer.resume();
         }, (OnRecognizerError) (i, i1) -> {
             Log.e(TAG, "Error " + i);
             Log.e(TAG, "Original Error " + getErrorString(i1));
@@ -287,7 +287,7 @@ public class MainActivity extends DaggerAppCompatActivity
     }
 
     private void readAll() {
-        new Thread(() -> {
+        serialThread.addTask(() -> {
             for (int i = 0; i < queue.size(); i++) {
                 Log.i(TAG, "readAll index: " + i);
                 Pair<Integer, String> item = queue.get(i);
@@ -298,7 +298,7 @@ public class MainActivity extends DaggerAppCompatActivity
                     listen(i);
                 }
             }
-        }).start();
+        });
     }
 
     @Override

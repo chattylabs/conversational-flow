@@ -27,8 +27,6 @@ import java.util.regex.Pattern;
 public interface ConversationalFlowComponent extends RequiredPermissions {
     String TAG = Tag.make("ConversationalFlowComponent");
 
-    String DEFAULT_QUEUE_ID = "default_queue";
-
     // Recognizer codes
     int RECOGNIZER_AVAILABLE = 201;
     int RECOGNIZER_NOT_AVAILABLE = 202;
@@ -207,8 +205,6 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
         void release();
 
         boolean isEmpty();
-
-        boolean isCurrentQueueEmpty();
 
         String getLastQueueId();
 
