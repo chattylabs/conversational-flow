@@ -37,10 +37,10 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
     // Data
     private final VoiceConfig configuration;
-    private final Map<String, UtteranceListener> listenersMap;
-    private final Map<String, ConcurrentLinkedQueue<Map<String, Object>>> queue;
+    private final LinkedHashMap<String, UtteranceListener> listenersMap;
+    private final LinkedHashMap<String, ConcurrentLinkedQueue<Map<String, Object>>> queue;
     private final List<TextFilter> filters;
-    final Object lock = new Object();
+    private final Object lock = new Object();
 
     // States
     private boolean isReady; // released
@@ -119,6 +119,12 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     @Override
     public void clearFilters() {
         filters.clear();
+    }
+
+    UtteranceListener removeListener(String utteranceId) {
+        synchronized (lock) {
+            return getListenersMap().remove(utteranceId);
+        }
     }
 
     Map<String, UtteranceListener> getListenersMap() {

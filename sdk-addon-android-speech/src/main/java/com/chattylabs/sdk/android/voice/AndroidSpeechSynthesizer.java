@@ -271,12 +271,11 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
                     }
                     setSpeaking(false);
                     if (getListenersMap().size() > 0) {
-                        UtteranceListener listener;
-                        synchronized (lock) {
-                            listener = getListenersMap().remove(utteranceId);
-                        }
+                        UtteranceListener listener = removeListener(utteranceId);
                         logger.v(getTag(), "ANDROID TTS[%s] - on done <%s> - execute listener.onDone", utteranceId, getCurrentQueueId());
-                        listener.onDone(utteranceId);
+                        if (listener != null) {
+                            listener.onDone(utteranceId);
+                        }
                     }
                 }
             }
@@ -304,10 +303,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
                     }
                     setSpeaking(false);
                     if (getListenersMap().size() > 0 && getListenersMap().containsKey(utteranceId)) {
-                        UtteranceListener listener;
-                        synchronized (lock) {
-                            listener = getListenersMap().remove(utteranceId);
-                        }
+                        UtteranceListener listener = removeListener(utteranceId);
                         shutdown();
                         if (listener != null) {
                             listener.onError(utteranceId, errorCode);
