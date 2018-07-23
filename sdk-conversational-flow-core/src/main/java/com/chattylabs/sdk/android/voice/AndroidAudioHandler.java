@@ -36,18 +36,18 @@ public class AndroidAudioHandler {
     private ILogger logger;
 
     public AndroidAudioHandler(AudioManager audioManager,
-                        VoiceConfig configuration,
-                        ILogger logger) {
+                               VoiceConfig configuration,
+                               ILogger logger) {
         this.logger = logger;
         this.audioManager = audioManager;
         this.configuration = configuration;
-        this.audioAttributes = new AudioAttributes.Builder()
-                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                .setUsage(configuration.isBluetoothScoRequired() ?
+        this.audioAttributes = new AudioAttributes.Builder();
+        audioAttributes.setContentType(AudioAttributes.CONTENT_TYPE_SPEECH);
+        audioAttributes.setUsage(configuration.isBluetoothScoRequired() ?
                         // We put this mode because when over Sco we're never going to gain focus!
                         AudioAttributes.USAGE_VOICE_COMMUNICATION :
-                        AudioAttributes.USAGE_MEDIA)
-                .setLegacyStreamType(getMainStreamType());
+                        AudioAttributes.USAGE_MEDIA);
+        audioAttributes.setLegacyStreamType(getMainStreamType());
     }
 
     public int getMainStreamType() {
