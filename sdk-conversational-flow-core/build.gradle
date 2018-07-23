@@ -18,7 +18,7 @@ version = android.defaultConfig.versionName
 
 android {
     testOptions {
-        unitTests.returnDefaultValues = true
+        //unitTests.returnDefaultValues = true
     }
 }
 
@@ -31,6 +31,7 @@ dependencies {
     api 'com.chattylabs.sdk.android:common:+'
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:2.19.1'
+    testImplementation 'org.robolectric:robolectric:3.8'
 }
 
 publish {
