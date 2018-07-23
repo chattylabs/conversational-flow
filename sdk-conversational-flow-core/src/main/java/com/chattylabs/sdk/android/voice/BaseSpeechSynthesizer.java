@@ -16,7 +16,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.DEFAULT_QUEUE_ID;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerDone;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerError;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerInitialised;
@@ -26,6 +25,8 @@ import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.Synth
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.TAG;
 
 abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
+
+    String DEFAULT_QUEUE_ID = "default_queue_id";
 
     // Constants
     private static final String DEFAULT_UTTERANCE_ID = "u:";
@@ -185,6 +186,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             });
         }
         else if (isReady && !isSpeaking && !isOnHold) {
+            setSpeaking(true);
             run();
         }
     }
@@ -246,6 +248,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             });
         }
         else if (isReady && !isSpeaking && !isOnHold) {
+            setSpeaking(true);
             run();
         }
     }
@@ -294,7 +297,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     @Override
     public void stop() {
         if (utteranceListener != null)
-            utteranceListener.clearTimeout();
+            utteranceListener.clearTimeout(null);
         // Stop Bluetooth Sco if required
         bluetoothSco.stopSco();
         // Audio focus
@@ -311,7 +314,6 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             queue.clear();
             queue.put(DEFAULT_QUEUE_ID, new ConcurrentLinkedQueue<>());
         }
-        //TODO: ?filters.clear();
         queueId = DEFAULT_QUEUE_ID;
         releaseCurrentQueue();
         setReady(false);
@@ -330,7 +332,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         }
         final String uId = utteranceId;
         logger.i(getTag(), "TTS[%s] - resume queue <%s>", uId, queueId);
-        setSpeaking(true);
+        if (!isEmpty()) setSpeaking(true);
         initTts(status -> {
             if (status == SynthesizerListener.SUCCESS) {
                 run();
@@ -344,17 +346,34 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     private void run() {
-        checkForEmptyCurrentQueue();
+        // This is useless because it is being called already in onDone and onError
+        moveToNextQueueIfNeeded();
         if (!isEmpty()) {
             // Gets and plays the current message in the queue
             playTheCurrentQueue(queue.get(queueId).poll());
         }
     }
 
-    void checkForEmptyCurrentQueue() {
-        if (isCurrentQueueEmpty()) {
+    void moveToNextQueueIfNeeded() {
+        if (isEmpty()) {
             logger.v(getTag(), "TTS - no more messages in the queue <%s>", queueId);
-            moveToNextQueue();
+            // is empty, still contains the queue id and it's not the default one
+            String oldQueueId = queueId;
+            if (queue.containsKey(queueId) && !DEFAULT_QUEUE_ID.equals(queueId)) {
+                logger.v(getTag(), "TTS - remove empty queue: <%s>", queueId);
+                synchronized (lock) {
+                    queue.remove(queueId);
+                }
+            }
+            boolean isLastQueueEqualsToCurrent = Objects.equals(lastQueueId, queueId);
+            queueId = getNextQueueId();
+            if (queueId == null) {
+                if (isLastQueueEqualsToCurrent) {
+                    lastQueueId = DEFAULT_QUEUE_ID;
+                }
+                queueId = DEFAULT_QUEUE_ID;
+            }
+            logger.v(getTag(), "TTS - moved queue from <%s> to <%s>", oldQueueId, queueId);
         }
     }
 
@@ -427,38 +446,13 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     @Override
-    public boolean isCurrentQueueEmpty() {
-        return !queue.containsKey(queueId) || queue.get(queueId).isEmpty();
-    }
-
-    @Override
     public boolean isEmpty() {
-        return queue.isEmpty() || (queue.containsKey(DEFAULT_QUEUE_ID) && queue.size() == 1 && queue.get(DEFAULT_QUEUE_ID).isEmpty());
+        return queue.isEmpty() || (queue.containsKey(queueId) && queue.get(queueId).isEmpty());
     }
 
     @Override
     public Set<String> getQueueSet() {
         return queue.keySet();
-    }
-
-    private void moveToNextQueue() {
-        // is empty, still contains the queue id and it's not the default one
-        if (queue.containsKey(queueId) && !DEFAULT_QUEUE_ID.equals(queueId)) {
-            logger.v(getTag(), "TTS - remove empty queue: <%s>", queueId);
-            synchronized (lock) {
-                queue.remove(queueId);
-            }
-        }
-        boolean isLastQueueEqualToCurrent = Objects.equals(lastQueueId, queueId);
-        queueId = getNextQueueId();
-        if (queueId == null) {
-            queueId = DEFAULT_QUEUE_ID;
-            if (isLastQueueEqualToCurrent) {
-                logger.v(getTag(), "TTS - queue from <%s> to <%s>", lastQueueId, queueId);
-                lastQueueId = queueId;
-            }
-        }
-        logger.v(getTag(), "TTS - new queue <%s>", queueId);
     }
 
     private void handleListener(@NonNull String utteranceId, @NonNull UtteranceListener listener) {

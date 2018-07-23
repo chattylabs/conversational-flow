@@ -43,7 +43,7 @@ abstract class AndroidSpeechSynthesizerAdapter extends UtteranceProgressListener
     }
 
     @Override
-    public void clearTimeout() {
+    public void clearTimeout(String utteranceId) {
     }
 
     @Override
