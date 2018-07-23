@@ -41,7 +41,7 @@ abstract class GoogleSpeechSynthesizerAdapter implements UtteranceListener {
     }
 
     @Override
-    public void clearTimeout() {
+    public void clearTimeout(String utteranceId) {
     }
 
     @Override

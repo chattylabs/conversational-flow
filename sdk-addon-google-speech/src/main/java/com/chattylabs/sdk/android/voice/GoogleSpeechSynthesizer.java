@@ -82,11 +82,9 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
         try (TextToSpeechClient ttsClient = generateFromRawFile(
                 application, getConfiguration().getGoogleCredentialsResourceFile())) {
             ListVoicesResponse response = ttsClient.listVoices(getDefaultLanguageCode());
-            ttsClient.close();
             ttsClient.shutdownNow();
             ttsClient.awaitTermination(2, TimeUnit.SECONDS);
             if (response.getVoicesCount() > 0) {
-                setUtteranceListener(createUtterancesListener());
                 onSynthesizerSetup.execute(SynthesizerListener.AVAILABLE);
             } else {
                 onSynthesizerSetup.execute(SynthesizerListener.LANGUAGE_NOT_SUPPORTED_ERROR);
@@ -247,8 +245,8 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
             private Timer timer;
 
             @Override
-            public void clearTimeout() {
-                logger.v(getTag(), "GOOGLE TTS - utterance timeout cleared");
+            public void clearTimeout(String utteranceId) {
+                logger.v(getTag(), "GOOGLE TTS[%s] - utterance timeout cleared", utteranceId);
                 if (task != null) task.cancel();
                 if (timer != null) timer.cancel();
             }
@@ -272,7 +270,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
                                 onError(utteranceId, SynthesizerListener.TIMEOUT);
                             }
                             else {
-                                clearTimeout();
+                                clearTimeout(utteranceId);
                                 startTimeout(utteranceId);
                             }
                         }
@@ -298,10 +296,10 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
 
             @Override
             public void onDone(String utteranceId) {
+                clearTimeout(utteranceId);
                 logger.v(getTag(), "GOOGLE TTS[%s] - on done <%s> - check for Empty Queue", utteranceId, getCurrentQueueId());
-                clearTimeout();
-                checkForEmptyCurrentQueue();
-                if (isCurrentQueueEmpty()) {
+                moveToNextQueueIfNeeded();
+                if (isEmpty()) {
                     stop();
                     logger.i(getTag(), "GOOGLE TTS[%s] - on done <%s> - Stream Finished", utteranceId, getCurrentQueueId());
                 }
@@ -319,11 +317,11 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
             @Override
             @TargetApi(Build.VERSION_CODES.LOLLIPOP)
             public void onError(String utteranceId, int errorCode) {
-                clearTimeout();
+                clearTimeout(utteranceId);
                 logger.e(getTag(), "GOOGLE TTS[%s] - on error <%s> -> stop timeout", utteranceId, getCurrentQueueId());
                 logger.e(getTag(), "GOOGLE TTS[%s] - error code: %s", utteranceId, getErrorType(errorCode));
-                checkForEmptyCurrentQueue();
-                if (isCurrentQueueEmpty()) {
+                moveToNextQueueIfNeeded();
+                if (isEmpty()) {
                     stop();
                     logger.i(getTag(), "GOOGLE TTS[%s] - ERROR <%s> - Stream Finished", utteranceId, getCurrentQueueId());
                 }
