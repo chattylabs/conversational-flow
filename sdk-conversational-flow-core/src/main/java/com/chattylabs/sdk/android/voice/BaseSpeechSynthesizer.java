@@ -36,7 +36,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     private static final String MAP_PARAMS = "params";
 
     // Data
-    private final VoiceConfig configuration;
+    private final ComponentConfig configuration;
     private final LinkedHashMap<String, UtteranceListener> listenersMap;
     private final LinkedHashMap<String, ConcurrentLinkedQueue<Map<String, Object>>> queue;
     private final List<TextFilter> filters;
@@ -57,7 +57,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     // Log stuff
     protected final ILogger logger;
 
-    BaseSpeechSynthesizer(VoiceConfig configuration,
+    BaseSpeechSynthesizer(ComponentConfig configuration,
                           AndroidAudioHandler audioHandler,
                           BluetoothSco bluetoothSco,
                           ILogger logger) {
@@ -139,7 +139,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         this.utteranceListener = utteranceListener;
     }
 
-    public VoiceConfig getConfiguration() {
+    public ComponentConfig getConfiguration() {
         return configuration;
     }
 

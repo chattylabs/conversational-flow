@@ -10,7 +10,7 @@
 Part of the [Voice User Interaction SDK]().
 
 The library wraps and combines single platform resources and builds 
-a **Software Component** capable of create a communication flow with ease.
+a _Software Component_ capable of create a communication flow between a devices and a user with ease.
 
 Besides, it also lets you choose between the following providers:
 like Android, Google Cloud, 
@@ -26,6 +26,10 @@ like Android, Google Cloud,
 <p align="center"><img src="assets/demo-sample.jpg" alt="demo-sample"/></p>
 
 ## Why choosing this library?
+
+The **Conversational Flow Component** is based on [Directed Graph](https://en.wikipedia.org/wiki/Directed_graph) 
+which also allows [Directed Cycles](https://en.wikipedia.org/wiki/Cycle_(graph_theory)) 
+to create connected nodes that build a consistent flow.
 
 Some devices don't have configured the resources you need to run a conversation in your app, 
 a developer needs to learn and test quite a lot before even to start coding for voice capabilities, noise is impacting 
@@ -82,7 +86,7 @@ or update some changes on the current one at anytime.
 
 ```java
 // Optional
-conversationalFlowComponent.updateVoiceConfig(
+conversationalFlowComponent.updateConfiguration(
         builder -> builder.setBluetoothScoRequired(() -> preferences.connectToBluetoothSco()).build());
 ```
 
@@ -94,10 +98,7 @@ to user preferences.
 
 ### Create a Conversation
 
-The **Conversational Flow Component** is based on a [Directed Graph](https://en.wikipedia.org/wiki/Directed_graph) 
-which also allows [Directed Cycles](https://en.wikipedia.org/wiki/Cycle_(graph_theory)) 
-to create connected nodes that build a consistent flow.
-<br/>You can use the `ConversationalFlowComponent` at any context level, both in an Activity and a Service. 
+You can use the `ConversationalFlowComponent` at any context level, both in an Activity and a Service. 
 
 To create a conversation between the user and your app, you will create a set of `VoiceNode` objects and build a flow with them.
 
@@ -115,7 +116,7 @@ VoiceMessage question = VoiceMessage.newBuilder().setText("Do you need help?").b
  
 // We define the expected replies from the user.
 String[] expected = new String[]{ "Yes", "I think so", "Sure" };
-VoiceAction answers = VoiceAction.newBuilder().setExpectedResults(expected)
+VoiceMatch answers = VoiceMatch.newBuilder().setExpectedResults(expected)
                                  .setOnMatch(results -> conversation::next)
                                  .build();
 ```

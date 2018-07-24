@@ -7,6 +7,7 @@ import android.support.v4.util.SimpleArrayMap;
 
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.common.internal.ILogger;
+import com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RecognizerListener;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -110,15 +111,15 @@ class ConversationImpl extends Flow.Edge implements Conversation {
                             }
                             next();
                         }); // TODO: implement onError
-            } else if (node instanceof VoiceActionSet) {
-                VoiceActionSet actions = (VoiceActionSet) node;
-                VoiceCaptureAction captureAction[] = new VoiceCaptureAction[1];
-                VoiceNoMatchAction noMatchAction[] = new VoiceNoMatchAction[1];
+            } else if (node instanceof VoiceActionList) {
+                VoiceActionList actions = (VoiceActionList) node;
+                VoiceCapture captureAction[] = new VoiceCapture[1];
+                VoiceMismatch mismatchAction[] = new VoiceMismatch[1];
                 for (VoiceNode n : actions) {
-                    if (VoiceCaptureAction.class.isInstance(n)) {
-                        captureAction[0] = (VoiceCaptureAction) n;
-                    } else if (VoiceNoMatchAction.class.isInstance(n)) {
-                        noMatchAction[0] = (VoiceNoMatchAction) n;
+                    if (VoiceCapture.class.isInstance(n)) {
+                        captureAction[0] = (VoiceCapture) n;
+                    } else if (VoiceMismatch.class.isInstance(n)) {
+                        mismatchAction[0] = (VoiceMismatch) n;
                     }
                 }
                 if (captureAction[0] != null) {
@@ -133,11 +134,11 @@ class ConversationImpl extends Flow.Edge implements Conversation {
                             },
                             (ConversationalFlowComponent.OnRecognizerError) (error, originalError) -> {
                                 logger.e(TAG, "Conversation - listening Capture error");
-                                boolean unexpected = error == ConversationalFlowComponent.RECOGNIZER_STOPPED_TOO_EARLY_ERROR;
-                                boolean isLowSound = error == ConversationalFlowComponent.RECOGNIZER_LOW_SOUND_ERROR;
-                                boolean isNoSound = error == ConversationalFlowComponent.RECOGNIZER_NO_SOUND_ERROR;
-                                if (noMatchAction[0] != null)
-                                    noMatch(noMatchAction[0], unexpected, isLowSound, isNoSound, null);
+                                boolean unexpected = error == RecognizerListener.RECOGNIZER_STOPPED_TOO_EARLY_ERROR;
+                                boolean isLowSound = error == RecognizerListener.RECOGNIZER_LOW_SOUND_ERROR;
+                                boolean isNoSound = error == RecognizerListener.RECOGNIZER_NO_SOUND_ERROR;
+                                if (mismatchAction[0] != null)
+                                    noMatch(mismatchAction[0], unexpected, isLowSound, isNoSound, null);
                             });
                 } else {
                     logger.v(TAG, "Conversation - running Actions");
@@ -152,11 +153,11 @@ class ConversationImpl extends Flow.Edge implements Conversation {
                             },
                             (ConversationalFlowComponent.OnRecognizerError) (error, originalError) -> {
                                 logger.e(TAG, "Conversation - listening Action error");
-                                boolean unexpected = error == ConversationalFlowComponent.RECOGNIZER_STOPPED_TOO_EARLY_ERROR;
-                                boolean isLowSound = error == ConversationalFlowComponent.RECOGNIZER_LOW_SOUND_ERROR;
-                                boolean isNoSound = error == ConversationalFlowComponent.RECOGNIZER_NO_SOUND_ERROR;
-                                if (noMatchAction[0] != null)
-                                    noMatch(noMatchAction[0], unexpected, isLowSound, isNoSound, null);
+                                boolean unexpected = error == RecognizerListener.RECOGNIZER_STOPPED_TOO_EARLY_ERROR;
+                                boolean isLowSound = error == RecognizerListener.RECOGNIZER_LOW_SOUND_ERROR;
+                                boolean isNoSound = error == RecognizerListener.RECOGNIZER_NO_SOUND_ERROR;
+                                if (mismatchAction[0] != null)
+                                    noMatch(mismatchAction[0], unexpected, isLowSound, isNoSound, null);
                             });
                 }
             }
@@ -164,13 +165,13 @@ class ConversationImpl extends Flow.Edge implements Conversation {
         // Otherwise there is no more nodes
     }
 
-    private void processResults(List<String> results, VoiceActionSet actions, boolean isPartial) {
-        final VoiceNoMatchAction[] noMatchAction = new VoiceNoMatchAction[1];
+    private void processResults(List<String> results, VoiceActionList actions, boolean isPartial) {
+        final VoiceMismatch[] mismatchAction = new VoiceMismatch[1];
         for (VoiceNode n : actions) {
-            if (VoiceNoMatchAction.class.isInstance(n)) {
-                noMatchAction[0] = (VoiceNoMatchAction) n;
-            } else if (VoiceAction.class.isInstance(n)) {
-                VoiceAction action = (VoiceAction) n;
+            if (VoiceMismatch.class.isInstance(n)) {
+                mismatchAction[0] = (VoiceMismatch) n;
+            } else if (VoiceMatch.class.isInstance(n)) {
+                VoiceMatch action = (VoiceMatch) n;
                 if (results != null && !results.isEmpty() && results.get(0).length() > 0) {
                     List<String> expected = Arrays.asList(action.expectedResults);
                     boolean matches = ConversationalFlowComponent.anyMatch(results, expected);
@@ -186,26 +187,26 @@ class ConversationImpl extends Flow.Edge implements Conversation {
             }
         }
         logger.w(TAG, "Conversation - not matched");
-        if (!isPartial && noMatchAction[0] != null) {
-            if (noMatchAction[0].retry == 0) current = noMatchAction[0];
-            noMatch(noMatchAction[0], false, false, false, results);
+        if (!isPartial && mismatchAction[0] != null) {
+            if (mismatchAction[0].retries == 0) current = mismatchAction[0];
+            noMatch(mismatchAction[0], false, false, false, results);
         }
     }
 
-    private void noMatch(VoiceNoMatchAction noMatchAction, boolean isUnexpected, boolean isLowSound, boolean isNoSound,
+    private void noMatch(VoiceMismatch mismatchAction, boolean isUnexpected, boolean isLowSound, boolean isNoSound,
                          @Nullable List<String> results) {
-        if (noMatchAction.retry > 0) {
-            noMatchAction.retry--;
-            logger.v(TAG, "Conversation - pending retry: " + noMatchAction.retry);
-            if (isUnexpected && noMatchAction.unexpectedErrorMessage != null) {
+        if (mismatchAction.retries > 0) {
+            mismatchAction.retries--;
+            logger.v(TAG, "Conversation - pending retry: " + mismatchAction.retries);
+            if (isUnexpected && mismatchAction.unexpectedErrorMessage != null) {
                 logger.v(TAG, "Conversation - unexpected error");
-                play(noMatchAction.unexpectedErrorMessage, this::next);
+                play(mismatchAction.unexpectedErrorMessage, this::next);
             } else if (hasFlag(FLAG_ENABLE_ERROR_MESSAGE_ON_LOW_SOUND) &&
-                    isLowSound && noMatchAction.lowSoundErrorMessage != null) {
+                    isLowSound && mismatchAction.lowSoundErrorMessage != null) {
                 logger.v(TAG, "Conversation - low sound");
-                play(noMatchAction.lowSoundErrorMessage, this::next);
-            } else if (!isNoSound && !isLowSound && noMatchAction.listeningErrorMessage != null) {
-                play(noMatchAction.listeningErrorMessage, this::next);
+                play(mismatchAction.lowSoundErrorMessage, this::next);
+            } else if (!isNoSound && !isLowSound && mismatchAction.listeningErrorMessage != null) {
+                play(mismatchAction.listeningErrorMessage, this::next);
             }
             //else if (!isNoSound) {
             //    next();
@@ -213,12 +214,12 @@ class ConversationImpl extends Flow.Edge implements Conversation {
             else {
                 logger.v(TAG, "Conversation - no sound at all!!");
                 // No repeat
-                noMatchAction.retry = 0;
-                if (noMatchAction.onNotMatched != null) noMatchAction.onNotMatched.accept(results);
+                mismatchAction.retries = 0;
+                if (mismatchAction.onNotMatched != null) mismatchAction.onNotMatched.accept(results);
                 else next(); // TODO: throw new Missing not matched?
             }
         } else {
-            if (noMatchAction.onNotMatched != null) noMatchAction.onNotMatched.accept(results);
+            if (mismatchAction.onNotMatched != null) mismatchAction.onNotMatched.accept(results);
             else next(); // TODO: throw new Missing not matched?
         }
     }
@@ -265,7 +266,7 @@ class ConversationImpl extends Flow.Edge implements Conversation {
 
         if (outgoingEdges.size() == 1) {
             VoiceNode node = outgoingEdges.get(0);
-            if (VoiceActionContract.class.isInstance(node)) {
+            if (VoiceAction.class.isInstance(node)) {
                 ArrayList<VoiceNode> nodes = new ArrayList<>(1);
                 nodes.add(node);
                 return getActionSet(nodes);
@@ -276,11 +277,11 @@ class ConversationImpl extends Flow.Edge implements Conversation {
         }
     }
 
-    private VoiceActionSet getActionSet(ArrayList<VoiceNode> edges) {
+    private VoiceActionList getActionSet(ArrayList<VoiceNode> edges) {
         try {
-            VoiceActionSet actionSet = new VoiceActionSet();
+            VoiceActionList actionSet = new VoiceActionList();
             for (int i = 0, size = edges.size(); i < size; i++) {
-                actionSet.add((VoiceActionContract) edges.get(i));
+                actionSet.add((VoiceAction) edges.get(i));
             }
             //Collections.sort(actionSet);
             return actionSet;

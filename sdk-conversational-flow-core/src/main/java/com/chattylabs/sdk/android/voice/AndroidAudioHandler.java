@@ -29,14 +29,14 @@ public class AndroidAudioHandler {
     private AudioFocusRequest focusRequestMayDuck;
     private AudioFocusRequest focusRequestExclusive;
     private final AudioManager audioManager;
-    private final VoiceConfig configuration;
+    private final ComponentConfig configuration;
     private final AudioAttributes.Builder audioAttributes;
 
     // Log stuff
     private ILogger logger;
 
     public AndroidAudioHandler(AudioManager audioManager,
-                               VoiceConfig configuration,
+                               ComponentConfig configuration,
                                ILogger logger) {
         this.logger = logger;
         this.audioManager = audioManager;
