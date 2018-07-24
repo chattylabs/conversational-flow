@@ -51,21 +51,21 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     private String queueId = DEFAULT_QUEUE_ID; // released
     private UtteranceListener utteranceListener; // released
     private String lastQueueId;
-    private final AndroidAudioHandler audioHandler;
+    private final AndroidAudioManager audioManager;
     private final BluetoothSco bluetoothSco;
 
     // Log stuff
     protected final ILogger logger;
 
     BaseSpeechSynthesizer(ComponentConfig configuration,
-                          AndroidAudioHandler audioHandler,
+                          AndroidAudioManager audioManager,
                           BluetoothSco bluetoothSco,
                           ILogger logger) {
         this.configuration = configuration;
         this.filters = new LinkedList<>();
         this.listenersMap = new LinkedHashMap<>();
         this.queue = new LinkedHashMap<>();
-        this.audioHandler = audioHandler;
+        this.audioManager = audioManager;
         this.bluetoothSco = bluetoothSco;
         this.logger = logger;
     }
@@ -174,7 +174,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             utteranceId = utteranceId + "_" + listenersMap.size();
         }
         final String uId = utteranceId;
-        HashMap<String, String> params = buildParams(uId, String.valueOf(audioHandler.getMainStreamType()));
+        HashMap<String, String> params = buildParams(uId, String.valueOf(audioManager.getMainStreamType()));
         if (listener != null) handleListener(uId, listener);
         addToQueue(uId, text, -1, params, queueId);
         logger.i(TAG, "TTS[%s] - ready: %s | speaking: %s | held: %s",
@@ -207,7 +207,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             utteranceId = utteranceId + "_" + listenersMap.size();
         }
         final String uId = utteranceId;
-        HashMap<String, String> params = buildParams(uId, String.valueOf(audioHandler.getMainStreamType()));
+        HashMap<String, String> params = buildParams(uId, String.valueOf(audioManager.getMainStreamType()));
         if (listener != null) handleListener(uId, listener);
         Map<String, Object> map = new HashMap<>();
         map.put(MAP_UTTERANCE_ID, uId);
@@ -307,7 +307,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         // Stop Bluetooth Sco if required
         bluetoothSco.stopSco();
         // Audio focus
-        audioHandler.abandonAudioFocus();
+        audioManager.abandonAudioFocus();
         setSpeaking(false);
         releaseCurrentQueue();
     }
@@ -416,7 +416,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     private void runMap(Map<String, Object> map) {
-        audioHandler.requestAudioFocus(configuration.isAudioExclusiveRequiredForSynthesizer());
+        audioManager.requestAudioFocus(configuration.isAudioExclusiveRequiredForSynthesizer());
         if (map.containsKey(MAP_MESSAGE)) {
             //noinspection unchecked
             executeOnTtsReady((String) map.get(MAP_UTTERANCE_ID),

@@ -43,14 +43,9 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
 
     // Resources
     private final Application application;
-    private final ComponentConfig config;
-    private final AndroidAudioHandler audioHandler;
+    private final AndroidAudioManager audioManager;
     private final BluetoothSco bluetoothSco;
     private final ExecutorService executorService;
-
-    // Log stuff
-    private ILogger logger;
-
     private AudioRecorder mAudioRecorder;
     private SpeechClient speech;
 
@@ -172,7 +167,7 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
         @Override
         public void reset() {
             releaseTimeout();
-            audioHandler.abandonAudioFocus();
+            audioManager.abandonAudioFocus();
             cleanup();
             //super.setTryAgain(false);
             setOnError(null);
@@ -186,7 +181,7 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
         @Override
         public void onReadyForSpeech(Bundle params) {
             if (!bluetoothSco.isBluetoothScoOn()) {
-                audioHandler.requestAudioFocus(config.isAudioExclusiveRequiredForRecognizer());
+                audioManager.requestAudioFocus(configuration.isAudioExclusiveRequiredForRecognizer());
             }
             //beep();
             super.onReadyForSpeech(params);
@@ -276,22 +271,15 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
 
     GoogleSpeechRecognizer(Application application,
                            ComponentConfig configuration,
-                           AndroidAudioHandler audioHandler,
-                           BluetoothSco bluetoothSco, ILogger logger) {
+                           AndroidAudioManager audioManager,
+                           BluetoothSco bluetoothSco,
+                           ILogger logger) {
         this.application = application;
-        this.config = configuration;
-        this.audioHandler = audioHandler;
+        this.configuration = configuration;
+        this.audioManager = audioManager;
         this.bluetoothSco = bluetoothSco;
         this.logger = logger;
         this.executorService = Executors.newSingleThreadExecutor();
-    }
-
-    @Override
-    public <T extends RecognizerListener> void listen(
-             T... listeners) {
-        logger.i(TAG, "GOOGLE VOICE - start listening");
-        handleListeners(listeners);
-        checkForBluetoothScoRequired(this::startListening);
     }
 
     private String getDefaultLanguageCode() {
@@ -303,37 +291,6 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
             language.append(country);
         }
         return language.toString();
-    }
-
-    private void checkForBluetoothScoRequired(Runnable starter) {
-        logger.i(TAG, "GOOGLE VOICE - is bluetooth Sco required: " +
-                Boolean.toString(config.isBluetoothScoRequired()));
-        if (config.isBluetoothScoRequired() && !bluetoothSco.isBluetoothScoOn()) {
-            // Sco Listener
-            BluetoothScoListener listener = new BluetoothScoListener() {
-                @Override
-                public void onConnected() {
-                    logger.w(TAG, "GOOGLE VOICE - Sco onConnected");
-                    starter.run();
-                }
-
-                @Override
-                public void onDisconnected() {
-                    logger.w(TAG, "GOOGLE VOICE - Sco onDisconnected");
-                    if (bluetoothSco.isBluetoothScoOn()) {
-                        logger.w(TAG, "GOOGLE VOICE - shutdown from Sco");
-                        shutdown();
-                    }
-                }
-            };
-            // Start Bluetooth Sco
-            bluetoothSco.startSco(listener);
-            logger.v(TAG, "GOOGLE VOICE - waiting for bluetooth sco connection");
-        }
-        else {
-            logger.v(TAG, "GOOGLE VOICE - bluetooth sco is: " + (bluetoothSco.isBluetoothScoOn() ? "on" : "off"));
-            starter.run();
-        }
     }
 
     private void startListening() {
@@ -351,7 +308,7 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
                 if (this.speech == null) {
                     try (SpeechClient speechClient = generateFromRawFile(
                             application,
-                            config.getGoogleCredentialsResourceFile())) {
+                            configuration.getGoogleCredentialsResourceFile())) {
                         this.speech = speechClient;
                     }
                 }
