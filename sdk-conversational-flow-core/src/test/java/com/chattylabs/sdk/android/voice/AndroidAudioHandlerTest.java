@@ -13,7 +13,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.robolectric.RobolectricTestRunner;
@@ -27,7 +26,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
@@ -36,7 +34,7 @@ public class AndroidAudioHandlerTest {
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock AudioManager audioManager;
-    @Mock VoiceConfig config;
+    @Mock ComponentConfig config;
     @Mock ILogger logger;
 
     private AndroidAudioHandler audioHandler;

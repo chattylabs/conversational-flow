@@ -6,7 +6,7 @@ import android.support.annotation.RawRes;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-public class VoiceConfig {
+public class ComponentConfig {
     public static final int SYNTHESIZER_SERVICE_ANDROID_BUILTIN = 0x6e44ad;
     public static final int RECOGNIZER_SERVICE_ANDROID_BUILTIN = 0x5a4ed1;
     public static final int SYNTHESIZER_SERVICE_GOOGLE_BUILTIN = 0xaa88d6;
@@ -29,7 +29,7 @@ public class VoiceConfig {
     private ServiceTypeLazyProvider synthesizerServiceType;
     private RawResourceLazyProvider googleCredentialsResourceFile;
 
-    private VoiceConfig(Builder builder) {
+    private ComponentConfig(Builder builder) {
         bluetoothScoRequired = builder.bluetoothScoRequired;
         audioExclusiveRequiredForSynthesizer = builder.audioExclusiveRequiredForSynthesizer;
         audioExclusiveRequiredForRecognizer = builder.audioExclusiveRequiredForRecognizer;
@@ -76,7 +76,7 @@ public class VoiceConfig {
         public Builder() {
         }
 
-        public Builder(VoiceConfig copy) {
+        public Builder(ComponentConfig copy) {
             bluetoothScoRequired = copy.bluetoothScoRequired;
             audioExclusiveRequiredForSynthesizer = copy.audioExclusiveRequiredForSynthesizer;
             audioExclusiveRequiredForRecognizer = copy.audioExclusiveRequiredForRecognizer;
@@ -115,13 +115,13 @@ public class VoiceConfig {
             return this;
         }
 
-        public VoiceConfig build() {
-            return new VoiceConfig(this);
+        public ComponentConfig build() {
+            return new ComponentConfig(this);
         }
     }
 
     public interface Update {
-        VoiceConfig run(VoiceConfig.Builder builder);
+        ComponentConfig run(ComponentConfig.Builder builder);
     }
 
     public interface LazyProvider<T> {
