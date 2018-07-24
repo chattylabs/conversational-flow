@@ -27,20 +27,6 @@ import java.util.regex.Pattern;
 public interface ConversationalFlowComponent extends RequiredPermissions {
     String TAG = Tag.make("ConversationalFlowComponent");
 
-    // Recognizer codes
-    int RECOGNIZER_AVAILABLE = 201;
-    int RECOGNIZER_NOT_AVAILABLE = 202;
-    int RECOGNIZER_UNKNOWN_ERROR = 203;
-    int RECOGNIZER_EMPTY_RESULTS_ERROR = 204;
-    int RECOGNIZER_UNAVAILABLE_ERROR = 205;
-    int RECOGNIZER_STOPPED_TOO_EARLY_ERROR = 206;
-    int RECOGNIZER_RETRY_ERROR = 207;
-    int RECOGNIZER_AFTER_PARTIALS_ERROR = 208;
-    int RECOGNIZER_NO_SOUND_ERROR = 209;
-    int RECOGNIZER_LOW_SOUND_ERROR = 210;
-
-    int MIN_VOICE_RECOGNITION_TIME_LISTENING = 2000;
-
     /**
      * The callbacks to interact with.
      * <p>
@@ -59,7 +45,6 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
         int UNKNOWN_ERROR = 103;
         int LANGUAGE_NOT_SUPPORTED_ERROR = 104;
         int NOT_AVAILABLE_ERROR = 105;
-        // Synthesizer initialization
         int SUCCESS = 106;
         int ERROR = 107;
         int TIMEOUT = 108;
@@ -86,25 +71,39 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY)
-    interface RecognizerListenerContract {}
+    interface RecognizerListener {
+        // Recognizer codes
+        int RECOGNIZER_AVAILABLE = 201;
+        int RECOGNIZER_NOT_AVAILABLE = 202;
+        int RECOGNIZER_UNKNOWN_ERROR = 203;
+        int RECOGNIZER_EMPTY_RESULTS_ERROR = 204;
+        int RECOGNIZER_UNAVAILABLE_ERROR = 205;
+        int RECOGNIZER_STOPPED_TOO_EARLY_ERROR = 206;
+        int RECOGNIZER_RETRY_ERROR = 207;
+        int RECOGNIZER_AFTER_PARTIALS_ERROR = 208;
+        int RECOGNIZER_NO_SOUND_ERROR = 209;
+        int RECOGNIZER_LOW_SOUND_ERROR = 210;
+        // Minimum constants
+        int MIN_VOICE_RECOGNITION_TIME_LISTENING = 2000;
+    }
 
-    interface OnRecognizerReady extends RecognizerListenerContract {
+    interface OnRecognizerReady extends RecognizerListener {
         void execute(Bundle params);
     }
 
-    interface OnRecognizerResults extends RecognizerListenerContract {
+    interface OnRecognizerResults extends RecognizerListener {
         void execute(List<String> results, float[] confidences);
     }
 
-    interface OnRecognizerPartialResults extends RecognizerListenerContract {
+    interface OnRecognizerPartialResults extends RecognizerListener {
         void execute(List<String> results, float[] confidences);
     }
 
-    interface OnRecognizerMostConfidentResult extends RecognizerListenerContract {
+    interface OnRecognizerMostConfidentResult extends RecognizerListener {
         void execute(String result);
     }
 
-    interface OnRecognizerError extends RecognizerListenerContract {
+    interface OnRecognizerError extends RecognizerListener {
         void execute(int error, int originalError);
     }
 
@@ -112,8 +111,8 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
      * Extra interfaces
      */
 
-    interface SpeechRecognizerCreator {
-        android.speech.SpeechRecognizer create();
+    interface SpeechRecognizerCreator<T> {
+        T create();
     }
 
     interface Status {
@@ -152,7 +151,7 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
 
     @SuppressWarnings("unchecked")
     interface SpeechRecognizer {
-        <T extends RecognizerListenerContract> void listen(T... listeners);
+        <T extends RecognizerListener> void listen(T... listeners);
 
         void stop();
 
@@ -269,14 +268,16 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     void setup(Context context, OnSetup onSetup);
 
-    void setVoiceConfig(VoiceConfig voiceConfiguration);
+    void setConfiguration(ComponentConfig configuration);
 
-    void updateVoiceConfig(VoiceConfig.Update update);
+    void updateConfiguration(ComponentConfig.Update update);
 
     SpeechSynthesizer getSpeechSynthesizer(Context context);
 
+    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     SpeechRecognizer getSpeechRecognizer(Context context);
 
+    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     Conversation create(Context context);
 
     void stop();

@@ -1,16 +1,18 @@
 package com.chattylabs.sdk.android.voice;
 
+import com.chattylabs.sdk.android.voice.ConversationalFlowComponent.Consumer;
+
 import java.util.List;
 
-public class VoiceNoMatchAction implements VoiceActionContract {
-    public int retry;
+public class VoiceMismatch implements VoiceAction {
+    public int retries;
     public final String lowSoundErrorMessage;
     public final String listeningErrorMessage;
     public final String unexpectedErrorMessage;
-    public final ConversationalFlowComponent.Consumer<List<String>> onNotMatched;
+    public final Consumer<List<String>> onNotMatched;
 
-    private VoiceNoMatchAction(Builder builder) {
-        retry = builder.retry;
+    private VoiceMismatch(Builder builder) {
+        retries = builder.retries;
         lowSoundErrorMessage = builder.lowSoundErrorMessage;
         listeningErrorMessage = builder.listeningErrorMessage;
         unexpectedErrorMessage = builder.unexpectedErrorMessage;
@@ -22,16 +24,16 @@ public class VoiceNoMatchAction implements VoiceActionContract {
     }
 
     public static final class Builder {
-        private int retry;
+        private int retries;
         private String lowSoundErrorMessage;
         private String listeningErrorMessage;
         private String unexpectedErrorMessage;
-        private ConversationalFlowComponent.Consumer<List<String>> onNotMatched;
+        private Consumer<List<String>> onNotMatched;
 
         private Builder() {}
 
-        public Builder setRetry(int retry) {
-            this.retry = retry;
+        public Builder setRetries(int retries) {
+            this.retries = retries;
             return this;
         }
 
@@ -50,13 +52,13 @@ public class VoiceNoMatchAction implements VoiceActionContract {
             return this;
         }
 
-        public Builder setOnNotMatched(ConversationalFlowComponent.Consumer<List<String>> onNotMatched) {
+        public Builder setOnNotMatched(Consumer<List<String>> onNotMatched) {
             this.onNotMatched = onNotMatched;
             return this;
         }
 
-        public VoiceNoMatchAction build() {
-            return new VoiceNoMatchAction(this);
+        public VoiceMismatch build() {
+            return new VoiceMismatch(this);
         }
     }
 }

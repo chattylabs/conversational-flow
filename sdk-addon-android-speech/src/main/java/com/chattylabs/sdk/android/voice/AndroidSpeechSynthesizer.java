@@ -44,7 +44,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
     private OnSynthesizerSetup onSynthesizerSetup;
 
     AndroidSpeechSynthesizer(Application application,
-                             VoiceConfig configuration,
+                             ComponentConfig configuration,
                              AndroidAudioHandler audioHandler,
                              BluetoothSco bluetoothSco,
                              ILogger logger) {

@@ -66,7 +66,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
     private int extraCode; //released
 
     GoogleSpeechSynthesizer(Application application,
-                            VoiceConfig configuration,
+                            ComponentConfig configuration,
                             AndroidAudioHandler audioHandler,
                             BluetoothSco bluetoothSco,
                             ILogger logger) {

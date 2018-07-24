@@ -34,7 +34,7 @@ import com.chattylabs.sdk.android.voice.ConversationalFlowComponent;
 import com.chattylabs.sdk.android.voice.GoogleSpeechSynthesizer;
 import com.chattylabs.sdk.android.voice.Peripheral;
 import com.chattylabs.sdk.android.voice.TextFilterForUrl;
-import com.chattylabs.sdk.android.voice.VoiceConfig;
+import com.chattylabs.sdk.android.voice.ComponentConfig;
 
 import javax.inject.Inject;
 
@@ -130,17 +130,17 @@ public class MainActivity extends DaggerAppCompatActivity
             if (PermissionsHelper.isPermissionGranted(grantResults)) {
                 serialThread.addTask(() -> {
                     //component = ConversationalFlowModule.provideComponent();
-                    component.updateVoiceConfig(builder ->
+                    component.updateConfiguration(builder ->
                             builder .setGoogleCredentialsResourceFile(() -> R.raw.credential)
                                     .setRecognizerServiceType(() ->
                                             ADDON_TYPE == R.id.addon_android ?
-                                                    VoiceConfig.RECOGNIZER_SERVICE_ANDROID_BUILTIN :
-                                                    VoiceConfig.RECOGNIZER_SERVICE_ANDROID_BUILTIN
+                                                    ComponentConfig.RECOGNIZER_SERVICE_ANDROID_BUILTIN :
+                                                    ComponentConfig.RECOGNIZER_SERVICE_ANDROID_BUILTIN
                                     )
                                     .setSynthesizerServiceType(() ->
                                             ADDON_TYPE == R.id.addon_android ?
-                                                    VoiceConfig.SYNTHESIZER_SERVICE_ANDROID_BUILTIN :
-                                                    VoiceConfig.SYNTHESIZER_SERVICE_GOOGLE_BUILTIN)
+                                                    ComponentConfig.SYNTHESIZER_SERVICE_ANDROID_BUILTIN :
+                                                    ComponentConfig.SYNTHESIZER_SERVICE_GOOGLE_BUILTIN)
                                     .build());
                     component.setup(this, status -> {
                         if (status.isAvailable()) {
@@ -331,7 +331,7 @@ public class MainActivity extends DaggerAppCompatActivity
                 Toast.makeText(this, "Not connected to a Bluetooth device", Toast.LENGTH_LONG).show();
                 return;
             }
-            component.updateVoiceConfig(
+            component.updateConfiguration(
                     builder -> {
                         builder.setBluetoothScoRequired(() ->
                                 peripheral.get(Peripheral.Type.BLUETOOTH).isConnected() && isChecked);

@@ -20,21 +20,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.MIN_VOICE_RECOGNITION_TIME_LISTENING;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerError;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerMostConfidentResult;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerPartialResults;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerReady;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerResults;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RECOGNIZER_AFTER_PARTIALS_ERROR;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RECOGNIZER_EMPTY_RESULTS_ERROR;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RECOGNIZER_LOW_SOUND_ERROR;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RECOGNIZER_NO_SOUND_ERROR;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RECOGNIZER_RETRY_ERROR;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RECOGNIZER_STOPPED_TOO_EARLY_ERROR;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RECOGNIZER_UNAVAILABLE_ERROR;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RECOGNIZER_UNKNOWN_ERROR;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RecognizerListenerContract;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RecognizerListener;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.selectMostConfidentResult;
 
 public final class AndroidSpeechRecognizer implements ConversationalFlowComponent.SpeechRecognizer {
@@ -49,12 +40,12 @@ public final class AndroidSpeechRecognizer implements ConversationalFlowComponen
 
     // Resources
     private final Application application;
-    private final VoiceConfig config;
+    private final ComponentConfig config;
     private final AndroidHandler mainHandler;
     private final AndroidAudioHandler audioHandler;
     private final BluetoothSco bluetoothSco;
     private final Intent speechRecognizerIntent;
-    private final SpeechRecognizerCreator recognizerCreator;
+    private final SpeechRecognizerCreator<android.speech.SpeechRecognizer> recognizerCreator;
     private final ExecutorService executorService;
     private SpeechRecognizer speechRecognizer;
 
@@ -98,7 +89,7 @@ public final class AndroidSpeechRecognizer implements ConversationalFlowComponen
                     });
                 }
             };
-            timeout.schedule(task, MIN_VOICE_RECOGNITION_TIME_LISTENING * 3);
+            timeout.schedule(task, RecognizerListener.MIN_VOICE_RECOGNITION_TIME_LISTENING * 3);
         }
 
         private void cleanup() {
@@ -134,7 +125,8 @@ public final class AndroidSpeechRecognizer implements ConversationalFlowComponen
         public void onError(int error) {
             logger.e(TAG, "ANDROID VOICE - error: " + getErrorType(error));
             // We consider 2 sec as timeout for non speech
-            boolean stoppedTooEarly = (System.currentTimeMillis() - elapsedTime) < ConversationalFlowComponent.MIN_VOICE_RECOGNITION_TIME_LISTENING;
+            boolean stoppedTooEarly = (System.currentTimeMillis() - elapsedTime) <
+                    ConversationalFlowComponent.RecognizerListener.MIN_VOICE_RECOGNITION_TIME_LISTENING;
             // Start checking for the error
             OnRecognizerError errorListener = getOnError();
             int soundLevel = getSoundLevel();
@@ -143,27 +135,27 @@ public final class AndroidSpeechRecognizer implements ConversationalFlowComponen
             cancel();
             if (errorListener != null) {
                 if (needRetry(error)) {
-                    errorListener.execute(RECOGNIZER_UNAVAILABLE_ERROR, error);
+                    errorListener.execute(RecognizerListener.RECOGNIZER_UNAVAILABLE_ERROR, error);
                 }
                 else if (stoppedTooEarly) {
-                    errorListener.execute(RECOGNIZER_STOPPED_TOO_EARLY_ERROR, error);
+                    errorListener.execute(RecognizerListener.RECOGNIZER_STOPPED_TOO_EARLY_ERROR, error);
                 }
                 else if (soundLevel == NO_SOUND) {
-                    errorListener.execute(RECOGNIZER_NO_SOUND_ERROR, error);
+                    errorListener.execute(RecognizerListener.RECOGNIZER_NO_SOUND_ERROR, error);
                 }
                 else if (soundLevel == LOW_SOUND) {
-                    errorListener.execute(RECOGNIZER_LOW_SOUND_ERROR, error);
+                    errorListener.execute(RecognizerListener.RECOGNIZER_LOW_SOUND_ERROR, error);
                 }
                 else if (intents > 0) {
-                    errorListener.execute(RECOGNIZER_AFTER_PARTIALS_ERROR, error);
+                    errorListener.execute(RecognizerListener.RECOGNIZER_AFTER_PARTIALS_ERROR, error);
                 }
                 else if (isTryAgain()) {
                     errorListener.execute(error == SpeechRecognizer.ERROR_NO_MATCH ?
-                            RECOGNIZER_UNKNOWN_ERROR :
-                            RECOGNIZER_RETRY_ERROR, error);
+                            RecognizerListener.RECOGNIZER_UNKNOWN_ERROR :
+                            RecognizerListener.RECOGNIZER_RETRY_ERROR, error);
                 }
                 else { // Restore ANDROID VOICE
-                    errorListener.execute(RECOGNIZER_UNKNOWN_ERROR, error);
+                    errorListener.execute(RecognizerListener.RECOGNIZER_UNKNOWN_ERROR, error);
                 }
             }
         }
@@ -192,7 +184,7 @@ public final class AndroidSpeechRecognizer implements ConversationalFlowComponen
                 logger.e(TAG, "ANDROID VOICE - NO results");
                 OnRecognizerError listener = getOnError();
                 reset();
-                if (listener != null) listener.execute(RECOGNIZER_EMPTY_RESULTS_ERROR, -1);
+                if (listener != null) listener.execute(RecognizerListener.RECOGNIZER_EMPTY_RESULTS_ERROR, -1);
             }
         }
 
@@ -226,7 +218,7 @@ public final class AndroidSpeechRecognizer implements ConversationalFlowComponen
     // Log stuff
     private ILogger logger;
 
-    AndroidSpeechRecognizer(Application application, VoiceConfig configuration,
+    AndroidSpeechRecognizer(Application application, ComponentConfig configuration,
                             AndroidAudioHandler audioHandler, BluetoothSco bluetoothSco,
                             SpeechRecognizerCreator recognizerCreator, ILogger logger) {
         this.application = application;
@@ -322,7 +314,7 @@ public final class AndroidSpeechRecognizer implements ConversationalFlowComponen
     }
 
     @Override
-    public void listen(RecognizerListenerContract... listeners) {
+    public void listen(RecognizerListener... listeners) {
         logger.i(TAG, "ANDROID VOICE - start listening");
         handleListeners(listeners);
         // Check whether Sco is connected or required
@@ -382,10 +374,10 @@ public final class AndroidSpeechRecognizer implements ConversationalFlowComponen
         });
     }
 
-    private void handleListeners(RecognizerListenerContract... listeners) {
+    private void handleListeners(RecognizerListener... listeners) {
         recognitionListener.reset();
         if (listeners != null && listeners.length > 0) {
-            for (RecognizerListenerContract item : listeners) {
+            for (RecognizerListener item : listeners) {
                 if (item instanceof OnRecognizerReady) {
                     recognitionListener.setOnReady((OnRecognizerReady) item);
                 }

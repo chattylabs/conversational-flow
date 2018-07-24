@@ -9,6 +9,7 @@ import android.text.TextUtils;
 
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.common.internal.ILogger;
+import com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RecognizerListener;
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
@@ -33,11 +34,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.MIN_VOICE_RECOGNITION_TIME_LISTENING;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RECOGNIZER_AFTER_PARTIALS_ERROR;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RECOGNIZER_EMPTY_RESULTS_ERROR;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RECOGNIZER_STOPPED_TOO_EARLY_ERROR;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RECOGNIZER_UNKNOWN_ERROR;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.selectMostConfidentResult;
 
 public class GoogleSpeechRecognizer implements ConversationalFlowComponent.SpeechRecognizer {
@@ -47,7 +43,7 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
 
     // Resources
     private final Application application;
-    private final VoiceConfig config;
+    private final ComponentConfig config;
     private final AndroidAudioHandler audioHandler;
     private final BluetoothSco bluetoothSco;
     private final ExecutorService executorService;
@@ -55,10 +51,10 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
     // Log stuff
     private ILogger logger;
 
-    private VoiceRecorder mVoiceRecorder;
+    private AudioRecorder mAudioRecorder;
     private SpeechClient speech;
 
-    private final VoiceRecorder.Callback mVoiceCallback = new VoiceRecorder.Callback() {
+    private final AudioRecorder.Callback mVoiceCallback = new AudioRecorder.Callback() {
 
         @Override
         public void onVoiceStart() {
@@ -74,7 +70,7 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
                         RecognitionConfig.AudioEncoding.FLAC;
                 RecognitionConfig recognitionConfig = RecognitionConfig.newBuilder()
                         .setEncoding(encoding)
-                        .setSampleRateHertz(mVoiceRecorder.getSampleRate())
+                        .setSampleRateHertz(mAudioRecorder.getSampleRate())
                         .setLanguageCode(getDefaultLanguageCode())
                         .build();
                 RecognitionAudio audio = RecognitionAudio.newBuilder()
@@ -164,7 +160,7 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
                     });
                 }
             };
-            timeout.schedule(task, MIN_VOICE_RECOGNITION_TIME_LISTENING * 3);
+            timeout.schedule(task, RecognizerListener.MIN_VOICE_RECOGNITION_TIME_LISTENING * 3);
         }
 
         private void cleanup() {
@@ -200,7 +196,7 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
         public void onError(int error) {
             //logger.e(TAG, "ANDROID VOICE - error: " + getErrorType(error));
             // We consider 2 sec as timeout for non speech
-            boolean stoppedTooEarly = (System.currentTimeMillis() - elapsedTime) < ConversationalFlowComponent.MIN_VOICE_RECOGNITION_TIME_LISTENING;
+            boolean stoppedTooEarly = (System.currentTimeMillis() - elapsedTime) < RecognizerListener.MIN_VOICE_RECOGNITION_TIME_LISTENING;
             // Start checking for the error
             ConversationalFlowComponent.OnRecognizerError errorListener = getOnError();
             //int soundLevel = getSoundLevel();
@@ -213,7 +209,7 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
 //                }
 //                else
                     if (stoppedTooEarly) {
-                    errorListener.execute(RECOGNIZER_STOPPED_TOO_EARLY_ERROR, error);
+                    errorListener.execute(RecognizerListener.RECOGNIZER_STOPPED_TOO_EARLY_ERROR, error);
                 }
 //                else if (soundLevel == NO_SOUND) {
 //                    errorListener.execute(RECOGNIZER_NO_SOUND_ERROR, error);
@@ -222,7 +218,7 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
 //                    errorListener.execute(RECOGNIZER_LOW_SOUND_ERROR, error);
 //                }
                 else if (intents > 0) {
-                    errorListener.execute(RECOGNIZER_AFTER_PARTIALS_ERROR, error);
+                    errorListener.execute(RecognizerListener.RECOGNIZER_AFTER_PARTIALS_ERROR, error);
                 }
 //                else if (isTryAgain()) {
 //                    errorListener.execute(error == SpeechRecognizer.ERROR_NO_MATCH ?
@@ -230,7 +226,7 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
 //                            RECOGNIZER_RETRY_ERROR, error);
 //                }
                 else { // Restore ANDROID VOICE
-                    errorListener.execute(RECOGNIZER_UNKNOWN_ERROR, error);
+                    errorListener.execute(RecognizerListener.RECOGNIZER_UNKNOWN_ERROR, error);
                 }
             }
         }
@@ -259,7 +255,7 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
                 logger.e(TAG, "GOOGLE VOICE - NO results");
                 ConversationalFlowComponent.OnRecognizerError listener = getOnError();
                 reset();
-                if (listener != null) listener.execute(RECOGNIZER_EMPTY_RESULTS_ERROR, -1);
+                if (listener != null) listener.execute(RecognizerListener.RECOGNIZER_EMPTY_RESULTS_ERROR, -1);
             }
         }
 
@@ -279,7 +275,7 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
     };
 
     GoogleSpeechRecognizer(Application application,
-                           VoiceConfig configuration,
+                           ComponentConfig configuration,
                            AndroidAudioHandler audioHandler,
                            BluetoothSco bluetoothSco, ILogger logger) {
         this.application = application;
@@ -291,7 +287,7 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
     }
 
     @Override
-    public <T extends ConversationalFlowComponent.RecognizerListenerContract> void listen(
+    public <T extends RecognizerListener> void listen(
              T... listeners) {
         logger.i(TAG, "GOOGLE VOICE - start listening");
         handleListeners(listeners);
@@ -379,10 +375,10 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
                 ).build());
     }
 
-    private void handleListeners(ConversationalFlowComponent.RecognizerListenerContract... listeners) {
+    private void handleListeners(RecognizerListener... listeners) {
         recognitionListener.reset();
         if (listeners != null && listeners.length > 0) {
-            for (ConversationalFlowComponent.RecognizerListenerContract item : listeners) {
+            for (RecognizerListener item : listeners) {
                 if (item instanceof ConversationalFlowComponent.OnRecognizerReady) {
                     recognitionListener.setOnReady((ConversationalFlowComponent.OnRecognizerReady) item);
                 }
@@ -403,17 +399,17 @@ public class GoogleSpeechRecognizer implements ConversationalFlowComponent.Speec
     }
 
     private void startVoiceRecorder() {
-        if (mVoiceRecorder != null) {
-            mVoiceRecorder.stop();
+        if (mAudioRecorder != null) {
+            mAudioRecorder.stop();
         }
-        mVoiceRecorder = new VoiceRecorder(mVoiceCallback);
-        mVoiceRecorder.start();
+        mAudioRecorder = new AudioRecorder(mVoiceCallback);
+        mAudioRecorder.start();
     }
 
     private void stopVoiceRecorder() {
-        if (mVoiceRecorder != null) {
-            mVoiceRecorder.stop();
-            mVoiceRecorder = null;
+        if (mAudioRecorder != null) {
+            mAudioRecorder.stop();
+            mAudioRecorder = null;
         }
     }
 
