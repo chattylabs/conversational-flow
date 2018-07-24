@@ -29,7 +29,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
-public class AndroidAudioHandlerTest {
+public class AndroidAudioManagerTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
@@ -37,7 +37,7 @@ public class AndroidAudioHandlerTest {
     @Mock ComponentConfig config;
     @Mock ILogger logger;
 
-    private AndroidAudioHandler audioHandler;
+    private AndroidAudioManager androidAudioManager;
     private int currentSdkLevel;
 
     @Before
@@ -47,7 +47,7 @@ public class AndroidAudioHandlerTest {
         UnitTestUtils.setVersionSdk(Build.VERSION_CODES.O);
         when(config.isBluetoothScoRequired()).thenReturn(false);
 
-        audioHandler = spy(new AndroidAudioHandler(audioManager, config, logger));
+        androidAudioManager = spy(new AndroidAudioManager(audioManager, config, logger));
     }
 
     @After
@@ -59,17 +59,17 @@ public class AndroidAudioHandlerTest {
     public void getMainStreamType() {
         when(config.isBluetoothScoRequired()).thenReturn(true);
 
-        assertEquals(audioHandler.getMainStreamType(), AudioManager.STREAM_VOICE_CALL);
+        assertEquals(androidAudioManager.getMainStreamType(), AudioManager.STREAM_VOICE_CALL);
 
         when(config.isBluetoothScoRequired()).thenReturn(false);
 
-        assertEquals(audioHandler.getMainStreamType(), AudioManager.STREAM_MUSIC);
+        assertEquals(androidAudioManager.getMainStreamType(), AudioManager.STREAM_MUSIC);
     }
 
     @SuppressWarnings("ConstantConditions")
     @Test
     public void requestAudioFocus_AndroidO() throws Exception {
-        audioHandler.requestAudioFocus(false);
+        androidAudioManager.requestAudioFocus(false);
 
         verify(audioManager, never()).requestAudioFocus(any(), anyInt(), anyInt());
         verify(audioManager).requestAudioFocus(any(AudioFocusRequest.class));
@@ -80,7 +80,7 @@ public class AndroidAudioHandlerTest {
     public void requestAudioFocus_AndroidN() throws Exception {
         UnitTestUtils.setVersionSdk(Build.VERSION_CODES.N);
 
-        audioHandler.requestAudioFocus(false);
+        androidAudioManager.requestAudioFocus(false);
 
         verify(audioManager).requestAudioFocus(any(), anyInt(), anyInt());
         verify(audioManager, never()).requestAudioFocus(any(AudioFocusRequest.class));
@@ -89,10 +89,10 @@ public class AndroidAudioHandlerTest {
     @SuppressWarnings("ConstantConditions")
     @Test
     public void requestAudioFocus_NotExclusive() throws Exception {
-        audioHandler.requestAudioFocus(false);
+        androidAudioManager.requestAudioFocus(false);
 
-        verify(audioHandler, never()).abandonAudioFocus();
-        verify(audioHandler).setAudioMode();
+        verify(androidAudioManager, never()).abandonAudioFocus();
+        verify(androidAudioManager).setAudioMode();
         verify(audioManager, never()).requestAudioFocus(argThat(argument ->
                 argument.getFocusGain() == AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE));
         verify(audioManager).requestAudioFocus(argThat(argument ->
@@ -102,10 +102,10 @@ public class AndroidAudioHandlerTest {
     @SuppressWarnings("ConstantConditions")
     @Test
     public void requestAudioFocus_Exclusive() throws Exception {
-        audioHandler.requestAudioFocus(true);
+        androidAudioManager.requestAudioFocus(true);
 
-        verify(audioHandler, never()).abandonAudioFocus();
-        verify(audioHandler).setAudioMode();
+        verify(androidAudioManager, never()).abandonAudioFocus();
+        verify(androidAudioManager).setAudioMode();
         verify(audioManager).requestAudioFocus(argThat(argument ->
                 argument.getFocusGain() == AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE));
         verify(audioManager, never()).requestAudioFocus(argThat(argument ->
@@ -117,8 +117,8 @@ public class AndroidAudioHandlerTest {
         when(audioManager.requestAudioFocus(any()))
                 .thenReturn(AudioManager.AUDIOFOCUS_REQUEST_GRANTED);
 
-        audioHandler.requestAudioFocus(false);
-        audioHandler.abandonAudioFocus();
+        androidAudioManager.requestAudioFocus(false);
+        androidAudioManager.abandonAudioFocus();
 
         verify(audioManager, never()).abandonAudioFocus(any());
         verify(audioManager).abandonAudioFocusRequest(any());
@@ -130,8 +130,8 @@ public class AndroidAudioHandlerTest {
         when(audioManager.requestAudioFocus(any(), anyInt(), anyInt()))
                 .thenReturn(AudioManager.AUDIOFOCUS_REQUEST_GRANTED);
 
-        audioHandler.requestAudioFocus(false);
-        audioHandler.abandonAudioFocus();
+        androidAudioManager.requestAudioFocus(false);
+        androidAudioManager.abandonAudioFocus();
 
         verify(audioManager).abandonAudioFocus(any());
         verify(audioManager, never()).abandonAudioFocusRequest(any());
@@ -143,10 +143,10 @@ public class AndroidAudioHandlerTest {
         when(audioManager.requestAudioFocus(any()))
                 .thenReturn(AudioManager.AUDIOFOCUS_REQUEST_GRANTED);
 
-        audioHandler.requestAudioFocus(false);
-        audioHandler.abandonAudioFocus();
+        androidAudioManager.requestAudioFocus(false);
+        androidAudioManager.abandonAudioFocus();
 
-        verify(audioHandler).unsetAudioMode();
+        verify(androidAudioManager).unsetAudioMode();
         verify(audioManager, never()).abandonAudioFocusRequest(argThat(argument ->
                 argument.getFocusGain() == AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE));
         verify(audioManager).abandonAudioFocusRequest(argThat(argument ->
@@ -159,10 +159,10 @@ public class AndroidAudioHandlerTest {
         when(audioManager.requestAudioFocus(any()))
                 .thenReturn(AudioManager.AUDIOFOCUS_REQUEST_GRANTED);
 
-        audioHandler.requestAudioFocus(true);
-        audioHandler.abandonAudioFocus();
+        androidAudioManager.requestAudioFocus(true);
+        androidAudioManager.abandonAudioFocus();
 
-        verify(audioHandler).unsetAudioMode();
+        verify(androidAudioManager).unsetAudioMode();
         verify(audioManager).abandonAudioFocusRequest(argThat(argument ->
                 argument.getFocusGain() == AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE));
         verify(audioManager, never()).abandonAudioFocusRequest(argThat(argument ->
@@ -173,7 +173,7 @@ public class AndroidAudioHandlerTest {
     public void setAudioMode_ScoOn() throws Exception {
         when(config.isBluetoothScoRequired()).thenReturn(true);
 
-        audioHandler.setAudioMode();
+        androidAudioManager.setAudioMode();
 
         verify(audioManager).getMode();
         verify(audioManager).setMode(AudioManager.MODE_IN_CALL);
@@ -183,7 +183,7 @@ public class AndroidAudioHandlerTest {
     public void setAudioMode_ScoOff() throws Exception {
         when(config.isBluetoothScoRequired()).thenReturn(false);
 
-        audioHandler.setAudioMode();
+        androidAudioManager.setAudioMode();
 
         verify(audioManager).getMode();
         verify(audioManager).setMode(AudioManager.MODE_NORMAL);
@@ -191,36 +191,36 @@ public class AndroidAudioHandlerTest {
 
     @Test
     public void unsetAudioMode() throws Exception {
-        audioHandler.unsetAudioMode();
+        androidAudioManager.unsetAudioMode();
 
         verify(audioManager).setMode(AudioManager.MODE_CURRENT);
-        verify(audioHandler).unsetAudioMode();
-        verifyNoMoreInteractions(audioHandler);
+        verify(androidAudioManager).unsetAudioMode();
         verifyNoMoreInteractions(audioManager);
+        verifyNoMoreInteractions(androidAudioManager);
     }
 
     @Test
     public void isBluetoothScoAvailableOffCall() throws Exception {
-        when(audioManager.isBluetoothScoAvailableOffCall()).thenReturn(true);
+        when(androidAudioManager.isBluetoothScoAvailableOffCall()).thenReturn(true);
 
-        assertTrue(audioHandler.isBluetoothScoAvailableOffCall());
+        assertTrue(androidAudioManager.isBluetoothScoAvailableOffCall());
     }
 
     @Test
     public void setBluetoothScoOn() throws Exception {
-        audioHandler.setBluetoothScoOn(true);
+        androidAudioManager.setBluetoothScoOn(true);
 
-        verify(audioManager).setBluetoothScoOn(true);
+        verify(androidAudioManager).setBluetoothScoOn(true);
     }
 
     @Test
     public void bluetoothSco() throws Exception {
-        audioHandler.startBluetoothSco();
+        androidAudioManager.startBluetoothSco();
 
-        verify(audioManager).startBluetoothSco();
+        verify(androidAudioManager).startBluetoothSco();
 
-        audioHandler.stopBluetoothSco();
+        androidAudioManager.stopBluetoothSco();
 
-        verify(audioManager).stopBluetoothSco();
+        verify(androidAudioManager).stopBluetoothSco();
     }
 }

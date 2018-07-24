@@ -40,9 +40,8 @@ public final class AndroidSpeechRecognizer implements ConversationalFlowComponen
 
     // Resources
     private final Application application;
-    private final ComponentConfig config;
     private final AndroidHandler mainHandler;
-    private final AndroidAudioHandler audioHandler;
+    private final AndroidAudioManager audioManager;
     private final BluetoothSco bluetoothSco;
     private final Intent speechRecognizerIntent;
     private final SpeechRecognizerCreator<android.speech.SpeechRecognizer> recognizerCreator;
@@ -101,7 +100,7 @@ public final class AndroidSpeechRecognizer implements ConversationalFlowComponen
         @Override
         public void reset() {
             releaseTimeout();
-            audioHandler.abandonAudioFocus();
+            audioManager.abandonAudioFocus();
             cleanup();
             super.setTryAgain(false);
             setOnError(null);
@@ -115,7 +114,7 @@ public final class AndroidSpeechRecognizer implements ConversationalFlowComponen
         @Override
         public void onReadyForSpeech(Bundle params) {
             if (!bluetoothSco.isBluetoothScoOn()) {
-                audioHandler.requestAudioFocus(config.isAudioExclusiveRequiredForRecognizer());
+                audioManager.requestAudioFocus(configuration.isAudioExclusiveRequiredForRecognizer());
             }
             //resetVolumeForBeep();
             super.onReadyForSpeech(params);
@@ -215,15 +214,16 @@ public final class AndroidSpeechRecognizer implements ConversationalFlowComponen
         }
     };
 
-    // Log stuff
-    private ILogger logger;
-
-    AndroidSpeechRecognizer(Application application, ComponentConfig configuration,
-                            AndroidAudioHandler audioHandler, BluetoothSco bluetoothSco,
-                            SpeechRecognizerCreator recognizerCreator, ILogger logger) {
+    AndroidSpeechRecognizer(Application application,
+                            ComponentConfig configuration,
+                            AndroidAudioManager audioManager,
+                            BluetoothSco bluetoothSco,
+                            SpeechRecognizerCreator<android.speech.SpeechRecognizer>
+                                    recognizerCreator,
+                            ILogger logger) {
         this.application = application;
-        this.config = configuration;
-        this.audioHandler = audioHandler;
+        this.configuration = configuration;
+        this.audioManager = audioManager;
         this.bluetoothSco = bluetoothSco;
         this.logger = logger;
         this.executorService = Executors.newSingleThreadExecutor();
@@ -235,6 +235,75 @@ public final class AndroidSpeechRecognizer implements ConversationalFlowComponen
         this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
         this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 5000L);
         this.recognizerCreator = recognizerCreator;
+    }
+
+    private void startListening() {
+        executorService.submit(() -> {
+            lock.lock();
+            try {
+                mainHandler.post(() -> {
+                    if (speechRecognizer == null) {
+                        speechRecognizer = recognizerCreator.create();
+                        logger.v(TAG, "ANDROID VOICE - created");
+                    }
+                    recognitionListener.startTimeout();
+                    recognitionListener.setRmsDebug(rmsDebug);
+                    if (noSoundThreshold > 0) recognitionListener.setNoSoundThreshold(noSoundThreshold);
+                    if (lowSoundThreshold > 0) recognitionListener.setLowSoundThreshold(lowSoundThreshold);
+                    logger.i(TAG, "ANDROID VOICE - start listening");
+                    speechRecognizer.setRecognitionListener(recognitionListener);
+                    //adjustVolumeForBeep();
+                    speechRecognizer.startListening(speechRecognizerIntent);
+                    executorService.submit(lock::unlock);
+                });
+            } catch (Exception e) {
+                logger.logException(e);
+                lock.unlock();
+            }
+        });
+    }
+
+    private void handleListeners(RecognizerListener... listeners) {
+        recognitionListener.reset();
+        if (listeners != null && listeners.length > 0) {
+            for (RecognizerListener item : listeners) {
+                if (item instanceof OnRecognizerReady) {
+                    recognitionListener.setOnReady((OnRecognizerReady) item);
+                }
+                else if (item instanceof OnRecognizerResults) {
+                    recognitionListener.setOnResults((OnRecognizerResults) item);
+                }
+                else if (item instanceof OnRecognizerMostConfidentResult) {
+                    recognitionListener.setOnMostConfidentResult((OnRecognizerMostConfidentResult) item);
+                }
+                else if (item instanceof OnRecognizerPartialResults) {
+                    recognitionListener.setOnPartialResults((OnRecognizerPartialResults) item);
+                }
+                else if (item instanceof OnRecognizerError) {
+                    recognitionListener.setOnError((OnRecognizerError) item);
+                }
+            }
+        }
+    }
+
+    public void setTryAgain(boolean tryAgain) {
+        this.recognitionListener.setTryAgain(tryAgain);
+    }
+
+    public void setPartialResults(boolean partial) {
+        this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, partial);
+    }
+
+    public void setRmsDebug(boolean rmsDebug) {
+        this.rmsDebug = rmsDebug;
+    }
+
+    public void setNoSoundThreshold(float maxValue) {
+        this.noSoundThreshold = maxValue;
+    }
+
+    public void setLowSoundThreshold(float maxValue) {
+        this.lowSoundThreshold = maxValue;
     }
 
     @Override
@@ -311,110 +380,6 @@ public final class AndroidSpeechRecognizer implements ConversationalFlowComponen
                 lock.unlock();
             }
         });
-    }
-
-    @Override
-    public void listen(RecognizerListener... listeners) {
-        logger.i(TAG, "ANDROID VOICE - start listening");
-        handleListeners(listeners);
-        // Check whether Sco is connected or required
-        logger.i(TAG, "ANDROID VOICE - is bluetooth Sco required: " +
-                Boolean.toString(config.isBluetoothScoRequired()));
-        if (config.isBluetoothScoRequired() && !bluetoothSco.isBluetoothScoOn()) {
-            // Sco Listener
-            BluetoothScoListener listener = new BluetoothScoListener() {
-                @Override
-                public void onConnected() {
-                    logger.w(TAG, "ANDROID VOICE - Sco onConnected");
-                    startListening();
-                }
-
-                @Override
-                public void onDisconnected() {
-                    logger.w(TAG, "ANDROID VOICE - Sco onDisconnected");
-                    if (bluetoothSco.isBluetoothScoOn()) {
-                        logger.w(TAG, "ANDROID VOICE - shutdown from Sco");
-                        shutdown();
-                    }
-                }
-            };
-            // Start Bluetooth Sco
-            bluetoothSco.startSco(listener);
-            logger.v(TAG, "ANDROID VOICE - waiting for bluetooth sco connection");
-        }
-        else {
-            logger.v(TAG, "ANDROID VOICE - bluetooth sco is: " + (bluetoothSco.isBluetoothScoOn() ? "on" : "off"));
-            startListening();
-        }
-    }
-
-    private void startListening() {
-        executorService.submit(() -> {
-            lock.lock();
-            try {
-                mainHandler.post(() -> {
-                    if (speechRecognizer == null) {
-                        speechRecognizer = recognizerCreator.create();
-                        logger.v(TAG, "ANDROID VOICE - created");
-                    }
-                    recognitionListener.startTimeout();
-                    recognitionListener.setRmsDebug(rmsDebug);
-                    if (noSoundThreshold > 0) recognitionListener.setNoSoundThreshold(noSoundThreshold);
-                    if (lowSoundThreshold > 0) recognitionListener.setLowSoundThreshold(lowSoundThreshold);
-                    logger.i(TAG, "ANDROID VOICE - start listening");
-                    speechRecognizer.setRecognitionListener(recognitionListener);
-                    //adjustVolumeForBeep();
-                    speechRecognizer.startListening(speechRecognizerIntent);
-                    executorService.submit(lock::unlock);
-                });
-            } catch (Exception e) {
-                logger.logException(e);
-                lock.unlock();
-            }
-        });
-    }
-
-    private void handleListeners(RecognizerListener... listeners) {
-        recognitionListener.reset();
-        if (listeners != null && listeners.length > 0) {
-            for (RecognizerListener item : listeners) {
-                if (item instanceof OnRecognizerReady) {
-                    recognitionListener.setOnReady((OnRecognizerReady) item);
-                }
-                else if (item instanceof OnRecognizerResults) {
-                    recognitionListener.setOnResults((OnRecognizerResults) item);
-                }
-                else if (item instanceof OnRecognizerMostConfidentResult) {
-                    recognitionListener.setOnMostConfidentResult((OnRecognizerMostConfidentResult) item);
-                }
-                else if (item instanceof OnRecognizerPartialResults) {
-                    recognitionListener.setOnPartialResults((OnRecognizerPartialResults) item);
-                }
-                else if (item instanceof OnRecognizerError) {
-                    recognitionListener.setOnError((OnRecognizerError) item);
-                }
-            }
-        }
-    }
-
-    public void setTryAgain(boolean tryAgain) {
-        this.recognitionListener.setTryAgain(tryAgain);
-    }
-
-    public void setPartialResults(boolean partial) {
-        this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, partial);
-    }
-
-    public void setRmsDebug(boolean rmsDebug) {
-        this.rmsDebug = rmsDebug;
-    }
-
-    public void setNoSoundThreshold(float maxValue) {
-        this.noSoundThreshold = maxValue;
-    }
-
-    public void setLowSoundThreshold(float maxValue) {
-        this.lowSoundThreshold = maxValue;
     }
 
     public static String getErrorType(int error) {

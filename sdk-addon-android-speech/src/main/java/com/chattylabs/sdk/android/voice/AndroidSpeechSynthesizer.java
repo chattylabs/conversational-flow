@@ -45,10 +45,10 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     AndroidSpeechSynthesizer(Application application,
                              ComponentConfig configuration,
-                             AndroidAudioHandler audioHandler,
+                             AndroidAudioManager audioManager,
                              BluetoothSco bluetoothSco,
                              ILogger logger) {
-        super(configuration, audioHandler, bluetoothSco, logger);
+        super(configuration, audioManager, bluetoothSco, logger);
         this.application = application;
         this.release();
     }
