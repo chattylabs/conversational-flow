@@ -6,7 +6,6 @@ import android.app.Application;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
-import android.speech.SpeechRecognizer;
 import android.support.annotation.RequiresPermission;
 import android.support.v4.content.ContextCompat;
 
@@ -35,7 +34,7 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
 
     // Resources
     private ComponentConfig configuration;
-    private AndroidAudioHandler audioHandler;
+    private AndroidAudioManager audioManager;
     private BluetoothSco bluetoothSco;
     private SpeechSynthesizer speechSynthesizer;
     private SpeechRecognizer speechRecognizer;
@@ -69,7 +68,7 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
 
     @Override
     public void reset() {
-        audioHandler = null;
+        audioManager = null;
         bluetoothSco = null;
         release();
     }
@@ -109,21 +108,21 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
         for (String perm : perms)
             if (ContextCompat.checkSelfPermission(application, perm) != PackageManager.PERMISSION_GRANTED)
                 throw new IllegalAccessError("Permission \"" + perm + "\" is not granted");
-        if (audioHandler == null) {
+        if (audioManager == null) {
             AudioManager audioManager = (AudioManager) application.getSystemService(Context.AUDIO_SERVICE);
-            audioHandler = new AndroidAudioHandler(audioManager, configuration, logger);
+            this.audioManager = new AndroidAudioManager(audioManager, configuration, logger);
         }
-        if (bluetoothSco == null) bluetoothSco = new BluetoothSco(application, audioHandler, logger);
+        if (bluetoothSco == null) bluetoothSco = new BluetoothSco(application, audioManager, logger);
         try {
             if (speechSynthesizer == null) {
                 if (configuration.getSynthesizerServiceType() == ComponentConfig.SYNTHESIZER_SERVICE_ANDROID_BUILTIN) {
                     String className = "com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer";
-                    speechSynthesizer = newInstance(className, application, configuration, audioHandler,
+                    speechSynthesizer = newInstance(className, application, configuration, audioManager,
                             bluetoothSco, logger);
                 }
                 else if (configuration.getSynthesizerServiceType() == ComponentConfig.SYNTHESIZER_SERVICE_GOOGLE_BUILTIN) {
                     String className = "com.chattylabs.sdk.android.voice.GoogleSpeechSynthesizer";
-                    speechSynthesizer = newInstance(className, application, configuration, audioHandler,
+                    speechSynthesizer = newInstance(className, application, configuration, audioManager,
                             bluetoothSco, logger);
                 }
             }
@@ -131,13 +130,13 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
                 if (configuration.getRecognizerServiceType() == ComponentConfig.RECOGNIZER_SERVICE_ANDROID_BUILTIN) {
                     String className = "com.chattylabs.sdk.android.voice.AndroidSpeechRecognizer";
                     speechRecognizer = newInstance(className, application,
-                            configuration, audioHandler, bluetoothSco, (SpeechRecognizerCreator) () ->
+                            configuration, audioManager, bluetoothSco, (SpeechRecognizerCreator) () ->
                                     android.speech.SpeechRecognizer.createSpeechRecognizer(application),
                             logger);
                 }
                 else if (configuration.getRecognizerServiceType() == ComponentConfig.RECOGNIZER_SERVICE_GOOGLE_SPEECH) {
                     String className = "com.chattylabs.sdk.android.voice.google.GoogleSpeechRecognizer";
-                    speechRecognizer = newInstance(className, application, configuration, audioHandler,
+                    speechRecognizer = newInstance(className, application, configuration, audioManager,
                             bluetoothSco, logger);
                 }
             }

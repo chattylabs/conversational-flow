@@ -8,7 +8,7 @@ import android.os.Build;
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.common.internal.ILogger;
 
-public class AndroidAudioHandler {
+public class AndroidAudioManager {
     private static final String TAG = Tag.make("AndroidAudioHandler");
 
     // States
@@ -35,7 +35,7 @@ public class AndroidAudioHandler {
     // Log stuff
     private ILogger logger;
 
-    public AndroidAudioHandler(AudioManager audioManager,
+    public AndroidAudioManager(AudioManager audioManager,
                                ComponentConfig configuration,
                                ILogger logger) {
         this.logger = logger;
