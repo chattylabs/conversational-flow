@@ -4,7 +4,8 @@ import android.speech.tts.UtteranceProgressListener;
 
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.*;
 
-abstract class AndroidSpeechSynthesizerAdapter extends UtteranceProgressListener implements UtteranceListener {
+abstract class AndroidSpeechSynthesizerAdapter extends UtteranceProgressListener
+        implements SynthesizerUtteranceListener {
     private OnSynthesizerStart onStartedListener;
     private OnSynthesizerDone onDoneListener;
     private OnSynthesizerError onErrorListener;
