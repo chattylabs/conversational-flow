@@ -2,29 +2,59 @@ package com.chattylabs.sdk.android.voice;
 
 import com.chattylabs.sdk.android.common.internal.ILogger;
 
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.*;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SpeechRecognizer;
 
 abstract class BaseSpeechRecognizer implements SpeechRecognizer {
 
     private final ComponentConfig configuration;
+    private final AndroidAudioManager audioManager;
+    private final BluetoothSco bluetoothSco;
 
     // Log stuff
-    private ILogger logger;
+    protected ILogger logger;
 
     public BaseSpeechRecognizer() {
     }
 
+    abstract RecognizerUtteranceListener getRecognitionListener();
+
+    abstract void startListening();
+
     abstract String getTag();
 
     @Override
-    public <T extends ConversationalFlowComponent.RecognizerListener> void listen(T... listeners) {
+    public <T extends RecognizerListener> void listen(T... listeners) {
         logger.i(getTag(), "VOICE - start listening");
         handleListeners(listeners);
         checkForBluetoothScoRequired(this::startListening);
     }
 
-    private void checkForBluetoothScoRequired(Runnable starter) {
-        logger.i(getTag(), "VOICE - is bluetooth Sco required: " +
+    private void handleListeners(RecognizerListener... listeners) {
+        getRecognitionListener().reset();
+        if (listeners != null && listeners.length > 0) {
+            for (RecognizerListener item : listeners) {
+                if (item instanceof OnRecognizerReady) {
+                    getRecognitionListener()._setOnReady((OnRecognizerReady) item);
+                }
+                else if (item instanceof OnRecognizerResults) {
+                    getRecognitionListener()._setOnResults((OnRecognizerResults) item);
+                }
+                else if (item instanceof OnRecognizerMostConfidentResult) {
+                    getRecognitionListener()._setOnMostConfidentResult((OnRecognizerMostConfidentResult) item);
+                }
+                else if (item instanceof OnRecognizerPartialResults) {
+                    getRecognitionListener()._setOnPartialResults((OnRecognizerPartialResults) item);
+                }
+                else if (item instanceof OnRecognizerError) {
+                    getRecognitionListener()._setOnError((OnRecognizerError) item);
+                }
+            }
+        }
+    }
+
+    private void checkForBluetoothScoRequired(Runnable runnable) {
+        logger.i(getTag(), "VOICE - is bluetooth Sco required: %s",
                 Boolean.toString(configuration.isBluetoothScoRequired()));
         if (configuration.isBluetoothScoRequired() && !bluetoothSco.isBluetoothScoOn()) {
             // Sco Listener
@@ -32,7 +62,7 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
                 @Override
                 public void onConnected() {
                     logger.w(getTag(), "VOICE - Sco onConnected");
-                    starter.run();
+                    runnable.run();
                 }
 
                 @Override
@@ -49,8 +79,8 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
             logger.v(getTag(), "VOICE - waiting for bluetooth sco connection");
         }
         else {
-            logger.v(getTag(), "VOICE - bluetooth sco is: " + (bluetoothSco.isBluetoothScoOn() ? "on" : "off"));
-            starter.run();
+            logger.v(getTag(), "VOICE - bluetooth sco is: %s", (bluetoothSco.isBluetoothScoOn() ? "on" : "off"));
+            runnable.run();
         }
     }
 }

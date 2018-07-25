@@ -28,7 +28,7 @@ import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRec
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RecognizerListener;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.selectMostConfidentResult;
 
-public final class AndroidSpeechRecognizer implements ConversationalFlowComponent.SpeechRecognizer {
+public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
     private static final String TAG = Tag.make("AndroidSpeechRecognizer");
 
     private final ReentrantLock lock = new ReentrantLock();
@@ -41,8 +41,6 @@ public final class AndroidSpeechRecognizer implements ConversationalFlowComponen
     // Resources
     private final Application application;
     private final AndroidHandler mainHandler;
-    private final AndroidAudioManager audioManager;
-    private final BluetoothSco bluetoothSco;
     private final Intent speechRecognizerIntent;
     private final SpeechRecognizerCreator<android.speech.SpeechRecognizer> recognizerCreator;
     private final ExecutorService executorService;
@@ -237,7 +235,8 @@ public final class AndroidSpeechRecognizer implements ConversationalFlowComponen
         this.recognizerCreator = recognizerCreator;
     }
 
-    private void startListening() {
+    @Override
+    void startListening() {
         executorService.submit(() -> {
             lock.lock();
             try {
@@ -261,29 +260,6 @@ public final class AndroidSpeechRecognizer implements ConversationalFlowComponen
                 lock.unlock();
             }
         });
-    }
-
-    private void handleListeners(RecognizerListener... listeners) {
-        recognitionListener.reset();
-        if (listeners != null && listeners.length > 0) {
-            for (RecognizerListener item : listeners) {
-                if (item instanceof OnRecognizerReady) {
-                    recognitionListener.setOnReady((OnRecognizerReady) item);
-                }
-                else if (item instanceof OnRecognizerResults) {
-                    recognitionListener.setOnResults((OnRecognizerResults) item);
-                }
-                else if (item instanceof OnRecognizerMostConfidentResult) {
-                    recognitionListener.setOnMostConfidentResult((OnRecognizerMostConfidentResult) item);
-                }
-                else if (item instanceof OnRecognizerPartialResults) {
-                    recognitionListener.setOnPartialResults((OnRecognizerPartialResults) item);
-                }
-                else if (item instanceof OnRecognizerError) {
-                    recognitionListener.setOnError((OnRecognizerError) item);
-                }
-            }
-        }
     }
 
     public void setTryAgain(boolean tryAgain) {
