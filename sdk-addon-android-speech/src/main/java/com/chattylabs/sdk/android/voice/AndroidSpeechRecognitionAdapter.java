@@ -3,14 +3,12 @@ package com.chattylabs.sdk.android.voice;
 import android.os.Bundle;
 import android.speech.RecognitionListener;
 import android.support.annotation.CallSuper;
-import android.util.Log;
 
-import com.chattylabs.sdk.android.common.Tag;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.*;
 
 
-abstract class AndroidSpeechRecognitionAdapter implements RecognitionListener {
-    private static final String TAG = Tag.make("AndroidSpeechRecognitionAdapter");
-
+abstract class AndroidSpeechRecognitionAdapter
+        implements RecognitionListener, RecognizerUtteranceListener {
     // Settings
     private static final int MINIMUM_REACHED_LEVEL_INTENTS = 3;
     private static final float DEFAULT_THRESHOLD_LOW_SOUND = 5f;
@@ -22,11 +20,11 @@ abstract class AndroidSpeechRecognitionAdapter implements RecognitionListener {
     static final int LOW_SOUND = 2;
     static final int NORMAL_SOUND = 3;
 
-    private ConversationalFlowComponent.OnRecognizerReady onReady;
-    private ConversationalFlowComponent.OnRecognizerResults onResults;
-    private ConversationalFlowComponent.OnRecognizerPartialResults onPartialResults;
-    private ConversationalFlowComponent.OnRecognizerMostConfidentResult onMostConfidentResult;
-    private ConversationalFlowComponent.OnRecognizerError onError;
+    private OnRecognizerReady onReady;
+    private OnRecognizerResults onResults;
+    private OnRecognizerPartialResults onPartialResults;
+    private OnRecognizerMostConfidentResult onMostConfidentResult;
+    private OnRecognizerError onError;
 
     private boolean tryAgain;
     private int soundLevel = UNKNOWN;
@@ -36,44 +34,53 @@ abstract class AndroidSpeechRecognitionAdapter implements RecognitionListener {
     private int lowSoundIntents;
     private int normalSoundIntents;
 
-    public void setOnReady(ConversationalFlowComponent.OnRecognizerReady onReady) {
+    @Override
+    public void _setOnReady(OnRecognizerReady onReady) {
         this.onReady = onReady;
     }
 
-    public ConversationalFlowComponent.OnRecognizerResults getOnResults() {
+    @Override
+    public OnRecognizerResults _getOnResults() {
         return onResults;
     }
 
-    public AndroidSpeechRecognitionAdapter setOnResults(ConversationalFlowComponent.OnRecognizerResults onResults) {
+    @Override
+    public AndroidSpeechRecognitionAdapter _setOnResults(OnRecognizerResults onResults) {
         this.onResults = onResults;
         return this;
     }
 
-    public ConversationalFlowComponent.OnRecognizerPartialResults getOnPartialResults() {
+    @Override
+    public OnRecognizerPartialResults _getOnPartialResults() {
         return onPartialResults;
     }
 
-    public AndroidSpeechRecognitionAdapter setOnPartialResults(
-            ConversationalFlowComponent.OnRecognizerPartialResults onPartialResults) {
+    @Override
+    public AndroidSpeechRecognitionAdapter _setOnPartialResults(
+            OnRecognizerPartialResults onPartialResults) {
         this.onPartialResults = onPartialResults;
         return this;
     }
 
-    public ConversationalFlowComponent.OnRecognizerMostConfidentResult getOnMostConfidentResult() {
+    @Override
+    public OnRecognizerMostConfidentResult _getOnMostConfidentResult() {
         return onMostConfidentResult;
     }
 
-    public AndroidSpeechRecognitionAdapter setOnMostConfidentResult(
-            ConversationalFlowComponent.OnRecognizerMostConfidentResult onMostConfidentResult) {
+    @Override
+    public AndroidSpeechRecognitionAdapter _setOnMostConfidentResult(
+            OnRecognizerMostConfidentResult onMostConfidentResult) {
         this.onMostConfidentResult = onMostConfidentResult;
         return this;
     }
 
-    public ConversationalFlowComponent.OnRecognizerError getOnError() {
+    @Override
+    public OnRecognizerError _getOnError() {
         return onError;
     }
 
-    public AndroidSpeechRecognitionAdapter setOnError(ConversationalFlowComponent.OnRecognizerError onError) {
+    @Override
+    public AndroidSpeechRecognitionAdapter _setOnError(OnRecognizerError onError) {
         this.onError = onError;
         return this;
     }
@@ -109,10 +116,6 @@ abstract class AndroidSpeechRecognitionAdapter implements RecognitionListener {
         this.soundLevel = soundLevel;
     }
 
-    public abstract void startTimeout();
-
-    public abstract void reset();
-
     String getSoundLevelAsString(int level) {
         switch (level) {
             case NO_SOUND:
@@ -128,7 +131,6 @@ abstract class AndroidSpeechRecognitionAdapter implements RecognitionListener {
 
     @Override @CallSuper
     public void onReadyForSpeech(Bundle params) {
-       //if (BuildConfig.DEBUG) System.out.println("onReadyForSpeech: " + params);
         if (onReady != null) onReady.execute(params);
     }
 
@@ -137,19 +139,19 @@ abstract class AndroidSpeechRecognitionAdapter implements RecognitionListener {
     }
 
     @Override
-    public void onRmsChanged(float rmsdB) {
-        if (rmsdB % 1 == 0) return;
-        if (rmsDebug) Log.v(TAG, "RECOGNITION - Rms db: " + rmsdB);
+    public void onRmsChanged(float rmsDb) {
+        if (rmsDb % 1 == 0) return;
+        if (rmsDebug) System.out.printf("Rms db: %s", rmsDb);
 
-        if (rmsdB <= noSoundThreshold && soundLevel <= NO_SOUND) {
+        if (rmsDb <= noSoundThreshold && soundLevel <= NO_SOUND) {
             soundLevel = NO_SOUND;
             // quiet
-        } else if (rmsdB > noSoundThreshold && rmsdB < lowSoundThreshold && soundLevel <= LOW_SOUND) {
+        } else if (rmsDb > noSoundThreshold && rmsDb < lowSoundThreshold && soundLevel <= LOW_SOUND) {
             lowSoundIntents++;
             if (lowSoundIntents > MINIMUM_REACHED_LEVEL_INTENTS)
                 soundLevel = LOW_SOUND;
             // medium
-        } else if (rmsdB >= lowSoundThreshold && soundLevel <= NORMAL_SOUND) {
+        } else if (rmsDb >= lowSoundThreshold && soundLevel <= NORMAL_SOUND) {
             lowSoundIntents++;
             if (lowSoundIntents > MINIMUM_REACHED_LEVEL_INTENTS && soundLevel <= LOW_SOUND)
                 soundLevel = LOW_SOUND;
@@ -182,6 +184,5 @@ abstract class AndroidSpeechRecognitionAdapter implements RecognitionListener {
 
     @Override
     public void onEvent(int eventType, Bundle params) {
-        //if (BuildConfig.DEBUG) System.out.println("onEvent: " + eventType + " - " + params);
     }
 }

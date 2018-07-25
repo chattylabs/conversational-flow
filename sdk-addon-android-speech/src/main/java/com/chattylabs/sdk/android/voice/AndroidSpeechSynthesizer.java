@@ -89,7 +89,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
     }
 
     @Override
-    UtteranceListener createUtteranceListener(@NonNull SynthesizerListener... listeners) {
+    SynthesizerUtteranceListener createUtteranceListener(@NonNull SynthesizerListener... listeners) {
         return new AndroidSpeechSynthesizerAdapter()
         {
             @Override
@@ -182,8 +182,8 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
                 onSynthesizerInitialised.execute(status == TextToSpeech.SUCCESS ?
                         SynthesizerListener.SUCCESS : SynthesizerListener.ERROR);
             });
-            setUtteranceListener(createUtterancesListener());
-            tts.setOnUtteranceProgressListener((UtteranceProgressListener) getUtteranceListener());
+            setSynthesizerUtteranceListener(createUtterancesListener());
+            tts.setOnUtteranceProgressListener((UtteranceProgressListener) getSynthesizerUtteranceListener());
         }
         else if (isReady()) {
             setupLanguage();
@@ -199,7 +199,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
             logger.logException(ignored); }
     }
 
-    private UtteranceListener createUtterancesListener() {
+    private SynthesizerUtteranceListener createUtterancesListener() {
         return new AndroidSpeechSynthesizerAdapter() {
             private long timestamp;
             private TimerTask task;
@@ -248,7 +248,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
                 timestamp = System.currentTimeMillis();
 
                 if (getListenersMap().size() > 0) {
-                    UtteranceListener listener = getListenersMap().get(utteranceId);
+                    SynthesizerUtteranceListener listener = getListenersMap().get(utteranceId);
                     if (listener != null) {
                         listener.onStart(utteranceId);
                     }
@@ -271,7 +271,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
                     }
                     setSpeaking(false);
                     if (getListenersMap().size() > 0) {
-                        UtteranceListener listener = removeListener(utteranceId);
+                        SynthesizerUtteranceListener listener = removeListener(utteranceId);
                         logger.v(getTag(), "ANDROID TTS[%s] - on done <%s> - execute listener.onDone", utteranceId, getCurrentQueueId());
                         if (listener != null) {
                             listener.onDone(utteranceId);
@@ -303,7 +303,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
                     }
                     setSpeaking(false);
                     if (getListenersMap().size() > 0 && getListenersMap().containsKey(utteranceId)) {
-                        UtteranceListener listener = removeListener(utteranceId);
+                        SynthesizerUtteranceListener listener = removeListener(utteranceId);
                         shutdown();
                         if (listener != null) {
                             listener.onError(utteranceId, errorCode);
@@ -396,7 +396,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
             }
             else {
                 logger.e(TAG, "ANDROID TTS[%s] - silence status ERROR", utteranceId);
-                getUtteranceListener().onError(utteranceId, SynthesizerListener.ERROR);
+                getSynthesizerUtteranceListener().onError(utteranceId, SynthesizerListener.ERROR);
             }
         });
     }
@@ -414,7 +414,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
             }
             else {
                 logger.e(TAG, "ANDROID TTS[%s] - internal playText status ERROR ", utteranceId);
-                getUtteranceListener().onError(utteranceId, SynthesizerListener.ERROR);
+                getSynthesizerUtteranceListener().onError(utteranceId, SynthesizerListener.ERROR);
             }
         });
     }

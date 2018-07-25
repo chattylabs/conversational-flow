@@ -37,7 +37,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
     // Data
     private final ComponentConfig configuration;
-    private final LinkedHashMap<String, UtteranceListener> listenersMap;
+    private final LinkedHashMap<String, SynthesizerUtteranceListener> listenersMap;
     private final LinkedHashMap<String, ConcurrentLinkedQueue<Map<String, Object>>> queue;
     private final List<TextFilter> filters;
     private final Object lock = new Object();
@@ -49,7 +49,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
     // Resources
     private String queueId = DEFAULT_QUEUE_ID; // released
-    private UtteranceListener utteranceListener; // released
+    private SynthesizerUtteranceListener synthesizerUtteranceListener; // released
     private String lastQueueId;
     private final AndroidAudioManager audioManager;
     private final BluetoothSco bluetoothSco;
@@ -85,7 +85,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
     abstract boolean isTtsSpeaking();
 
-    abstract UtteranceListener createUtteranceListener(
+    abstract SynthesizerUtteranceListener createUtteranceListener(
             SynthesizerListener[] listeners);
 
     void setReady(boolean ready) {
@@ -121,30 +121,30 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         filters.clear();
     }
 
-    UtteranceListener removeListener(String utteranceId) {
+    SynthesizerUtteranceListener removeListener(String utteranceId) {
         synchronized (lock) {
             return getListenersMap().remove(utteranceId);
         }
     }
 
-    Map<String, UtteranceListener> getListenersMap() {
+    Map<String, SynthesizerUtteranceListener> getListenersMap() {
         return listenersMap;
     }
 
-    UtteranceListener getUtteranceListener() {
-        return utteranceListener;
+    SynthesizerUtteranceListener getSynthesizerUtteranceListener() {
+        return synthesizerUtteranceListener;
     }
 
-    void setUtteranceListener(UtteranceListener utteranceListener) {
-        this.utteranceListener = utteranceListener;
+    void setSynthesizerUtteranceListener(SynthesizerUtteranceListener synthesizerUtteranceListener) {
+        this.synthesizerUtteranceListener = synthesizerUtteranceListener;
     }
 
     public ComponentConfig getConfiguration() {
         return configuration;
     }
 
-    private UtteranceListener generateUtteranceListener(
-            UtteranceListener listener, SynthesizerListener[] listeners) {
+    private SynthesizerUtteranceListener generateUtteranceListener(
+            SynthesizerUtteranceListener listener, SynthesizerListener[] listeners) {
         if (listeners.length > 0) {
             for (SynthesizerListener item : listeners) {
                 if (item instanceof OnSynthesizerStart) {
@@ -164,11 +164,11 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     @WorkerThread
     @Override
     public <T extends SynthesizerListener> void playText(String text, String queueId, T... listeners) {
-        UtteranceListener listener = generateUtteranceListener(createUtteranceListener(listeners), listeners);
+        SynthesizerUtteranceListener listener = generateUtteranceListener(createUtteranceListener(listeners), listeners);
         playText(text, queueId, listener, DEFAULT_UTTERANCE_ID + System.nanoTime());
     }
 
-    void playText(String text, String queueId, @Nullable UtteranceListener listener, String utteranceId) {
+    void playText(String text, String queueId, @Nullable SynthesizerUtteranceListener listener, String utteranceId) {
         logger.i(TAG, "TTS[%s] - play \"%s\" on queue <%s>", utteranceId, text, queueId);
         if (listenersMap.containsKey(utteranceId)) {
             utteranceId = utteranceId + "_" + listenersMap.size();
@@ -187,7 +187,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
                 }
                 else {
                     logger.e(TAG, "TTS[%s] - status ERROR with queue <%s>", uId, queueId);
-                    getUtteranceListener().onError(uId, SynthesizerListener.ERROR);
+                    getSynthesizerUtteranceListener().onError(uId, SynthesizerListener.ERROR);
                 }
             });
         }
@@ -202,7 +202,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     public <T extends SynthesizerListener> void playText(String text, T... listeners) {
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
         logger.i(TAG, "TTS[%s] - immediately play \"%s\"", utteranceId, text);
-        UtteranceListener listener = generateUtteranceListener(createUtteranceListener(listeners), listeners);
+        SynthesizerUtteranceListener listener = generateUtteranceListener(createUtteranceListener(listeners), listeners);
         if (listenersMap.containsKey(utteranceId)) {
             utteranceId = utteranceId + "_" + listenersMap.size();
         }
@@ -221,7 +221,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             }
             else {
                 logger.e(TAG, "TTS[%s] - no queue status ERROR", uId);
-                getUtteranceListener().onError(uId, SynthesizerListener.ERROR);
+                getSynthesizerUtteranceListener().onError(uId, SynthesizerListener.ERROR);
             }
         });
     }
@@ -232,7 +232,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         if (durationInMillis <= 0) throw new IllegalArgumentException("Silence duration must be greater than 0");
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
         logger.i(TAG, "TTS[%s] - play silence on queue <%s>", utteranceId, queueId);
-        UtteranceListener listener = generateUtteranceListener(createUtteranceListener(listeners), listeners);
+        SynthesizerUtteranceListener listener = generateUtteranceListener(createUtteranceListener(listeners), listeners);
         if (listenersMap.containsKey(utteranceId)) {
             utteranceId = utteranceId + "_" + listenersMap.size();
         }
@@ -249,7 +249,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
                 }
                 else {
                     logger.e(TAG, "TTS[%s] - silence status ERROR with queue <%s>", uId, queueId);
-                    getUtteranceListener().onError(uId, SynthesizerListener.ERROR);
+                    getSynthesizerUtteranceListener().onError(uId, SynthesizerListener.ERROR);
                 }
             });
         }
@@ -265,7 +265,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         if (durationInMillis <= 0) throw new IllegalArgumentException("Silence duration must be greater than 0");
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
         logger.i(TAG, "TTS[%s] - immediately play silence", utteranceId);
-        UtteranceListener listener = generateUtteranceListener(createUtteranceListener(listeners), listeners);
+        SynthesizerUtteranceListener listener = generateUtteranceListener(createUtteranceListener(listeners), listeners);
         if (listenersMap.containsKey(utteranceId)) {
             utteranceId = utteranceId + "_" + listenersMap.size();
         }
@@ -282,7 +282,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             }
             else {
                 logger.e(TAG, "TTS[%s] - no queue silence status ERROR", uId);
-                getUtteranceListener().onError(uId, SynthesizerListener.ERROR);
+                getSynthesizerUtteranceListener().onError(uId, SynthesizerListener.ERROR);
             }
         });
     }
@@ -302,8 +302,8 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     @CallSuper
     @Override
     public void stop() {
-        if (utteranceListener != null)
-            utteranceListener.clearTimeout(null);
+        if (synthesizerUtteranceListener != null)
+            synthesizerUtteranceListener.clearTimeout(null);
         // Stop Bluetooth Sco if required
         bluetoothSco.stopSco();
         // Audio focus
@@ -346,7 +346,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             else {
                 logger.e(getTag(), "TTS - status ERROR");
                 if (uId != null)
-                    getUtteranceListener().onError(uId, SynthesizerListener.ERROR);
+                    getSynthesizerUtteranceListener().onError(uId, SynthesizerListener.ERROR);
             }
         });
     }
@@ -461,7 +461,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         return queue.keySet();
     }
 
-    private void handleListener(@NonNull String utteranceId, @NonNull UtteranceListener listener) {
+    private void handleListener(@NonNull String utteranceId, @NonNull SynthesizerUtteranceListener listener) {
         logger.v(getTag(), "TTS[%s] - added new utterance listener -> map size: %s", utteranceId, listenersMap.size());
         synchronized (lock) {
             listenersMap.put(utteranceId, listener);

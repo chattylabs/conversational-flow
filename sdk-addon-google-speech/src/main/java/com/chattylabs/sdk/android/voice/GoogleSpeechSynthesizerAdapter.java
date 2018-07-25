@@ -2,7 +2,7 @@ package com.chattylabs.sdk.android.voice;
 
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.*;
 
-abstract class GoogleSpeechSynthesizerAdapter implements UtteranceListener {
+abstract class GoogleSpeechSynthesizerAdapter implements SynthesizerUtteranceListener {
     private OnSynthesizerStart onStartedListener;
     private OnSynthesizerDone onDoneListener;
     private OnSynthesizerError onErrorListener;
