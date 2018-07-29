@@ -1,5 +1,7 @@
 package com.chattylabs.sdk.android.voice;
 
+import android.support.annotation.CallSuper;
+
 import com.chattylabs.sdk.android.common.internal.ILogger;
 
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.*;
@@ -7,14 +9,22 @@ import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.Speec
 
 abstract class BaseSpeechRecognizer implements SpeechRecognizer {
 
+    // Resources
     private final ComponentConfig configuration;
-    private final AndroidAudioManager audioManager;
     private final BluetoothSco bluetoothSco;
+    private final AndroidAudioManager audioManager;
 
     // Log stuff
-    protected ILogger logger;
+    protected final ILogger logger;
 
-    public BaseSpeechRecognizer() {
+    BaseSpeechRecognizer(ComponentConfig configuration,
+                                BluetoothSco bluetoothSco,
+                                AndroidAudioManager audioManager,
+                                ILogger logger) {
+        this.configuration = configuration;
+        this.bluetoothSco = bluetoothSco;
+        this.audioManager = audioManager;
+        this.logger = logger;
     }
 
     abstract RecognizerUtteranceListener getRecognitionListener();
@@ -23,11 +33,58 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
 
     abstract String getTag();
 
+    public ComponentConfig getConfiguration() {
+        return configuration;
+    }
+
+    void requestAudioFocus() {
+        if (!bluetoothSco.isBluetoothScoOn()) {
+            audioManager.requestAudioFocus(
+                    getConfiguration().isAudioExclusiveRequiredForRecognizer());
+        }
+    }
+
+    void abandonAudioFocus() {
+        audioManager.abandonAudioFocus();
+    }
+
+    public void setTryAgain(boolean tryAgain) {
+        getRecognitionListener().setTryAgain(tryAgain);
+    }
+
+    @CallSuper
     @Override
     public <T extends RecognizerListener> void listen(T... listeners) {
         logger.i(getTag(), "VOICE - start listening");
         handleListeners(listeners);
         checkForBluetoothScoRequired(this::startListening);
+    }
+
+    @CallSuper
+    @Override
+    public void stop() {
+        bluetoothSco.stopSco();
+        getRecognitionListener().reset();
+    }
+
+    @CallSuper
+    @Override
+    public void cancel() {
+        bluetoothSco.stopSco();
+        getRecognitionListener().reset();
+    }
+
+    @CallSuper
+    @Override
+    public void shutdown() {
+        bluetoothSco.stopSco();
+        getRecognitionListener().reset();
+    }
+
+    @CallSuper
+    @Override
+    public void release() {
+
     }
 
     private void handleListeners(RecognizerListener... listeners) {

@@ -1,7 +1,6 @@
 package com.chattylabs.demo.voice;
 
 import android.annotation.SuppressLint;
-import android.app.AlertDialog;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.os.Bundle;
@@ -30,19 +29,30 @@ import com.chattylabs.sdk.android.common.PermissionsHelper;
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.common.ThreadUtils;
 import com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer;
+import com.chattylabs.sdk.android.voice.ComponentConfig;
 import com.chattylabs.sdk.android.voice.ConversationalFlowComponent;
 import com.chattylabs.sdk.android.voice.GoogleSpeechSynthesizer;
 import com.chattylabs.sdk.android.voice.Peripheral;
 import com.chattylabs.sdk.android.voice.TextFilterForUrl;
-import com.chattylabs.sdk.android.voice.ComponentConfig;
+
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 import javax.inject.Inject;
 
 import dagger.android.support.DaggerAppCompatActivity;
 
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.*;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerError;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerMostConfidentResult;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerReady;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerDone;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerError;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerStart;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SpeechRecognizer;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SpeechSynthesizer;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SynthesizerListener;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.matches;
 
 
 public class MainActivity extends DaggerAppCompatActivity
@@ -55,18 +65,26 @@ public class MainActivity extends DaggerAppCompatActivity
     public static final int LISTEN = 2;
     public static final int READ = 1;
 
-    private static int ADDON_TYPE = R.id.addon_android;
+    private static LinkedHashMap<Integer, String> addonMap = new LinkedHashMap<>();
+    static {
+        addonMap.put(0, "Android");
+        addonMap.put(1, "Google");
+    }
+
+    private static String ADDON_TYPE = "Android";
 
     // Resources
     private ConstraintLayout root;
     private TextView execution;
-    private Spinner spinner;
+    private Spinner actionSpinner;
+    private Spinner addonSpinner;
     private EditText text;
     private Button add;
     private Button clear;
     private Button proceed;
     private SparseArray<Pair<Integer, String>> queue = new SparseArray<>();
-    private ArrayAdapter<CharSequence> adapter;
+    private ArrayAdapter<CharSequence> actionAdapter;
+    private ArrayAdapter<String> addonAdapter;
     private CheckBox scoCheck;
     private Menu menu;
     private ThreadUtils.SerialThread serialThread;
@@ -80,23 +98,12 @@ public class MainActivity extends DaggerAppCompatActivity
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.addons, menu);
-        this.menu = menu;
-        updateMenu(menu);
+        inflater.inflate(R.menu.demo, menu);
         return true;
-    }
-
-    private void updateMenu(Menu menu) {
-        for (int a = 0; a < menu.size(); a++)
-            if (menu.getItem(a).getItemId() == ADDON_TYPE) menu.getItem(a).setChecked(true);
-            else  menu.getItem(a).setChecked(false);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        ADDON_TYPE = item.getItemId();
-        updateMenu(menu);
-        setup();
         return super.onOptionsItemSelected(item);
     }
 
@@ -132,15 +139,22 @@ public class MainActivity extends DaggerAppCompatActivity
                     //component = ConversationalFlowModule.provideComponent();
                     component.updateConfiguration(builder ->
                             builder .setGoogleCredentialsResourceFile(() -> R.raw.credential)
-                                    .setRecognizerServiceType(() ->
-                                            ADDON_TYPE == R.id.addon_android ?
-                                                    ComponentConfig.RECOGNIZER_SERVICE_ANDROID_BUILTIN :
-                                                    ComponentConfig.RECOGNIZER_SERVICE_ANDROID_BUILTIN
-                                    )
-                                    .setSynthesizerServiceType(() ->
-                                            ADDON_TYPE == R.id.addon_android ?
-                                                    ComponentConfig.SYNTHESIZER_SERVICE_ANDROID_BUILTIN :
-                                                    ComponentConfig.SYNTHESIZER_SERVICE_GOOGLE_BUILTIN)
+                                    .setRecognizerServiceType(() -> {
+                                        switch (ADDON_TYPE) {
+                                            case "Google":
+                                                return ComponentConfig.RECOGNIZER_SERVICE_GOOGLE;
+                                            default:
+                                                return ComponentConfig.RECOGNIZER_SERVICE_ANDROID;
+                                        }
+                                    })
+                                    .setSynthesizerServiceType(() -> {
+                                        switch (ADDON_TYPE) {
+                                            case "Google":
+                                                return ComponentConfig.SYNTHESIZER_SERVICE_GOOGLE;
+                                            default:
+                                                return ComponentConfig.SYNTHESIZER_SERVICE_ANDROID;
+                                        }
+                                    })
                                     .build());
                     component.setup(this, status -> {
                         if (status.isAvailable()) {
@@ -157,7 +171,7 @@ public class MainActivity extends DaggerAppCompatActivity
     private void initActions() {
         add.setOnClickListener(v -> {
             String msg = text.getText().toString().trim();
-            int itemPosition = spinner.getSelectedItemPosition();
+            int itemPosition = actionSpinner.getSelectedItemPosition();
             if (msg.length() > 0 || itemPosition == LISTEN) {
                 queue.put(queue.size(), Pair.create(itemPosition, itemPosition == LISTEN ? null : msg));
                 representQueue(-1);
@@ -191,7 +205,7 @@ public class MainActivity extends DaggerAppCompatActivity
                 tx.append("or \"<i>").append(text).append("</i>\" ");
             } else {
                 String text = item.second;
-                String label = (String) adapter.getItem(item.first);
+                String label = (String) actionAdapter.getItem(item.first);
                 if (i == index) {
                     if (text != null) {
                         text = "<font color=\"#FFFFFF\">" + text + "</font>";
@@ -263,18 +277,27 @@ public class MainActivity extends DaggerAppCompatActivity
         }, (OnRecognizerError) (i, i1) -> {
             Log.e(TAG, "Error " + i);
             Log.e(TAG, "Original Error " + getErrorString(i1));
-            runOnUiThread(() -> new AlertDialog.Builder(this)
-                    .setTitle("Error")
-                    .setMessage(getErrorString(i1))
-                    .create().show());
+
+            synthesizer.releaseCurrentQueue();
+            if (synthesizer.isEmpty()) {
+                component.shutdown();
+            } else synthesizer.resume();
+
+//            runOnUiThread(() -> new AlertDialog.Builder(this)
+//                    .setTitle("Error")
+//                    .setMessage(getErrorString(i1))
+//                    .create().show());
         });
     }
 
     @NonNull
     private String getErrorString(int i1) {
-        return ADDON_TYPE == R.id.addon_android ?
-                AndroidSpeechSynthesizer.getErrorType(i1) :
-                GoogleSpeechSynthesizer.getErrorType(i1);
+        switch (ADDON_TYPE) {
+            case "Google":
+                return GoogleSpeechSynthesizer.getErrorType(i1);
+            default:
+                return AndroidSpeechSynthesizer.getErrorType(i1);
+        }
     }
 
     private SparseArray<String> getChecks(SparseArray<String> news, int index) {
@@ -295,7 +318,7 @@ public class MainActivity extends DaggerAppCompatActivity
                     play(item.second, i);
                 // TODO: Check! How it continues speaking after listening?
                 } else if (i == 0 && item.first == LISTEN) {
-                    listen(i);
+                    listen(-1);
                 }
             }
         });
@@ -305,6 +328,7 @@ public class MainActivity extends DaggerAppCompatActivity
     public void onDestroy() {
         super.onDestroy();
         //UpdateManager.unregister();
+        serialThread.shutdownNow();
         component.shutdown();
     }
 
@@ -317,7 +341,8 @@ public class MainActivity extends DaggerAppCompatActivity
     private void initViews() {
         root = findViewById(R.id.root);
         execution = findViewById(R.id.execution);
-        spinner = findViewById(R.id.spinner);
+        actionSpinner = findViewById(R.id.spinner);
+        addonSpinner = findViewById(R.id.addon);
         text = findViewById(R.id.text);
         add = findViewById(R.id.add);
         clear = findViewById(R.id.clear);
@@ -339,14 +364,12 @@ public class MainActivity extends DaggerAppCompatActivity
                     });
         });
         proceed.setEnabled(false);
-        // Create an ArrayAdapter using the string array and a default spinner layout
-        adapter = ArrayAdapter.createFromResource(this, R.array.actions, android.R.layout.simple_spinner_item);
-        // Specify the layout to use when the list of choices appears
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        // Apply the adapter to the spinner
-        spinner.setAdapter(adapter);
-        spinner.setSelection(0);
-        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        // Create an ArrayAdapter of the actions
+        actionAdapter = ArrayAdapter.createFromResource(this, R.array.actions, android.R.layout.simple_spinner_item);
+        actionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        actionSpinner.setAdapter(actionAdapter);
+        actionSpinner.setSelection(0);
+        actionSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 boolean isDefault = position > 0;
@@ -354,6 +377,24 @@ public class MainActivity extends DaggerAppCompatActivity
                 add.setEnabled(isDefault);
                 text.setVisibility(View.VISIBLE);
                 if (position == LISTEN) text.setVisibility(View.GONE);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+        // Create an ArrayAdapter of the addons
+        List<String> addonList = Arrays.asList(addonMap.values().toArray(new String[addonMap.size()]));
+        addonAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item,
+                addonList);
+        addonAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        addonSpinner.setAdapter(addonAdapter);
+        addonSpinner.setSelection(0);
+        addonSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                ADDON_TYPE = addonMap.get(position);
+                setup();
             }
 
             @Override

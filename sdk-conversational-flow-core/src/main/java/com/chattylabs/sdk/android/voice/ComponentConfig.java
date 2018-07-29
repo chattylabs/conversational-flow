@@ -7,18 +7,18 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 public class ComponentConfig {
-    public static final int SYNTHESIZER_SERVICE_ANDROID_BUILTIN = 0x6e44ad;
-    public static final int RECOGNIZER_SERVICE_ANDROID_BUILTIN = 0x5a4ed1;
-    public static final int SYNTHESIZER_SERVICE_GOOGLE_BUILTIN = 0xaa88d6;
-    public static final int RECOGNIZER_SERVICE_GOOGLE_SPEECH = 0xcd231a;
+    public static final int SYNTHESIZER_SERVICE_ANDROID = 0x6e44ad;
+    public static final int RECOGNIZER_SERVICE_ANDROID = 0x5a4ed1;
+    public static final int SYNTHESIZER_SERVICE_GOOGLE = 0xaa88d6;
+    public static final int RECOGNIZER_SERVICE_GOOGLE = 0xcd231a;
 
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(flag=true,
             value = {
-                    SYNTHESIZER_SERVICE_ANDROID_BUILTIN,
-                    RECOGNIZER_SERVICE_ANDROID_BUILTIN,
-                    SYNTHESIZER_SERVICE_GOOGLE_BUILTIN,
-                    RECOGNIZER_SERVICE_GOOGLE_SPEECH
+                    SYNTHESIZER_SERVICE_ANDROID,
+                    RECOGNIZER_SERVICE_ANDROID,
+                    SYNTHESIZER_SERVICE_GOOGLE,
+                    RECOGNIZER_SERVICE_GOOGLE
             })
     public @interface ServiceType {}
 

@@ -72,7 +72,7 @@ public class AndroidAudioManager {
 
     private void requestAudioFocusMayDuck() {
         if (!requestAudioFocusMayDuck) {
-            logger.v(TAG, "TTS - request Audio Focus May Duck");
+            logger.v(TAG, "AUDIO - request Audio Focus May Duck");
             setAudioMode();
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
                 requestAudioFocusMayDuck = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(
@@ -89,7 +89,7 @@ public class AndroidAudioManager {
 
     private void abandonAudioFocusMayDuck() {
         if (requestAudioFocusMayDuck) {
-            logger.v(TAG, "TTS - abandon Audio Focus May Duck");
+            logger.v(TAG, "AUDIO - abandon Audio Focus May Duck");
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
                 audioManager.abandonAudioFocus(null);
             } else {
@@ -102,7 +102,7 @@ public class AndroidAudioManager {
 
     private void requestAudioFocusExclusive() {
         if (!requestAudioFocusExclusive) {
-            logger.v(TAG, "TTS - request Audio Focus Exclusive");
+            logger.v(TAG, "AUDIO - request Audio Focus Exclusive");
             setAudioMode();
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
                 requestAudioFocusExclusive = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(
@@ -120,7 +120,7 @@ public class AndroidAudioManager {
 
     private void abandonAudioFocusExclusive() {
         if (requestAudioFocusExclusive) {
-            logger.v(TAG, "TTS - abandon Audio Focus Exclusive");
+            logger.v(TAG, "AUDIO - abandon Audio Focus Exclusive");
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
                 //noinspection deprecation
                 audioManager.abandonAudioFocus(null);

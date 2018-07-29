@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:id="@+id/addon_android"
-        android:title="Android addon"
-        android:checkable="true"/>
-    <item android:id="@+id/addon_google"
-        android:title="Google addon"
-        android:checkable="true"/>
-</menu>

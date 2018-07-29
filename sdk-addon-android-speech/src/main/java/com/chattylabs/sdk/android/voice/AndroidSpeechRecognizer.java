@@ -8,6 +8,7 @@ import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 
 import com.chattylabs.sdk.android.common.Tag;
+import com.chattylabs.sdk.android.common.ThreadUtils;
 import com.chattylabs.sdk.android.common.internal.ILogger;
 import com.chattylabs.sdk.android.common.internal.android.AndroidHandler;
 import com.chattylabs.sdk.android.common.internal.android.AndroidHandlerImpl;
@@ -16,14 +17,11 @@ import com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SpeechRecogn
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerError;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerMostConfidentResult;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerPartialResults;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerReady;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerResults;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RecognizerListener;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.selectMostConfidentResult;
@@ -43,11 +41,29 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
     private final AndroidHandler mainHandler;
     private final Intent speechRecognizerIntent;
     private final SpeechRecognizerCreator<android.speech.SpeechRecognizer> recognizerCreator;
-    private final ExecutorService executorService;
+    private ThreadUtils.SerialThread serialThread;
     private SpeechRecognizer speechRecognizer;
 
-    // Listener
-    private final AndroidSpeechRecognitionAdapter recognitionListener = new AndroidSpeechRecognitionAdapter() {
+    AndroidSpeechRecognizer(Application application,
+                            ComponentConfig configuration,
+                            AndroidAudioManager audioManager,
+                            BluetoothSco bluetoothSco,
+                            SpeechRecognizerCreator<android.speech.SpeechRecognizer>
+                                    recognizerCreator,
+                            ILogger logger) {
+        super(configuration, bluetoothSco, audioManager, logger);
+        this.application = application;
+        this.release();
+        this.mainHandler = new AndroidHandlerImpl(Looper.getMainLooper());
+        this.speechRecognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, application.getPackageName());
+        this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
+        this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 5000L);
+        this.recognizerCreator = recognizerCreator;
+    }
+
+    private final AndroidSpeechRecognitionAdapter listener = new AndroidSpeechRecognitionAdapter() {
         private int intents;
         private long elapsedTime;
         private Timer timeout;
@@ -72,17 +88,13 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                 @Override
                 public void run() {
                     logger.w(TAG, "ANDROID VOICE - reached timeout");
-                    executorService.submit(() -> {
+                    serialThread.addTask(() -> {
+                        printLock();
                         lock.lock();
-                        try {
-                            mainHandler.post(() -> {
-                                speechRecognizer.stopListening();
-                                executorService.submit(lock::unlock);
-                            });
-                        } catch (Exception e) {
-                            logger.logException(e);
-                            lock.unlock();
-                        }
+                        mainHandler.post(() -> {
+                            speechRecognizer.stopListening();
+                            serialThread.addTask(lock::unlock);
+                        });
                     });
                 }
             };
@@ -98,36 +110,35 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
         @Override
         public void reset() {
             releaseTimeout();
-            audioManager.abandonAudioFocus();
+            abandonAudioFocus();
             cleanup();
             super.setTryAgain(false);
-            setOnError(null);
-            setOnPartialResults(null);
-            setOnResults(null);
-            setOnMostConfidentResult(null);
-            setOnReady(null);
+            _setOnError(null);
+            _setOnPartialResults(null);
+            _setOnResults(null);
+            _setOnMostConfidentResult(null);
+            _setOnReady(null);
             setSoundLevel(UNKNOWN);
         }
 
         @Override
         public void onReadyForSpeech(Bundle params) {
-            if (!bluetoothSco.isBluetoothScoOn()) {
-                audioManager.requestAudioFocus(configuration.isAudioExclusiveRequiredForRecognizer());
-            }
+            requestAudioFocus();
             //resetVolumeForBeep();
             super.onReadyForSpeech(params);
         }
 
         @Override
         public void onError(int error) {
-            logger.e(TAG, "ANDROID VOICE - error: " + getErrorType(error));
-            // We consider 2 sec as timeout for non speech
+            logger.e(TAG, "ANDROID VOICE - error: %s", AndroidSpeechRecognizer.getErrorType(error));
+            // We consider 2 sec as the minimum to record audio
+            // If it last less than that, there was an audio issue
+            // So potentially we retry listening again
             boolean stoppedTooEarly = (System.currentTimeMillis() - elapsedTime) <
-                    ConversationalFlowComponent.RecognizerListener.MIN_VOICE_RECOGNITION_TIME_LISTENING;
-            // Start checking for the error
-            OnRecognizerError errorListener = getOnError();
+                    RecognizerListener.MIN_VOICE_RECOGNITION_TIME_LISTENING;
+            OnRecognizerError errorListener = _getOnError();
             int soundLevel = getSoundLevel();
-            logger.v(TAG, "ANDROID VOICE - Sound Level: " + getSoundLevelAsString(soundLevel));
+            logger.v(TAG, "ANDROID VOICE - Sound Level: %s", getSoundLevelAsString(soundLevel));
             // Restart the recognizer
             cancel();
             if (errorListener != null) {
@@ -146,7 +157,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                 else if (intents > 0) {
                     errorListener.execute(RecognizerListener.RECOGNIZER_AFTER_PARTIALS_ERROR, error);
                 }
-                else if (isTryAgain()) {
+                else if (this.isTryAgain()) {
                     errorListener.execute(error == SpeechRecognizer.ERROR_NO_MATCH ?
                             RecognizerListener.RECOGNIZER_UNKNOWN_ERROR :
                             RecognizerListener.RECOGNIZER_RETRY_ERROR, error);
@@ -160,12 +171,13 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
         @Override
         public void onResults(Bundle results) {
             releaseTimeout();
-            OnRecognizerResults resultsListener = getOnResults();
-            OnRecognizerMostConfidentResult mostConfidentResult = getOnMostConfidentResult();
+            OnRecognizerResults resultsListener = _getOnResults();
+            OnRecognizerMostConfidentResult mostConfidentResult = _getOnMostConfidentResult();
             if (resultsListener == null && mostConfidentResult == null) return;
             List<String> textResults = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
             float[] confidences = results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
-            if (textResults != null && (textResults.size() > 1 || (!textResults.isEmpty() && textResults.get(0).length() > 0))) {
+            if (textResults != null && (textResults.size() > 1 ||
+                    (!textResults.isEmpty() && textResults.get(0).length() > 0))) {
                 reset();
                 if (resultsListener != null) {
                     logger.v(TAG, "ANDROID VOICE - results: " + textResults);
@@ -179,7 +191,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
             }
             else {
                 logger.e(TAG, "ANDROID VOICE - NO results");
-                OnRecognizerError listener = getOnError();
+                OnRecognizerError listener = _getOnError();
                 reset();
                 if (listener != null) listener.execute(RecognizerListener.RECOGNIZER_EMPTY_RESULTS_ERROR, -1);
             }
@@ -187,14 +199,17 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
 
         @Override
         public void onPartialResults(Bundle partialResults) {
+            logger.v(TAG, "ANDROID VOICE - onPartialResults");
             releaseTimeout();
             intents++;
-            OnRecognizerPartialResults listener = getOnPartialResults();
+            startTimeout();
+            OnRecognizerPartialResults listener = _getOnPartialResults();
             if (listener == null) return;
             List<String> textResults = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
             float[] confidences = partialResults.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
-            if (textResults != null && (textResults.size() > 1 || (!textResults.isEmpty() && textResults.get(0).length() > 0))) {
-                logger.v(TAG, "ANDROID VOICE - partial results: " + textResults);
+            if (textResults != null && (textResults.size() > 1 ||
+                    (!textResults.isEmpty() && textResults.get(0).length() > 0))) {
+                logger.v(TAG, "ANDROID VOICE - partial results: %s", textResults);
                 listener.execute(textResults, confidences);
             }
         }
@@ -212,62 +227,42 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
         }
     };
 
-    AndroidSpeechRecognizer(Application application,
-                            ComponentConfig configuration,
-                            AndroidAudioManager audioManager,
-                            BluetoothSco bluetoothSco,
-                            SpeechRecognizerCreator<android.speech.SpeechRecognizer>
-                                    recognizerCreator,
-                            ILogger logger) {
-        this.application = application;
-        this.configuration = configuration;
-        this.audioManager = audioManager;
-        this.bluetoothSco = bluetoothSco;
-        this.logger = logger;
-        this.executorService = Executors.newSingleThreadExecutor();
-        this.release();
-        this.mainHandler = new AndroidHandlerImpl(Looper.getMainLooper());
-        this.speechRecognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-        this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, application.getPackageName());
-        this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
-        this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 5000L);
-        this.recognizerCreator = recognizerCreator;
+    @Override
+    AndroidSpeechRecognitionAdapter getRecognitionListener() {
+        return listener;
+    }
+
+    @Override
+    String getTag() {
+        return TAG;
+    }
+
+    private void printLock() {
+        logger.d(TAG, "isHeldByCurrentThread: %s, isLocked: %s, getHoldCount: %s",
+                lock.isHeldByCurrentThread(), lock.isLocked(), lock.getHoldCount());
     }
 
     @Override
     void startListening() {
-        executorService.submit(() -> {
+        logger.i(TAG, "ANDROID VOICE - started listening");
+        if (serialThread == null) {
+            serialThread = ThreadUtils.newSerialThread();
+        }
+        serialThread.addTask(() -> {
+            printLock();
             lock.lock();
-            try {
-                mainHandler.post(() -> {
-                    if (speechRecognizer == null) {
-                        speechRecognizer = recognizerCreator.create();
-                        logger.v(TAG, "ANDROID VOICE - created");
-                    }
-                    recognitionListener.startTimeout();
-                    recognitionListener.setRmsDebug(rmsDebug);
-                    if (noSoundThreshold > 0) recognitionListener.setNoSoundThreshold(noSoundThreshold);
-                    if (lowSoundThreshold > 0) recognitionListener.setLowSoundThreshold(lowSoundThreshold);
-                    logger.i(TAG, "ANDROID VOICE - start listening");
-                    speechRecognizer.setRecognitionListener(recognitionListener);
-                    //adjustVolumeForBeep();
-                    speechRecognizer.startListening(speechRecognizerIntent);
-                    executorService.submit(lock::unlock);
-                });
-            } catch (Exception e) {
-                logger.logException(e);
-                lock.unlock();
-            }
+            mainHandler.post(() -> {
+                speechRecognizer = recognizerCreator.create();
+                getRecognitionListener().startTimeout();
+                getRecognitionListener().setRmsDebug(rmsDebug);
+                if (noSoundThreshold > 0) getRecognitionListener().setNoSoundThreshold(noSoundThreshold);
+                if (lowSoundThreshold > 0) getRecognitionListener().setLowSoundThreshold(lowSoundThreshold);
+                speechRecognizer.setRecognitionListener(getRecognitionListener());
+                //adjustVolumeForBeep();
+                speechRecognizer.startListening(speechRecognizerIntent);
+                serialThread.addTask(lock::unlock);
+            });
         });
-    }
-
-    public void setTryAgain(boolean tryAgain) {
-        this.recognitionListener.setTryAgain(tryAgain);
-    }
-
-    public void setPartialResults(boolean partial) {
-        this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, partial);
     }
 
     public void setRmsDebug(boolean rmsDebug) {
@@ -283,79 +278,84 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
     }
 
     @Override
-    public void release() {
-        if (mainHandler != null) {
-            mainHandler.removeCallbacksAndMessages(null);
-            executorService.submit(lock::unlock);
-        }
-        setRmsDebug(false);
-        setNoSoundThreshold(0);
-        setLowSoundThreshold(0);
-        logger.i(TAG, "ANDROID VOICE - released");
-    }
-
-    @Override
     public void stop() {
-        executorService.submit(() -> {
+        logger.w(TAG, "ANDROID VOICE - do stop");
+        super.stop();
+        serialThread.addTask(() -> {
+            printLock();
             lock.lock();
-            recognitionListener.reset();
-            bluetoothSco.stopSco();
-            if (speechRecognizer != null) {
-                logger.w(TAG, "ANDROID VOICE - do stop");
-                try {
-                    mainHandler.post(() -> {
-                        speechRecognizer.stopListening();
-                        executorService.submit(lock::unlock);
-                    });
-                } catch (Exception e) {
-                    logger.logException(e);
-                    lock.unlock();
+            mainHandler.post(() -> {
+                if (speechRecognizer != null) {
+                    speechRecognizer.stopListening();
+                    logger.v(TAG, "ANDROID VOICE - speechRecognizer stopped");
                 }
-            } else {
-                lock.unlock();
-            }
+                serialThread.addTask(lock::unlock);
+            });
         });
     }
 
     @Override
     public void cancel() {
-        recognitionListener.reset();
+        logger.w(TAG, "ANDROID VOICE - do cancel");
+        super.cancel();
         if (speechRecognizer != null) {
-            logger.w(TAG, "ANDROID VOICE - do cancel");
             speechRecognizer.setRecognitionListener(null);
-            speechRecognizer.cancel();
+            serialThread.addTask(() -> {
+                printLock();
+                lock.lock();
+                mainHandler.post(() -> {
+                    try {
+                        if (speechRecognizer != null) {
+                            speechRecognizer.cancel();
+                            logger.v(TAG, "ANDROID VOICE - speechRecognizer canceled");
+                        }
+                    }
+                    catch (Exception ignore) {}
+                    serialThread.addTask(lock::unlock);
+                });
+            });
         }
     }
 
     @Override
     public void shutdown() {
-        executorService.submit(() -> {
-            lock.lock();
-            logger.w(TAG, "ANDROID VOICE - shutting down");
-            recognitionListener.reset();
-            bluetoothSco.stopSco();
-            // Destroy current SpeechRecognizer
-            try {
-                mainHandler.post(() -> {
-                    try {
-                        if (speechRecognizer != null) {
-                            speechRecognizer.setRecognitionListener(null);
-                            speechRecognizer.destroy();
-                            speechRecognizer = null;
-                            logger.v(TAG, "ANDROID VOICE - speechRecognizer destroyed");
-                        }
+        logger.w(TAG, "ANDROID VOICE - shutting down");
+        super.shutdown();
+        if (speechRecognizer != null) {
+            speechRecognizer.setRecognitionListener(null);
+            mainHandler.post(() -> {
+                try {
+                    if (speechRecognizer != null) {
+                        speechRecognizer.destroy();
+                        speechRecognizer = null;
+                        logger.v(TAG, "ANDROID VOICE - speechRecognizer destroyed");
                     }
-                    catch (Exception ignore) {}
-                    finally {
-                        // Release and reset all resources & lock
-                        release();
-                    }
-                });
-            } catch (Exception e) {
-                logger.logException(e);
-                lock.unlock();
-            }
-        });
+                } catch (Exception ignore) {
+                } finally {
+                    // Release and reset all resources & lock
+                    release();
+                }
+            });
+        } else {
+            // Release and reset all resources & lock
+            release();
+        }
+    }
+
+    @Override
+    public void release() {
+        super.release();
+        if (mainHandler != null)
+            mainHandler.removeCallbacksAndMessages(null);
+        if (serialThread != null) {
+            serialThread.addTask(lock::unlock);
+            serialThread.shutdown();
+            serialThread = null;
+        }
+        setRmsDebug(false);
+        setNoSoundThreshold(0);
+        setLowSoundThreshold(0);
+        logger.i(TAG, "ANDROID VOICE - released");
     }
 
     public static String getErrorType(int error) {

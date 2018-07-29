@@ -155,11 +155,11 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
 
         void stop();
 
+        void cancel();
+
         void shutdown();
 
         void release();
-
-        void cancel();
 
         void setRmsDebug(boolean debug);
 
