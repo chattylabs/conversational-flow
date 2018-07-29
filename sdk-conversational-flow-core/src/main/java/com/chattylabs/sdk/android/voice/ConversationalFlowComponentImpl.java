@@ -46,8 +46,8 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
     ConversationalFlowComponentImpl() {
         configuration = new ComponentConfig.Builder()
                 .setBluetoothScoRequired(() -> false)
-                .setRecognizerServiceType(() -> ComponentConfig.RECOGNIZER_SERVICE_ANDROID_BUILTIN)
-                .setSynthesizerServiceType(() -> ComponentConfig.SYNTHESIZER_SERVICE_ANDROID_BUILTIN)
+                .setRecognizerServiceType(() -> ComponentConfig.RECOGNIZER_SERVICE_ANDROID)
+                .setSynthesizerServiceType(() -> ComponentConfig.SYNTHESIZER_SERVICE_ANDROID)
                 .setAudioExclusiveRequiredForSynthesizer(() -> false)
                 .setAudioExclusiveRequiredForRecognizer(() -> true)
                 .build();
@@ -68,20 +68,11 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
 
     @Override
     public void reset() {
+        shutdown();
         audioManager = null;
         bluetoothSco = null;
-        release();
-    }
-
-    private void release() {
-        if (speechSynthesizer != null) {
-            speechSynthesizer.release();
-            speechSynthesizer = null;
-        }
-        if (speechRecognizer != null) {
-            speechRecognizer.release();
-            speechRecognizer = null;
-        }
+        speechSynthesizer = null;
+        speechRecognizer = null;
     }
 
     void setLogger(ILogger logger) {
@@ -114,30 +105,36 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
         }
         if (bluetoothSco == null) bluetoothSco = new BluetoothSco(application, audioManager, logger);
         try {
+            String packageName = getClass().getPackage().getName();
+            String className;
             if (speechSynthesizer == null) {
-                if (configuration.getSynthesizerServiceType() == ComponentConfig.SYNTHESIZER_SERVICE_ANDROID_BUILTIN) {
-                    String className = "com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer";
-                    speechSynthesizer = newInstance(className, application, configuration, audioManager,
-                            bluetoothSco, logger);
-                }
-                else if (configuration.getSynthesizerServiceType() == ComponentConfig.SYNTHESIZER_SERVICE_GOOGLE_BUILTIN) {
-                    String className = "com.chattylabs.sdk.android.voice.GoogleSpeechSynthesizer";
-                    speechSynthesizer = newInstance(className, application, configuration, audioManager,
-                            bluetoothSco, logger);
+                switch (configuration.getSynthesizerServiceType()) {
+                    case ComponentConfig.SYNTHESIZER_SERVICE_GOOGLE:
+                        className = packageName + ".GoogleSpeechSynthesizer";
+                        speechSynthesizer = newInstance(className, application, configuration, audioManager,
+                                bluetoothSco, logger);
+                        break;
+                    default:
+                        className = packageName + ".AndroidSpeechSynthesizer";
+                        speechSynthesizer = newInstance(className, application, configuration, audioManager,
+                                bluetoothSco, logger);
+                        break;
                 }
             }
             if (speechRecognizer == null) {
-                if (configuration.getRecognizerServiceType() == ComponentConfig.RECOGNIZER_SERVICE_ANDROID_BUILTIN) {
-                    String className = "com.chattylabs.sdk.android.voice.AndroidSpeechRecognizer";
-                    speechRecognizer = newInstance(className, application,
-                            configuration, audioManager, bluetoothSco, (SpeechRecognizerCreator) () ->
-                                    android.speech.SpeechRecognizer.createSpeechRecognizer(application),
-                            logger);
-                }
-                else if (configuration.getRecognizerServiceType() == ComponentConfig.RECOGNIZER_SERVICE_GOOGLE_SPEECH) {
-                    String className = "com.chattylabs.sdk.android.voice.google.GoogleSpeechRecognizer";
-                    speechRecognizer = newInstance(className, application, configuration, audioManager,
-                            bluetoothSco, logger);
+                switch (configuration.getRecognizerServiceType()) {
+                    case ComponentConfig.RECOGNIZER_SERVICE_GOOGLE:
+                        className = packageName + ".GoogleSpeechRecognizer";
+                        speechRecognizer = newInstance(className, application, configuration, audioManager,
+                                bluetoothSco, logger);
+                        break;
+                    default:
+                        className = packageName + ".AndroidSpeechRecognizer";
+                        speechRecognizer = newInstance(className, application,
+                                configuration, audioManager, bluetoothSco, (SpeechRecognizerCreator) () ->
+                                        android.speech.SpeechRecognizer.createSpeechRecognizer(application),
+                                logger);
+                        break;
                 }
             }
         } catch (ClassNotFoundException | IllegalAccessException
@@ -168,7 +165,7 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
             int androidRecognizerStatus = android.speech.SpeechRecognizer.isRecognitionAvailable(application) ?
                     RecognizerListener.RECOGNIZER_AVAILABLE : RecognizerListener.RECOGNIZER_NOT_AVAILABLE;
             int speechRecognizerStatus = configuration.getRecognizerServiceType() ==
-                    ComponentConfig.RECOGNIZER_SERVICE_GOOGLE_SPEECH ?
+                    ComponentConfig.RECOGNIZER_SERVICE_GOOGLE ?
                     RecognizerListener.RECOGNIZER_AVAILABLE : androidRecognizerStatus;
             onSetup.execute(new Status() {
                 @SuppressLint("MissingPermission")
@@ -226,6 +223,5 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
         if (speechSynthesizer != null) speechSynthesizer.shutdown();
         if (speechRecognizer != null) speechRecognizer.shutdown();
         if (phoneStateHandler != null) phoneStateHandler.unregisterReceiver();
-        release();
     }
 }

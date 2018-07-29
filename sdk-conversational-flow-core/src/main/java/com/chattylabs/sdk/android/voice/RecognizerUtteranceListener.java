@@ -23,6 +23,10 @@ interface RecognizerUtteranceListener {
 
     RecognizerUtteranceListener _setOnError(ConversationalFlowComponent.OnRecognizerError onError);
 
+    RecognizerUtteranceListener setTryAgain(boolean tryAgain);
+
+    boolean isTryAgain();
+
     void startTimeout();
 
     void reset();

@@ -106,7 +106,6 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
                             Executors.newScheduledThreadPool(
                                 Math.max(2, Math.min(Runtime.getRuntime().availableProcessors() - 1, 4))
                             )
-//                                Executors.newSingleThreadScheduledExecutor()
                         )
                 )
                 .setCredentialsProvider(
@@ -192,7 +191,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
     }
 
     @Override
-    public void release() {
+    public void  release() {
         super.release();
         tts = null;
         voice = null;
@@ -427,7 +426,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
                     mediaPlayer.start();
                     mCondVar.block();
                     finishPlayer();
-                } catch (IOException ex) {
+                } catch (Exception ex) {
                     logger.logException(ex);
                     mCondVar.open();
                 }
