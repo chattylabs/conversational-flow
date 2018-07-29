@@ -10,6 +10,7 @@ import com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizer
 import com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerResults;
 
 abstract class GoogleSpeechRecognitionAdapter implements RecognizerUtteranceListener {
+    private boolean tryAgain;
     private OnRecognizerReady onReady;
     private OnRecognizerResults onResults;
     private OnRecognizerPartialResults onPartialResults;
@@ -65,6 +66,17 @@ abstract class GoogleSpeechRecognitionAdapter implements RecognizerUtteranceList
     public GoogleSpeechRecognitionAdapter _setOnError(OnRecognizerError onError) {
         this.onError = onError;
         return this;
+    }
+
+    @Override
+    public GoogleSpeechRecognitionAdapter setTryAgain(boolean tryAgain) {
+        this.tryAgain = tryAgain;
+        return this;
+    }
+
+    @Override
+    public boolean isTryAgain() {
+        return tryAgain;
     }
 
     @CallSuper

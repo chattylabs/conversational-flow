@@ -194,7 +194,8 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
     private void setupLanguage() {
         // setLanguage might throw an IllegalArgumentException: Invalid int: "OS" - Samsung Android 6
         try {
-            tts.setLanguage(Locale.getDefault());
+            if (tts != null)
+                tts.setLanguage(Locale.getDefault());
         } catch (Exception ignored) {
             logger.logException(ignored); }
     }

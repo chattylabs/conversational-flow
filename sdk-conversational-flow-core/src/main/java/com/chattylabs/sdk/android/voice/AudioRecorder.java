@@ -188,7 +188,7 @@ public class AudioRecorder {
             if (sizeInBytes == AudioRecord.ERROR_BAD_VALUE) {
                 continue;
             }
-            final AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.VOICE_COMMUNICATION,
+            final AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.DEFAULT,
                     sampleRate, CHANNEL, ENCODING, sizeInBytes);
             if (audioRecord.getState() == AudioRecord.STATE_INITIALIZED) {
                 mBuffer = new byte[sizeInBytes];
@@ -214,6 +214,7 @@ public class AudioRecorder {
                         break;
                     }
                     final int size = mAudioRecord.read(mBuffer, 0, mBuffer.length);
+                    if (mBuffer == null) continue;
                     final long now = System.currentTimeMillis();
                     if (mCurrentVoiceHearingMillis == Long.MAX_VALUE) {
                         mCurrentVoiceHearingMillis = now;

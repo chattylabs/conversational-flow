@@ -85,6 +85,17 @@ abstract class AndroidSpeechRecognitionAdapter
         return this;
     }
 
+    @Override
+    public AndroidSpeechRecognitionAdapter setTryAgain(boolean tryAgain) {
+        this.tryAgain = tryAgain;
+        return this;
+    }
+
+    @Override
+    public boolean isTryAgain() {
+        return tryAgain;
+    }
+
     public AndroidSpeechRecognitionAdapter setNoSoundThreshold(float noSoundThreshold) {
         this.noSoundThreshold = noSoundThreshold;
         return this;
@@ -92,15 +103,6 @@ abstract class AndroidSpeechRecognitionAdapter
 
     public AndroidSpeechRecognitionAdapter setLowSoundThreshold(float lowSoundThreshold) {
         this.lowSoundThreshold = lowSoundThreshold;
-        return this;
-    }
-
-    public boolean isTryAgain() {
-        return tryAgain;
-    }
-
-    public AndroidSpeechRecognitionAdapter setTryAgain(boolean tryAgain) {
-        this.tryAgain = tryAgain;
         return this;
     }
 
