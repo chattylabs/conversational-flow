@@ -1,32 +1,21 @@
 package com.chattylabs.sdk.android.voice;
 
-import android.support.annotation.IntDef;
 import android.support.annotation.RawRes;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SpeechRecognizer;
+import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SpeechSynthesizer;
 
 public class ComponentConfig {
-    public static final int SYNTHESIZER_SERVICE_ANDROID = 0x6e44ad;
-    public static final int RECOGNIZER_SERVICE_ANDROID = 0x5a4ed1;
-    public static final int SYNTHESIZER_SERVICE_GOOGLE = 0xaa88d6;
-    public static final int RECOGNIZER_SERVICE_GOOGLE = 0xcd231a;
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef(flag=true,
-            value = {
-                    SYNTHESIZER_SERVICE_ANDROID,
-                    RECOGNIZER_SERVICE_ANDROID,
-                    SYNTHESIZER_SERVICE_GOOGLE,
-                    RECOGNIZER_SERVICE_GOOGLE
-            })
-    public @interface ServiceType {}
+    static final String SYNTHESIZER_SERVICE_ANDROID = "AndroidSpeechSynthesizer";
+    static final String RECOGNIZER_SERVICE_ANDROID = "AndroidSpeechRecognizer";
+    static final String SYNTHESIZER_SERVICE_GOOGLE = "GoogleSpeechSynthesizer";
+    static final String RECOGNIZER_SERVICE_GOOGLE = "GoogleSpeechRecognizer";
 
     private LazyProvider<Boolean> bluetoothScoRequired;
     private LazyProvider<Boolean> audioExclusiveRequiredForSynthesizer;
     private LazyProvider<Boolean> audioExclusiveRequiredForRecognizer;
-    private ServiceTypeLazyProvider recognizerServiceType;
-    private ServiceTypeLazyProvider synthesizerServiceType;
+    private LazyProvider<Class<? extends SpeechRecognizer>> recognizerServiceType;
+    private LazyProvider<Class<? extends SpeechSynthesizer>> synthesizerServiceType;
     private RawResourceLazyProvider googleCredentialsResourceFile;
 
     private ComponentConfig(Builder builder) {
@@ -50,13 +39,11 @@ public class ComponentConfig {
         return audioExclusiveRequiredForRecognizer.get();
     }
 
-    @ServiceType
-    public int getRecognizerServiceType() {
+    public Class<? extends SpeechRecognizer> getRecognizerServiceType() {
         return recognizerServiceType.get();
     }
 
-    @ServiceType
-    public int getSynthesizerServiceType() {
+    public Class<? extends SpeechSynthesizer> getSynthesizerServiceType() {
         return synthesizerServiceType.get();
     }
 
@@ -69,8 +56,8 @@ public class ComponentConfig {
         private LazyProvider<Boolean> bluetoothScoRequired;
         private LazyProvider<Boolean> audioExclusiveRequiredForSynthesizer;
         private LazyProvider<Boolean> audioExclusiveRequiredForRecognizer;
-        private ServiceTypeLazyProvider recognizerServiceType;
-        private ServiceTypeLazyProvider synthesizerServiceType;
+        private LazyProvider<Class<? extends SpeechRecognizer>> recognizerServiceType;
+        private LazyProvider<Class<? extends SpeechSynthesizer>> synthesizerServiceType;
         private RawResourceLazyProvider googleCredentialsResourceFile;
 
         public Builder() {
@@ -100,12 +87,14 @@ public class ComponentConfig {
             return this;
         }
 
-        public Builder setRecognizerServiceType(ServiceTypeLazyProvider lazyRecognizerServiceType) {
+        public Builder setRecognizerServiceType(
+                LazyProvider<Class<? extends SpeechRecognizer>> lazyRecognizerServiceType) {
             this.recognizerServiceType = lazyRecognizerServiceType;
             return this;
         }
 
-        public Builder setSynthesizerServiceType(ServiceTypeLazyProvider lazyRecognizerServiceType) {
+        public Builder setSynthesizerServiceType(
+                LazyProvider<Class<? extends SpeechSynthesizer>> lazyRecognizerServiceType) {
             this.synthesizerServiceType = lazyRecognizerServiceType;
             return this;
         }
@@ -126,10 +115,6 @@ public class ComponentConfig {
 
     public interface LazyProvider<T> {
         T get();
-    }
-
-    public interface ServiceTypeLazyProvider {
-        @ServiceType int get();
     }
 
     public interface RawResourceLazyProvider {

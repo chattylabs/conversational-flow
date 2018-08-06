@@ -17,7 +17,6 @@ import java.lang.reflect.InvocationTargetException;
 
 final class ConversationalFlowComponentImpl implements ConversationalFlowComponent {
 
-
     static class Instance {
         static SoftReference<ConversationalFlowComponent> instanceOf;
         static ConversationalFlowComponent get() {
@@ -46,8 +45,6 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
     ConversationalFlowComponentImpl() {
         configuration = new ComponentConfig.Builder()
                 .setBluetoothScoRequired(() -> false)
-                .setRecognizerServiceType(() -> ComponentConfig.RECOGNIZER_SERVICE_ANDROID)
-                .setSynthesizerServiceType(() -> ComponentConfig.SYNTHESIZER_SERVICE_ANDROID)
                 .setAudioExclusiveRequiredForSynthesizer(() -> false)
                 .setAudioExclusiveRequiredForRecognizer(() -> true)
                 .build();
@@ -81,13 +78,11 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
 
     @Override
     public String[] requiredPermissions() {
-        return new String[]{Manifest.permission.RECORD_AUDIO};
+        return new String[]{ Manifest.permission.RECORD_AUDIO };
     }
 
-    private <T> T newInstance(String className, Object... parameters) throws
-            ClassNotFoundException, IllegalAccessException,
-            InvocationTargetException, InstantiationException {
-        Class cls = Class.forName(className);
+    private <T> T newInstance(Class cls, Object... parameters) throws
+            IllegalAccessException, InvocationTargetException, InstantiationException {
         //noinspection unchecked
         Constructor constructor = cls.getConstructors()[0];
         //noinspection unchecked
@@ -105,41 +100,36 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
         }
         if (bluetoothSco == null) bluetoothSco = new BluetoothSco(application, audioManager, logger);
         try {
-            String packageName = getClass().getPackage().getName();
-            String className;
             if (speechSynthesizer == null) {
-                switch (configuration.getSynthesizerServiceType()) {
+                switch (configuration.getSynthesizerServiceType().getSimpleName()) {
                     case ComponentConfig.SYNTHESIZER_SERVICE_GOOGLE:
-                        className = packageName + ".GoogleSpeechSynthesizer";
-                        speechSynthesizer = newInstance(className, application, configuration, audioManager,
-                                bluetoothSco, logger);
+                        speechSynthesizer = newInstance(configuration.getSynthesizerServiceType(),
+                                application, configuration, audioManager, bluetoothSco, logger);
                         break;
                     default:
-                        className = packageName + ".AndroidSpeechSynthesizer";
-                        speechSynthesizer = newInstance(className, application, configuration, audioManager,
-                                bluetoothSco, logger);
+                        speechSynthesizer = newInstance(configuration.getSynthesizerServiceType(),
+                                application, configuration, audioManager, bluetoothSco, logger);
                         break;
                 }
             }
             if (speechRecognizer == null) {
-                switch (configuration.getRecognizerServiceType()) {
+                switch (configuration.getRecognizerServiceType().getSimpleName()) {
                     case ComponentConfig.RECOGNIZER_SERVICE_GOOGLE:
-                        className = packageName + ".GoogleSpeechRecognizer";
-                        speechRecognizer = newInstance(className, application, configuration, audioManager,
-                                bluetoothSco, logger);
+                        speechRecognizer = newInstance(configuration.getSynthesizerServiceType(),
+                                application, configuration, audioManager, bluetoothSco, logger);
                         break;
                     default:
-                        className = packageName + ".AndroidSpeechRecognizer";
-                        speechRecognizer = newInstance(className, application,
-                                configuration, audioManager, bluetoothSco, (SpeechRecognizerCreator) () ->
+                        speechRecognizer = newInstance(configuration.getSynthesizerServiceType(),
+                                application, configuration, audioManager, bluetoothSco,
+                                (SpeechRecognizerCreator) () ->
                                         android.speech.SpeechRecognizer.createSpeechRecognizer(application),
                                 logger);
                         break;
                 }
             }
-        } catch (ClassNotFoundException | IllegalAccessException
-                | InstantiationException | InvocationTargetException e) {
-            logger.logException(e); throw new RuntimeException("Have you forgot to add addon the dependency?");
+        } catch (Exception e) {
+            logger.logException(e);
+            throw new RuntimeException("Have you missed to configure the < addon > dependency?");
         }
         if (phoneStateHandler == null) phoneStateHandler = new PhoneStateHandler(application, logger);
         if (!phoneStateHandler.isPhoneStateReceiverRegistered()) {
@@ -164,9 +154,9 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
         speechSynthesizer.setup(synthesizerStatus -> {
             int androidRecognizerStatus = android.speech.SpeechRecognizer.isRecognitionAvailable(application) ?
                     RecognizerListener.RECOGNIZER_AVAILABLE : RecognizerListener.RECOGNIZER_NOT_AVAILABLE;
-            int speechRecognizerStatus = configuration.getRecognizerServiceType() ==
-                    ComponentConfig.RECOGNIZER_SERVICE_GOOGLE ?
-                    RecognizerListener.RECOGNIZER_AVAILABLE : androidRecognizerStatus;
+            int speechRecognizerStatus = configuration.getRecognizerServiceType().getSimpleName().equals(
+                    ComponentConfig.RECOGNIZER_SERVICE_ANDROID) ? androidRecognizerStatus
+                    : RecognizerListener.RECOGNIZER_AVAILABLE;
             onSetup.execute(new Status() {
                 @SuppressLint("MissingPermission")
                 @Override

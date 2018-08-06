@@ -5,8 +5,6 @@ import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.util.Pair;
@@ -28,9 +26,10 @@ import com.chattylabs.sdk.android.common.HtmlUtils;
 import com.chattylabs.sdk.android.common.PermissionsHelper;
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.common.ThreadUtils;
+import com.chattylabs.sdk.android.voice.AndroidSpeechRecognizer;
 import com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer;
-import com.chattylabs.sdk.android.voice.ComponentConfig;
 import com.chattylabs.sdk.android.voice.ConversationalFlowComponent;
+import com.chattylabs.sdk.android.voice.GoogleSpeechRecognizer;
 import com.chattylabs.sdk.android.voice.GoogleSpeechSynthesizer;
 import com.chattylabs.sdk.android.voice.Peripheral;
 import com.chattylabs.sdk.android.voice.TextFilterForUrl;
@@ -58,23 +57,26 @@ import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.match
 public class MainActivity extends DaggerAppCompatActivity
         implements ActivityCompat.OnRequestPermissionsResultCallback {
 
-    public static final String TAG = Tag.make(MainActivity.class);
+    private static final String TAG = Tag.make(MainActivity.class);
 
     // Constants
-    public static final int CHECK = 3;
-    public static final int LISTEN = 2;
-    public static final int READ = 1;
+    private static final int CHECK = 3;
+    private static final int LISTEN = 2;
+    private static final int READ = 1;
+
+    private static final String ANDROID = "Android";
+    private static final String GOOGLE = "Google";
+    // ...
 
     private static LinkedHashMap<Integer, String> addonMap = new LinkedHashMap<>();
     static {
-        addonMap.put(0, "Android");
-        addonMap.put(1, "Google");
+        addonMap.put(0, ANDROID);
+        addonMap.put(1, GOOGLE);
     }
 
-    private static String ADDON_TYPE = "Android";
+    private static String ADDON_TYPE = addonMap.get(0);
 
     // Resources
-    private ConstraintLayout root;
     private TextView execution;
     private Spinner actionSpinner;
     private Spinner addonSpinner;
@@ -86,7 +88,6 @@ public class MainActivity extends DaggerAppCompatActivity
     private ArrayAdapter<CharSequence> actionAdapter;
     private ArrayAdapter<String> addonAdapter;
     private CheckBox scoCheck;
-    private Menu menu;
     private ThreadUtils.SerialThread serialThread;
 
     // Components
@@ -136,23 +137,22 @@ public class MainActivity extends DaggerAppCompatActivity
         if (PermissionsHelper.isPermissionRequest(requestCode)) {
             if (PermissionsHelper.isPermissionGranted(grantResults)) {
                 serialThread.addTask(() -> {
-                    //component = ConversationalFlowModule.provideComponent();
                     component.updateConfiguration(builder ->
                             builder .setGoogleCredentialsResourceFile(() -> R.raw.credential)
                                     .setRecognizerServiceType(() -> {
                                         switch (ADDON_TYPE) {
-                                            case "Google":
-                                                return ComponentConfig.RECOGNIZER_SERVICE_GOOGLE;
+                                            case GOOGLE:
+                                                return GoogleSpeechRecognizer.class;
                                             default:
-                                                return ComponentConfig.RECOGNIZER_SERVICE_ANDROID;
+                                                return AndroidSpeechRecognizer.class;
                                         }
                                     })
                                     .setSynthesizerServiceType(() -> {
                                         switch (ADDON_TYPE) {
-                                            case "Google":
-                                                return ComponentConfig.SYNTHESIZER_SERVICE_GOOGLE;
+                                            case GOOGLE:
+                                                return GoogleSpeechSynthesizer.class;
                                             default:
-                                                return ComponentConfig.SYNTHESIZER_SERVICE_ANDROID;
+                                                return AndroidSpeechSynthesizer.class;
                                         }
                                     })
                                     .build());
@@ -191,7 +191,6 @@ public class MainActivity extends DaggerAppCompatActivity
         });
     }
 
-    @Nullable
     private void representQueue(int index) {
         StringBuilder tx = null;
         boolean isChecking = false;
@@ -293,7 +292,7 @@ public class MainActivity extends DaggerAppCompatActivity
     @NonNull
     private String getErrorString(int i1) {
         switch (ADDON_TYPE) {
-            case "Google":
+            case GOOGLE:
                 return GoogleSpeechSynthesizer.getErrorType(i1);
             default:
                 return AndroidSpeechSynthesizer.getErrorType(i1);
@@ -316,8 +315,8 @@ public class MainActivity extends DaggerAppCompatActivity
                 Pair<Integer, String> item = queue.get(i);
                 if (item.first == READ) {
                     play(item.second, i);
-                // TODO: Check! How it continues speaking after listening?
                 } else if (i == 0 && item.first == LISTEN) {
+                    // FIXME: Check why it continues speaking sometimes after listening
                     listen(-1);
                 }
             }
@@ -339,7 +338,6 @@ public class MainActivity extends DaggerAppCompatActivity
     }
 
     private void initViews() {
-        root = findViewById(R.id.root);
         execution = findViewById(R.id.execution);
         actionSpinner = findViewById(R.id.spinner);
         addonSpinner = findViewById(R.id.addon);
@@ -349,7 +347,7 @@ public class MainActivity extends DaggerAppCompatActivity
         proceed = findViewById(R.id.proceed);
         scoCheck = findViewById(R.id.bluetooth_sco);
 
-        //
+        // Check if there is a Bluetooth device connected and setup the config for a Sco connection
         scoCheck.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked && !peripheral.get(Peripheral.Type.BLUETOOTH).isConnected()) {
                 buttonView.setChecked(false);
@@ -364,6 +362,7 @@ public class MainActivity extends DaggerAppCompatActivity
                     });
         });
         proceed.setEnabled(false);
+
         // Create an ArrayAdapter of the actions
         actionAdapter = ArrayAdapter.createFromResource(this, R.array.actions, android.R.layout.simple_spinner_item);
         actionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -383,6 +382,7 @@ public class MainActivity extends DaggerAppCompatActivity
             public void onNothingSelected(AdapterView<?> parent) {
             }
         });
+
         // Create an ArrayAdapter of the addons
         List<String> addonList = Arrays.asList(addonMap.values().toArray(new String[addonMap.size()]));
         addonAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item,
