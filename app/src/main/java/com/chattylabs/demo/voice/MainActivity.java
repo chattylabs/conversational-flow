@@ -80,11 +80,14 @@ public class MainActivity extends DaggerAppCompatActivity
             case R.id.demo_conversation:
                 ContextCompat.startActivity(this,
                         new Intent(this, ConversationCreatorActivity.class), null);
+                return true;
             case R.id.demo_components:
                 ContextCompat.startActivity(this,
                         new Intent(this, MainActivity.class), null);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
-        return super.onOptionsItemSelected(item);
     }
 
     @Override

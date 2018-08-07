@@ -1,12 +1,9 @@
-plugins {
-    id 'com.chattylabs.versioning' version '0.19.3'
-}
-
 repositories {
     maven { url "https://dl.bintray.com/chattylabs/maven" }
 }
 
 apply plugin: 'com.android.application'
+apply plugin: 'com.chattylabs.versioning'
 apply from: '../buildsystem/android.gradle'
 
 versioning {
