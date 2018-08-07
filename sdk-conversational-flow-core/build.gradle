@@ -7,16 +7,13 @@ buildscript {
     }
 }
 
-plugins {
-    id 'com.chattylabs.versioning' version '0.19.3'
-}
-
 repositories {
     maven { url "https://dl.bintray.com/chattylabs/maven" }
 }
 
 apply plugin: 'com.android.library'
 apply plugin: 'com.novoda.bintray-release'
+apply plugin: 'com.chattylabs.versioning'
 apply from: '../buildsystem/android.gradle'
 
 group = 'com.chattylabs.sdk.android'
@@ -25,11 +22,11 @@ version = android.defaultConfig.versionName
 
 versioning {
 
-    tagPrefix "conv-flow-version/"
+    tagPrefix "core-version/"
 
     keywords {
-        minor "[conv-flow-feature]"
-        patch "[conv-flow-bug]", "[conv-flow-patch]"
+        minor "[core-feature]"
+        patch "[core-bug]", "[core-patch]"
     }
 }
 

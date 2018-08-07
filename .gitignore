@@ -106,3 +106,8 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+
+## Custom
+
+version.properties
