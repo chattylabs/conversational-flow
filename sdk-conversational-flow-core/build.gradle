@@ -6,9 +6,15 @@ buildscript {
         classpath 'com.novoda:bintray-release:0.8.1'
     }
 }
+
+plugins {
+    id 'com.chattylabs.versioning' version '0.19.3'
+}
+
 repositories {
     maven { url "https://dl.bintray.com/chattylabs/maven" }
 }
+
 apply plugin: 'com.android.library'
 apply plugin: 'com.novoda.bintray-release'
 apply from: '../buildsystem/android.gradle'
@@ -16,7 +22,22 @@ apply from: '../buildsystem/android.gradle'
 group = 'com.chattylabs.sdk.android'
 version = android.defaultConfig.versionName
 
+
+versioning {
+
+    tagPrefix "conv-flow-version/"
+
+    keywords {
+        minor "[conv-flow-feature]"
+        patch "[conv-flow-bug]", "[conv-flow-patch]"
+    }
+}
+
 android {
+    defaultConfig {
+        versionCode versioning.code()
+        versionName versioning.name()
+    }
     testOptions {
         //unitTests.returnDefaultValues = true
     }
@@ -40,5 +61,5 @@ publish {
     artifactId = project.name.replace("sdk-", "")
     publishVersion = project.version
     desc = 'Conversational Flow Component (VUI SDK)'
-    website = 'https://github.com/chattylabs/sdk-conversational-flow'
+    website = 'https://github.com/chattylabs/android-sdk-conversational-flow'
 }

@@ -1,11 +1,28 @@
+plugins {
+    id 'com.chattylabs.versioning' version '0.19.3'
+}
+
 repositories {
     maven { url "https://dl.bintray.com/chattylabs/maven" }
 }
+
 apply plugin: 'com.android.application'
 apply from: '../buildsystem/android.gradle'
 
+versioning {
+
+    tagPrefix "demo-version/"
+
+    keywords {
+        minor "[demo-feature]"
+        patch "[demo-bug]", "[demo-patch]"
+    }
+}
+
 android {
     defaultConfig {
+        versionCode versioning.code()
+        versionName versioning.name()
         applicationId "com.chattylabs.demo.voice_interaction.conversational_flow"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
@@ -64,6 +81,7 @@ dependencies {
 }
 
 task copySecretKey(type: Copy) {
+    // Search this on internet and ADD the Env Variable on your Machine.
     def File secretKey = file "$System.env.GOOGLE_APPLICATION_CREDENTIALS"
     from secretKey.getParent()
     include secretKey.getName()
