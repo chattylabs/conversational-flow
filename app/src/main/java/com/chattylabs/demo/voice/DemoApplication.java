@@ -32,10 +32,10 @@ public class DemoApplication extends DaggerApplication {
         abstract ILogger provideLogger(ILoggerImpl logger);
 
         @ContributesAndroidInjector
-        abstract ConversationCreatorActivity conversationCreatorActivity();
+        abstract CustomizeTheComponentActivity conversationCreatorActivity();
 
         @ContributesAndroidInjector
-        abstract MainActivity mainActivity();
+        abstract BuildFromJsonActivity mainActivity();
     }
 
     @Override

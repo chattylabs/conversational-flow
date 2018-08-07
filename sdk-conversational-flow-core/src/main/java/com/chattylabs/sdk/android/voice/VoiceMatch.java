@@ -6,12 +6,14 @@ import java.util.List;
 
 public class VoiceMatch implements VoiceAction {
     public final String id;
+    public final Runnable onReady;
     public final boolean canMatchOnPartials;
     public final String[] expectedResults;
     public final Consumer<List<String>> onMatched;
 
     private VoiceMatch(Builder builder) {
         id = builder.id;
+        onReady = builder.onReady;
         canMatchOnPartials = builder.canMatchOnPartials;
         expectedResults = builder.expectedResults;
         onMatched = builder.onMatched;
@@ -23,6 +25,7 @@ public class VoiceMatch implements VoiceAction {
 
     public static final class Builder {
         private String id;
+        private Runnable onReady;
         private boolean canMatchOnPartials;
         private String[] expectedResults;
         private Consumer<List<String>> onMatched;
@@ -31,6 +34,11 @@ public class VoiceMatch implements VoiceAction {
 
         public Builder setId(String id) {
             this.id = id;
+            return this;
+        }
+
+        public Builder setOnReady(Runnable onReady) {
+            this.onReady = onReady;
             return this;
         }
 

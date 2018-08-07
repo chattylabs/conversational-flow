@@ -56,10 +56,10 @@ import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.Synth
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.matches;
 
 
-public class ConversationCreatorActivity extends DaggerAppCompatActivity
+public class CustomizeTheComponentActivity extends DaggerAppCompatActivity
         implements ActivityCompat.OnRequestPermissionsResultCallback {
 
-    private static final String TAG = Tag.make(ConversationCreatorActivity.class);
+    private static final String TAG = Tag.make(CustomizeTheComponentActivity.class);
 
     // Constants
     private static final int CHECK = 3;
@@ -101,7 +101,7 @@ public class ConversationCreatorActivity extends DaggerAppCompatActivity
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.demo, menu);
+        inflater.inflate(R.menu.demos, menu);
         return true;
     }
 
@@ -110,18 +110,21 @@ public class ConversationCreatorActivity extends DaggerAppCompatActivity
         switch (item.getItemId()) {
             case R.id.demo_conversation:
                 ContextCompat.startActivity(this,
-                        new Intent(this, ConversationCreatorActivity.class), null);
+                        new Intent(this, CustomizeTheComponentActivity.class), null);
+                return true;
             case R.id.demo_components:
                 ContextCompat.startActivity(this,
-                        new Intent(this, MainActivity.class), null);
+                        new Intent(this, BuildFromJsonActivity.class), null);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
-        return super.onOptionsItemSelected(item);
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_conversation_creator);
+        setContentView(R.layout.activity_customize_the_component);
         initViews();
         initActions();
         peripheral = new Peripheral((AudioManager) getSystemService(AUDIO_SERVICE));
