@@ -158,7 +158,7 @@ After you have cloned this project, run the following command on a terminal cons
 git submodule update --init
 ```
 
-## Who use this library?
+## Whose use this library?
 This is a list of Apps using the library:
 
 <a href="https://play.google.com/store/apps/details?id=com.Chatty"><img src="https://lh3.googleusercontent.com/BwP_HPbu2G523jUQitRcfgADe5qKxZclxAbESmM4xaTNFS3ckz5uqkh12OimzqPC=s50-rw" alt="Chatty" title="Chatty"/> &nbsp;&nbsp; 

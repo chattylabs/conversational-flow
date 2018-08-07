@@ -6,9 +6,15 @@ buildscript {
         classpath 'com.novoda:bintray-release:0.8.1'
     }
 }
+
+plugins {
+    id 'com.chattylabs.versioning' version '0.19.3'
+}
+
 repositories {
     maven { url "https://dl.bintray.com/chattylabs/maven" }
 }
+
 apply plugin: 'com.android.library'
 apply plugin: 'com.novoda.bintray-release'
 apply from: '../buildsystem/android.gradle'
@@ -16,7 +22,22 @@ apply from: '../buildsystem/android.gradle'
 group = 'com.chattylabs.sdk.android'
 version = android.defaultConfig.versionName
 
+
+versioning {
+
+    tagPrefix "addon-google-version/"
+
+    keywords {
+        minor "[addon-google-feature]"
+        patch "[addon-google-bug]", "[addon-google-patch]"
+    }
+}
+
 android {
+    defaultConfig {
+        versionCode versioning.code()
+        versionName versioning.name()
+    }
     //compileSdkVersion 21
 }
 
