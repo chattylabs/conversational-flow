@@ -4,6 +4,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.util.Pools;
 import android.support.v4.util.SimpleArrayMap;
+import android.util.Log;
 
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.common.internal.ILogger;
@@ -105,6 +106,11 @@ class ConversationImpl extends Flow.Edge implements Conversation {
                 current = message;
                 speechSynthesizer.playText(
                         message.text,
+                        (ConversationalFlowComponent.OnSynthesizerStart) utteranceId -> {
+                            if (message.onReady != null) {
+                                message.onReady.run();
+                            }
+                        },
                         (ConversationalFlowComponent.OnSynthesizerDone) utteranceId -> {
                             if (message.onSuccess != null) {
                                 message.onSuccess.run();
@@ -134,15 +140,23 @@ class ConversationImpl extends Flow.Edge implements Conversation {
                             },
                             (ConversationalFlowComponent.OnRecognizerError) (error, originalError) -> {
                                 logger.e(TAG, "Conversation - listening Capture error");
-                                boolean unexpected = error == RecognizerListener.RECOGNIZER_STOPPED_TOO_EARLY_ERROR;
-                                boolean isLowSound = error == RecognizerListener.RECOGNIZER_LOW_SOUND_ERROR;
-                                boolean isNoSound = error == RecognizerListener.RECOGNIZER_NO_SOUND_ERROR;
                                 if (mismatchAction[0] != null)
-                                    noMatch(mismatchAction[0], unexpected, isLowSound, isNoSound, null);
+                                    noMatch(mismatchAction[0], error, null);
                             });
                 } else {
                     logger.v(TAG, "Conversation - running Actions");
                     speechRecognizer.listen(
+                            (ConversationalFlowComponent.OnRecognizerReady) params -> {
+                                for (VoiceNode n : actions) {
+                                    if (VoiceMatch.class.isInstance(n)) {
+                                        VoiceMatch action = (VoiceMatch) n;
+                                        if (action.onReady != null) {
+                                            Log.d("MOMO", "one");
+                                            action.onReady.run();
+                                        }
+                                    }
+                                }
+                            },
                             (ConversationalFlowComponent.OnRecognizerResults) (results, confidences) -> {
                                 String result = ConversationalFlowComponent.selectMostConfidentResult(results, confidences);
                                 processResults(Collections.singletonList(result), actions, false);
@@ -153,11 +167,8 @@ class ConversationImpl extends Flow.Edge implements Conversation {
                             },
                             (ConversationalFlowComponent.OnRecognizerError) (error, originalError) -> {
                                 logger.e(TAG, "Conversation - listening Action error");
-                                boolean unexpected = error == RecognizerListener.RECOGNIZER_STOPPED_TOO_EARLY_ERROR;
-                                boolean isLowSound = error == RecognizerListener.RECOGNIZER_LOW_SOUND_ERROR;
-                                boolean isNoSound = error == RecognizerListener.RECOGNIZER_NO_SOUND_ERROR;
                                 if (mismatchAction[0] != null)
-                                    noMatch(mismatchAction[0], unexpected, isLowSound, isNoSound, null);
+                                    noMatch(mismatchAction[0], error, null);
                             });
                 }
             }
@@ -179,8 +190,10 @@ class ConversationImpl extends Flow.Edge implements Conversation {
                         logger.i(TAG, "Conversation - matched with: " + expected);
                         speechRecognizer.cancel();
                         current = action;
-                        if (action.onMatched != null) action.onMatched.accept(results);
-                        else next();
+                        if (action.onMatched != null) {
+                            Log.d("MOMO", "two");
+                            action.onMatched.accept(results);
+                        } else next();
                         return;
                     }
                 }
@@ -189,12 +202,15 @@ class ConversationImpl extends Flow.Edge implements Conversation {
         logger.w(TAG, "Conversation - not matched");
         if (!isPartial && mismatchAction[0] != null) {
             if (mismatchAction[0].retries == 0) current = mismatchAction[0];
-            noMatch(mismatchAction[0], false, false, false, results);
+            noMatch(mismatchAction[0], 0, results);
         }
     }
 
-    private void noMatch(VoiceMismatch mismatchAction, boolean isUnexpected, boolean isLowSound, boolean isNoSound,
-                         @Nullable List<String> results) {
+    private void noMatch(VoiceMismatch mismatchAction, int error, @Nullable List<String> results) {
+        boolean isUnexpected = error == RecognizerListener.RECOGNIZER_STOPPED_TOO_EARLY_ERROR;
+        boolean isLowSound = error == RecognizerListener.RECOGNIZER_LOW_SOUND_ERROR;
+        boolean isNoSound = error == RecognizerListener.RECOGNIZER_NO_SOUND_ERROR;
+
         if (mismatchAction.retries > 0) {
             mismatchAction.retries--;
             logger.v(TAG, "Conversation - pending retry: " + mismatchAction.retries);
@@ -215,11 +231,16 @@ class ConversationImpl extends Flow.Edge implements Conversation {
                 logger.v(TAG, "Conversation - no sound at all!!");
                 // No repeat
                 mismatchAction.retries = 0;
-                if (mismatchAction.onNotMatched != null) mismatchAction.onNotMatched.accept(results);
+                if (mismatchAction.onNotMatched != null) {
+                    mismatchAction.onNotMatched.accept(results);
+                }
                 else next(); // TODO: throw new Missing not matched?
             }
         } else {
-            if (mismatchAction.onNotMatched != null) mismatchAction.onNotMatched.accept(results);
+            if (mismatchAction.onNotMatched != null) {
+                Log.d("MOMO", "three");
+                mismatchAction.onNotMatched.accept(results);
+            }
             else next(); // TODO: throw new Missing not matched?
         }
     }

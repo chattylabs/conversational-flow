@@ -115,11 +115,11 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
             if (speechRecognizer == null) {
                 switch (configuration.getRecognizerServiceType().getSimpleName()) {
                     case ComponentConfig.RECOGNIZER_SERVICE_GOOGLE:
-                        speechRecognizer = newInstance(configuration.getSynthesizerServiceType(),
+                        speechRecognizer = newInstance(configuration.getRecognizerServiceType(),
                                 application, configuration, audioManager, bluetoothSco, logger);
                         break;
                     default:
-                        speechRecognizer = newInstance(configuration.getSynthesizerServiceType(),
+                        speechRecognizer = newInstance(configuration.getRecognizerServiceType(),
                                 application, configuration, audioManager, bluetoothSco,
                                 (SpeechRecognizerCreator) () ->
                                         android.speech.SpeechRecognizer.createSpeechRecognizer(application),
@@ -129,7 +129,7 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
             }
         } catch (Exception e) {
             logger.logException(e);
-            throw new RuntimeException("Have you missed to configure the < addon > dependency?");
+            throw new RuntimeException("Have you missed configuring the < addon > dependency?");
         }
         if (phoneStateHandler == null) phoneStateHandler = new PhoneStateHandler(application, logger);
         if (!phoneStateHandler.isPhoneStateReceiverRegistered()) {

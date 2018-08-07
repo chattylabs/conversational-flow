@@ -1,0 +1,16 @@
+[
+  {
+    "message": "Hi!"
+  },
+  {
+    "message": "How are you?",
+    "results": ["good", "fine", "not bad"]
+  },
+  {
+    "message": "Good!. Are you ok if we keep talking?",
+    "results": ["yes", "sure", "no", "of course"]
+  },
+  {
+    "message": "Ok. I'm a bit lazy now, let's try next time."
+  }
+]

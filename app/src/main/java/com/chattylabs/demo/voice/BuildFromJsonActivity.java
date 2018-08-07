@@ -7,14 +7,18 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import com.chattylabs.sdk.android.common.PermissionsHelper;
 import com.chattylabs.sdk.android.common.Tag;
@@ -28,6 +32,7 @@ import com.chattylabs.sdk.android.voice.GoogleSpeechRecognizer;
 import com.chattylabs.sdk.android.voice.GoogleSpeechSynthesizer;
 import com.chattylabs.sdk.android.voice.VoiceMatch;
 import com.chattylabs.sdk.android.voice.VoiceMessage;
+import com.chattylabs.sdk.android.voice.VoiceMismatch;
 import com.chattylabs.sdk.android.voice.VoiceNode;
 
 import org.json.JSONArray;
@@ -36,6 +41,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -44,10 +50,10 @@ import javax.inject.Inject;
 
 import dagger.android.support.DaggerAppCompatActivity;
 
-public class MainActivity extends DaggerAppCompatActivity
+public class BuildFromJsonActivity extends DaggerAppCompatActivity
         implements ActivityCompat.OnRequestPermissionsResultCallback {
 
-    private static final String TAG = Tag.make(ConversationCreatorActivity.class);
+    private static final String TAG = Tag.make(CustomizeTheComponentActivity.class);
 
     private static final String ANDROID = "Android";
     private static final String GOOGLE = "Google";
@@ -58,19 +64,21 @@ public class MainActivity extends DaggerAppCompatActivity
         addonMap.put(1, GOOGLE);
     }
 
-    private static String ADDON_TYPE = addonMap.get(0);
+    private static String ADDON_TYPE = ANDROID;
 
     @Inject ConversationalFlowComponent component;
+    private ThreadUtils.SerialThread serialThread;
 
     private Button proceed;
     private Spinner addonSpinner;
+    private ListView conversationListView;
     private ArrayAdapter<String> addonAdapter;
-    private ThreadUtils.SerialThread serialThread;
+    private ArrayAdapter<String> listViewAdapter;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.demo, menu);
+        inflater.inflate(R.menu.demos, menu);
         return true;
     }
 
@@ -79,11 +87,11 @@ public class MainActivity extends DaggerAppCompatActivity
         switch (item.getItemId()) {
             case R.id.demo_conversation:
                 ContextCompat.startActivity(this,
-                        new Intent(this, ConversationCreatorActivity.class), null);
+                        new Intent(this, CustomizeTheComponentActivity.class), null);
                 return true;
             case R.id.demo_components:
                 ContextCompat.startActivity(this,
-                        new Intent(this, MainActivity.class), null);
+                        new Intent(this, BuildFromJsonActivity.class), null);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -93,7 +101,7 @@ public class MainActivity extends DaggerAppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_build_from_json);
 
         initViews();
         serialThread = ThreadUtils.newSerialThread();
@@ -109,16 +117,28 @@ public class MainActivity extends DaggerAppCompatActivity
     }
 
     private void initViews() {
-        addonSpinner = findViewById(R.id.addon);
         proceed = findViewById(R.id.proceed);
         proceed.setOnClickListener(v -> {
             loadConversation();
         });
 
+        conversationListView = findViewById(R.id.conversation);
+        listViewAdapter = new ArrayAdapter<>(this, R.layout.item_block,
+                R.id.conversation_item_text,
+                new ArrayList<>());
+        listViewAdapter.setNotifyOnChange(true);
+        TextView emptyView = new TextView(this);
+        emptyView.setText("Choose an addon and press on proceed");
+        emptyView.setLayoutParams(new AbsListView.LayoutParams(
+                AbsListView.LayoutParams.WRAP_CONTENT,
+                AbsListView.LayoutParams.WRAP_CONTENT, Gravity.CENTER));
+        conversationListView.setAdapter(listViewAdapter);
+        conversationListView.setEmptyView(emptyView);
+
+        addonSpinner = findViewById(R.id.addon);
         // Create an ArrayAdapter of the addons
         List<String> addonList = Arrays.asList(addonMap.values().toArray(new String[addonMap.size()]));
-        addonAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item,
-                addonList);
+        addonAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, addonList);
         addonAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         addonSpinner.setAdapter(addonAdapter);
         addonSpinner.setSelection(0);
@@ -146,9 +166,12 @@ public class MainActivity extends DaggerAppCompatActivity
 
     @SuppressLint("MissingPermission")
     private void loadConversation() {
+        listViewAdapter.clear();
+        listViewAdapter.notifyDataSetChanged();
         Conversation conversation = component.create(this);
         Flow flow = conversation.prepare();
         try {
+            String dots = ". . .";
             VoiceNode firstNode = null;
             VoiceNode lastNode = null;
             JSONArray array = new JSONArray(loadJSONFromAsset());
@@ -156,23 +179,55 @@ public class MainActivity extends DaggerAppCompatActivity
 
                 JSONObject object = array.getJSONObject(a);
 
-                JSONArray jsonArray = object.getJSONArray("results");
-                String[] stringArray = new String[jsonArray.length()];
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    stringArray[i]= jsonArray.getString(i);
+                String text = object.getString("message");
+                VoiceMessage message = VoiceMessage.newBuilder()
+                        .setText(text)
+                        .setOnReady(() -> {
+                            runOnUiThread(() -> {
+                                listViewAdapter.add(text);
+                            });
+                        }).build();
+
+                VoiceMatch matches = null;
+                VoiceMismatch noMatches = null;
+                if (object.has("results")) {
+                    JSONArray jsonArray = object.getJSONArray("results");
+                    String[] stringArray = new String[jsonArray.length()];
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        stringArray[i] = jsonArray.getString(i);
+                    }
+                    matches = VoiceMatch.newBuilder()
+                            .setOnReady(() -> {
+                                listViewAdapter.add(dots);
+                            })
+                            .setExpectedResults(stringArray)
+                            .setOnMatched(strings -> {
+                                listViewAdapter.remove(dots);
+                                if (strings != null) {
+                                    listViewAdapter.add(strings.get(0));
+                                    conversation.next();
+                                }
+                            })
+                            .build();
+                    noMatches = VoiceMismatch.newBuilder()
+                            .setOnNotMatched(strings -> {
+                                listViewAdapter.remove(dots);
+                                listViewAdapter.add("You said: " + strings);
+                                listViewAdapter.add("I did not expect that. Please try again!");
+                            }).build();
                 }
 
-                VoiceMessage message = VoiceMessage.newBuilder()
-                        .setText(object.getString("message")).build();
-                VoiceMatch match = VoiceMatch.newBuilder()
-                        .setExpectedResults(stringArray).build();
-
                 conversation.addNode(message);
-                conversation.addNode(match);
+                if (matches != null) {
+                    conversation.addNode(matches);
+                    conversation.addNode(noMatches);
+                }
                 if (lastNode != null) flow.from(lastNode).to(message);
                 if (firstNode == null) firstNode = message;
-                flow.from(message).to(match);
-                lastNode = match;
+                if (matches != null) {
+                    flow.from(message).to(matches, noMatches);
+                }
+                lastNode = matches != null ? matches : message;
             }
 
             conversation.start(firstNode);
@@ -185,7 +240,7 @@ public class MainActivity extends DaggerAppCompatActivity
     public String loadJSONFromAsset() {
         String json = null;
         try {
-            InputStream is = getAssets().open("conversation.json");
+            InputStream is = getResources().openRawResource(R.raw.demo_conversation);
             int size = is.available();
             byte[] buffer = new byte[size];
             is.read(buffer);
