@@ -2,9 +2,6 @@ package com.chattylabs.sdk.android.voice;
 
 import android.support.annotation.RawRes;
 
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SpeechRecognizer;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SpeechSynthesizer;
-
 public class ComponentConfig {
     static final String SYNTHESIZER_SERVICE_ANDROID = "AndroidSpeechSynthesizer";
     static final String RECOGNIZER_SERVICE_ANDROID = "AndroidSpeechRecognizer";
@@ -14,8 +11,8 @@ public class ComponentConfig {
     private LazyProvider<Boolean> bluetoothScoRequired;
     private LazyProvider<Boolean> audioExclusiveRequiredForSynthesizer;
     private LazyProvider<Boolean> audioExclusiveRequiredForRecognizer;
-    private LazyProvider<Class<? extends SpeechRecognizer>> recognizerServiceType;
-    private LazyProvider<Class<? extends SpeechSynthesizer>> synthesizerServiceType;
+    private LazyProvider<Class<? extends SpeechRecognizerComponent>> recognizerServiceType;
+    private LazyProvider<Class<? extends SpeechSynthesizerComponent>> synthesizerServiceType;
     private RawResourceLazyProvider googleCredentialsResourceFile;
 
     private ComponentConfig(Builder builder) {
@@ -39,11 +36,11 @@ public class ComponentConfig {
         return audioExclusiveRequiredForRecognizer.get();
     }
 
-    public Class<? extends SpeechRecognizer> getRecognizerServiceType() {
+    public Class<? extends SpeechRecognizerComponent> getRecognizerServiceType() {
         return recognizerServiceType.get();
     }
 
-    public Class<? extends SpeechSynthesizer> getSynthesizerServiceType() {
+    public Class<? extends SpeechSynthesizerComponent> getSynthesizerServiceType() {
         return synthesizerServiceType.get();
     }
 
@@ -56,8 +53,8 @@ public class ComponentConfig {
         private LazyProvider<Boolean> bluetoothScoRequired;
         private LazyProvider<Boolean> audioExclusiveRequiredForSynthesizer;
         private LazyProvider<Boolean> audioExclusiveRequiredForRecognizer;
-        private LazyProvider<Class<? extends SpeechRecognizer>> recognizerServiceType;
-        private LazyProvider<Class<? extends SpeechSynthesizer>> synthesizerServiceType;
+        private LazyProvider<Class<? extends SpeechRecognizerComponent>> recognizerServiceType;
+        private LazyProvider<Class<? extends SpeechSynthesizerComponent>> synthesizerServiceType;
         private RawResourceLazyProvider googleCredentialsResourceFile;
 
         public Builder() {
@@ -88,13 +85,13 @@ public class ComponentConfig {
         }
 
         public Builder setRecognizerServiceType(
-                LazyProvider<Class<? extends SpeechRecognizer>> lazyRecognizerServiceType) {
+                LazyProvider<Class<? extends SpeechRecognizerComponent>> lazyRecognizerServiceType) {
             this.recognizerServiceType = lazyRecognizerServiceType;
             return this;
         }
 
         public Builder setSynthesizerServiceType(
-                LazyProvider<Class<? extends SpeechSynthesizer>> lazyRecognizerServiceType) {
+                LazyProvider<Class<? extends SpeechSynthesizerComponent>> lazyRecognizerServiceType) {
             this.synthesizerServiceType = lazyRecognizerServiceType;
             return this;
         }

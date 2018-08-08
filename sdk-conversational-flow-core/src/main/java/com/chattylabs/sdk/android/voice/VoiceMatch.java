@@ -1,7 +1,5 @@
 package com.chattylabs.sdk.android.voice;
 
-import com.chattylabs.sdk.android.voice.ConversationalFlowComponent.Consumer;
-
 import java.util.List;
 
 public class VoiceMatch implements VoiceAction {
@@ -9,7 +7,7 @@ public class VoiceMatch implements VoiceAction {
     public final Runnable onReady;
     public final boolean canMatchOnPartials;
     public final String[] expectedResults;
-    public final Consumer<List<String>> onMatched;
+    public final ComponentConsumer<List<String>> onMatched;
 
     private VoiceMatch(Builder builder) {
         id = builder.id;
@@ -28,7 +26,7 @@ public class VoiceMatch implements VoiceAction {
         private Runnable onReady;
         private boolean canMatchOnPartials;
         private String[] expectedResults;
-        private Consumer<List<String>> onMatched;
+        private ComponentConsumer<List<String>> onMatched;
 
         private Builder() {}
 
@@ -52,7 +50,7 @@ public class VoiceMatch implements VoiceAction {
             return this;
         }
 
-        public Builder setOnMatched(Consumer<List<String>> onMatched) {
+        public Builder setOnMatched(ComponentConsumer<List<String>> onMatched) {
             this.onMatched = onMatched;
             return this;
         }

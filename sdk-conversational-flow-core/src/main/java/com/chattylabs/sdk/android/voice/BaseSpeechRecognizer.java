@@ -4,10 +4,9 @@ import android.support.annotation.CallSuper;
 
 import com.chattylabs.sdk.android.common.internal.ILogger;
 
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.*;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SpeechRecognizer;
-
-abstract class BaseSpeechRecognizer implements SpeechRecognizer {
+abstract class BaseSpeechRecognizer implements SpeechRecognizerComponent {
+    // Minimum constants
+    int MIN_VOICE_RECOGNITION_TIME_LISTENING = 2000;
 
     // Resources
     private final ComponentConfig configuration;
@@ -91,20 +90,20 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
         getRecognitionListener().reset();
         if (listeners != null && listeners.length > 0) {
             for (RecognizerListener item : listeners) {
-                if (item instanceof OnRecognizerReady) {
-                    getRecognitionListener()._setOnReady((OnRecognizerReady) item);
+                if (item instanceof RecognizerListener.OnReady) {
+                    getRecognitionListener()._setOnReady((RecognizerListener.OnReady) item);
                 }
-                else if (item instanceof OnRecognizerResults) {
-                    getRecognitionListener()._setOnResults((OnRecognizerResults) item);
+                else if (item instanceof RecognizerListener.OnResults) {
+                    getRecognitionListener()._setOnResults((RecognizerListener.OnResults) item);
                 }
-                else if (item instanceof OnRecognizerMostConfidentResult) {
-                    getRecognitionListener()._setOnMostConfidentResult((OnRecognizerMostConfidentResult) item);
+                else if (item instanceof RecognizerListener.OnMostConfidentResult) {
+                    getRecognitionListener()._setOnMostConfidentResult((RecognizerListener.OnMostConfidentResult) item);
                 }
-                else if (item instanceof OnRecognizerPartialResults) {
-                    getRecognitionListener()._setOnPartialResults((OnRecognizerPartialResults) item);
+                else if (item instanceof RecognizerListener.OnPartialResults) {
+                    getRecognitionListener()._setOnPartialResults((RecognizerListener.OnPartialResults) item);
                 }
-                else if (item instanceof OnRecognizerError) {
-                    getRecognitionListener()._setOnError((OnRecognizerError) item);
+                else if (item instanceof RecognizerListener.OnError) {
+                    getRecognitionListener()._setOnError((RecognizerListener.OnError) item);
                 }
             }
         }

@@ -1,22 +1,18 @@
 package com.chattylabs.sdk.android.voice;
 
-import com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerDone;
-import com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerError;
-import com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerStart;
-
 interface SynthesizerUtteranceListener {
 
-    OnSynthesizerStart _getOnStartedListener();
+    SynthesizerListener.OnStart _getOnStartedListener();
 
-    SynthesizerUtteranceListener _setOnStartedListener(OnSynthesizerStart onStartedListener);
+    SynthesizerUtteranceListener _setOnStartedListener(SynthesizerListener.OnStart onStartedListener);
 
-    OnSynthesizerDone _getOnDoneListener();
+    SynthesizerListener.OnDone _getOnDoneListener();
 
-    SynthesizerUtteranceListener _setOnDoneListener(OnSynthesizerDone onDoneListener);
+    SynthesizerUtteranceListener _setOnDoneListener(SynthesizerListener.OnDone onDoneListener);
 
-    OnSynthesizerError _getOnErrorListener();
+    SynthesizerListener.OnError _getOnErrorListener();
 
-    SynthesizerUtteranceListener _setOnErrorListener(OnSynthesizerError onErrorListener);
+    SynthesizerUtteranceListener _setOnErrorListener(SynthesizerListener.OnError onErrorListener);
 
     void clearTimeout(String utteranceId);
 

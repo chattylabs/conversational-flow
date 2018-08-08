@@ -6,39 +6,39 @@ import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.*;
 
 abstract class AndroidSpeechSynthesizerAdapter extends UtteranceProgressListener
         implements SynthesizerUtteranceListener {
-    private OnSynthesizerStart onStartedListener;
-    private OnSynthesizerDone onDoneListener;
-    private OnSynthesizerError onErrorListener;
+    private SynthesizerListener.OnStart onStartedListener;
+    private SynthesizerListener.OnDone onDoneListener;
+    private SynthesizerListener.OnError onErrorListener;
 
     @Override
-    public OnSynthesizerStart _getOnStartedListener() {
+    public SynthesizerListener.OnStart _getOnStartedListener() {
         return onStartedListener != null ? onStartedListener : item -> {};
     }
 
     @Override
-    public AndroidSpeechSynthesizerAdapter _setOnStartedListener(OnSynthesizerStart onStartedListener) {
+    public AndroidSpeechSynthesizerAdapter _setOnStartedListener(SynthesizerListener.OnStart onStartedListener) {
         this.onStartedListener = onStartedListener;
         return this;
     }
 
     @Override
-    public OnSynthesizerDone _getOnDoneListener() {
+    public SynthesizerListener.OnDone _getOnDoneListener() {
         return onDoneListener != null ? onDoneListener : item -> {};
     }
 
     @Override
-    public AndroidSpeechSynthesizerAdapter _setOnDoneListener(OnSynthesizerDone onDoneListener) {
+    public AndroidSpeechSynthesizerAdapter _setOnDoneListener(SynthesizerListener.OnDone onDoneListener) {
         this.onDoneListener = onDoneListener;
         return this;
     }
 
     @Override
-    public OnSynthesizerError _getOnErrorListener() {
+    public SynthesizerListener.OnError _getOnErrorListener() {
         return onErrorListener != null ? onErrorListener : (item1, item2) -> {};
     }
 
     @Override
-    public AndroidSpeechSynthesizerAdapter _setOnErrorListener(OnSynthesizerError onErrorListener) {
+    public AndroidSpeechSynthesizerAdapter _setOnErrorListener(SynthesizerListener.OnError onErrorListener) {
         this.onErrorListener = onErrorListener;
         return this;
     }

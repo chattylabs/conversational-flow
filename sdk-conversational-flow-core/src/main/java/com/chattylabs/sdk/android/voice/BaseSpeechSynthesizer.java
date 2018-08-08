@@ -16,15 +16,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerDone;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerError;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerInitialised;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerStart;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SpeechSynthesizer;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SynthesizerListener;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.TAG;
 
-abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
+abstract class BaseSpeechSynthesizer implements SpeechSynthesizerComponent {
 
     String DEFAULT_QUEUE_ID = "default_queue_id";
 
@@ -72,7 +66,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
     abstract String getTag();
 
-    abstract void initTts(OnSynthesizerInitialised onSynthesizerInitialised);
+    abstract void initTts(SynthesizerListener.OnInitialised onSynthesizerInitialised);
 
     abstract void executeOnTtsReady(
             String utteranceId, String text, HashMap<String, String> params);
@@ -147,14 +141,14 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             SynthesizerUtteranceListener listener, SynthesizerListener[] listeners) {
         if (listeners.length > 0) {
             for (SynthesizerListener item : listeners) {
-                if (item instanceof OnSynthesizerStart) {
-                    listener._setOnStartedListener((OnSynthesizerStart) item);
+                if (item instanceof SynthesizerListener.OnStart) {
+                    listener._setOnStartedListener((SynthesizerListener.OnStart) item);
                 }
-                if (item instanceof OnSynthesizerDone) {
-                    listener._setOnDoneListener((OnSynthesizerDone) item);
+                if (item instanceof SynthesizerListener.OnDone) {
+                    listener._setOnDoneListener((SynthesizerListener.OnDone) item);
                 }
-                if (item instanceof OnSynthesizerError) {
-                    listener._setOnErrorListener((OnSynthesizerError) item);
+                if (item instanceof SynthesizerListener.OnError) {
+                    listener._setOnErrorListener((SynthesizerListener.OnError) item);
                 }
             }
         }
@@ -182,12 +176,12 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         if (isTtsNull() && !isSpeaking) {
             setSpeaking(true);
             initTts(status -> {
-                if (status == SynthesizerListener.SUCCESS) {
+                if (status == SynthesizerListener.Status.SUCCESS) {
                     run();
                 }
                 else {
                     logger.e(TAG, "TTS[%s] - status ERROR with queue <%s>", uId, queueId);
-                    getSynthesizerUtteranceListener().onError(uId, SynthesizerListener.ERROR);
+                    getSynthesizerUtteranceListener().onError(uId, SynthesizerListener.Status.ERROR);
                 }
             });
         }
@@ -216,12 +210,12 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         logger.i(TAG, "TTS[%s] - ready: %s | speaking: %s",
                 uId, Boolean.toString(isReady), Boolean.toString(isSpeaking));
         initTts(status -> {
-            if (status == SynthesizerListener.SUCCESS) {
+            if (status == SynthesizerListener.Status.SUCCESS) {
                 playTheCurrentQueue(map);
             }
             else {
                 logger.e(TAG, "TTS[%s] - no queue status ERROR", uId);
-                getSynthesizerUtteranceListener().onError(uId, SynthesizerListener.ERROR);
+                getSynthesizerUtteranceListener().onError(uId, SynthesizerListener.Status.ERROR);
             }
         });
     }
@@ -244,12 +238,12 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         if (isTtsNull() && !isSpeaking) {
             setSpeaking(true);
             initTts(status -> {
-                if (status == SynthesizerListener.SUCCESS) {
+                if (status == SynthesizerListener.Status.SUCCESS) {
                     run();
                 }
                 else {
                     logger.e(TAG, "TTS[%s] - silence status ERROR with queue <%s>", uId, queueId);
-                    getSynthesizerUtteranceListener().onError(uId, SynthesizerListener.ERROR);
+                    getSynthesizerUtteranceListener().onError(uId, SynthesizerListener.Status.ERROR);
                 }
             });
         }
@@ -277,12 +271,12 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         logger.i(TAG, "TTS[%s] - ready: %s | speaking: %s",
                 uId, Boolean.toString(isReady), Boolean.toString(isSpeaking));
         initTts(status -> {
-            if (status == SynthesizerListener.SUCCESS) {
+            if (status == SynthesizerListener.Status.SUCCESS) {
                 playTheCurrentQueue(map);
             }
             else {
                 logger.e(TAG, "TTS[%s] - no queue silence status ERROR", uId);
-                getSynthesizerUtteranceListener().onError(uId, SynthesizerListener.ERROR);
+                getSynthesizerUtteranceListener().onError(uId, SynthesizerListener.Status.ERROR);
             }
         });
     }
@@ -340,13 +334,13 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         logger.i(getTag(), "TTS[%s] - resume queue <%s>", uId, queueId);
         if (!isEmpty()) setSpeaking(true);
         initTts(status -> {
-            if (status == SynthesizerListener.SUCCESS) {
+            if (status == SynthesizerListener.Status.SUCCESS) {
                 run();
             }
             else {
                 logger.e(getTag(), "TTS - status ERROR");
                 if (uId != null)
-                    getSynthesizerUtteranceListener().onError(uId, SynthesizerListener.ERROR);
+                    getSynthesizerUtteranceListener().onError(uId, SynthesizerListener.Status.ERROR);
             }
         });
     }

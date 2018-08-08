@@ -8,14 +8,13 @@ import android.util.Log;
 
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.common.internal.ILogger;
-import com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RecognizerListener;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-class ConversationImpl extends Flow.Edge implements Conversation {
+class ConversationImpl extends ConversationFlow.Edge implements Conversation {
     private final String TAG = Tag.make("Conversation");
 
     // Data
@@ -23,17 +22,17 @@ class ConversationImpl extends Flow.Edge implements Conversation {
     private final SimpleArrayMap<VoiceNode, ArrayList<VoiceNode>> graph = new SimpleArrayMap<>();
 
     // Resources
-    private ConversationalFlowComponent.SpeechSynthesizer speechSynthesizer;
-    private ConversationalFlowComponent.SpeechRecognizer speechRecognizer;
-    private Flow flow;
+    private SpeechSynthesizerComponent speechSynthesizer;
+    private SpeechRecognizerComponent speechRecognizer;
+    private ConversationFlow flow;
     private VoiceNode current;
     private int flags;
 
     // Log stuff
     private ILogger logger;
 
-    ConversationImpl(ConversationalFlowComponent.SpeechSynthesizer speechSynthesizer,
-                     ConversationalFlowComponent.SpeechRecognizer speechRecognizer,
+    ConversationImpl(SpeechSynthesizerComponent speechSynthesizer,
+                     SpeechRecognizerComponent speechRecognizer,
                      ILogger logger) {
         this.speechSynthesizer = speechSynthesizer;
         this.speechRecognizer = speechRecognizer;
@@ -62,8 +61,8 @@ class ConversationImpl extends Flow.Edge implements Conversation {
     }
 
     @Override
-    public Flow prepare() {
-        if (flow == null) flow = new Flow(this);
+    public ConversationFlow prepare() {
+        if (flow == null) flow = new ConversationFlow(this);
         return flow;
     }
 
@@ -106,12 +105,12 @@ class ConversationImpl extends Flow.Edge implements Conversation {
                 current = message;
                 speechSynthesizer.playText(
                         message.text,
-                        (ConversationalFlowComponent.OnSynthesizerStart) utteranceId -> {
+                        (SynthesizerListener.OnStart) utteranceId -> {
                             if (message.onReady != null) {
                                 message.onReady.run();
                             }
                         },
-                        (ConversationalFlowComponent.OnSynthesizerDone) utteranceId -> {
+                        (SynthesizerListener.OnDone) utteranceId -> {
                             if (message.onSuccess != null) {
                                 message.onSuccess.run();
                             }
@@ -132,13 +131,13 @@ class ConversationImpl extends Flow.Edge implements Conversation {
                     logger.v(TAG, "Conversation - running Capture");
                     // Listen Only
                     speechRecognizer.listen(
-                            (ConversationalFlowComponent.OnRecognizerMostConfidentResult) result -> {
+                            (RecognizerListener.OnMostConfidentResult) result -> {
                                 current = captureAction[0];
-                                ConversationalFlowComponent.Consumer<String> consumer = captureAction[0].onCaptured;
+                                ComponentConsumer<String> consumer = captureAction[0].onCaptured;
                                 if (consumer != null) consumer.accept(result);
                                 else next();
                             },
-                            (ConversationalFlowComponent.OnRecognizerError) (error, originalError) -> {
+                            (RecognizerListener.OnError) (error, originalError) -> {
                                 logger.e(TAG, "Conversation - listening Capture error");
                                 if (mismatchAction[0] != null)
                                     noMatch(mismatchAction[0], error, null);
@@ -146,7 +145,7 @@ class ConversationImpl extends Flow.Edge implements Conversation {
                 } else {
                     logger.v(TAG, "Conversation - running Actions");
                     speechRecognizer.listen(
-                            (ConversationalFlowComponent.OnRecognizerReady) params -> {
+                            (RecognizerListener.OnReady) params -> {
                                 for (VoiceNode n : actions) {
                                     if (VoiceMatch.class.isInstance(n)) {
                                         VoiceMatch action = (VoiceMatch) n;
@@ -157,15 +156,15 @@ class ConversationImpl extends Flow.Edge implements Conversation {
                                     }
                                 }
                             },
-                            (ConversationalFlowComponent.OnRecognizerResults) (results, confidences) -> {
+                            (RecognizerListener.OnResults) (results, confidences) -> {
                                 String result = ConversationalFlowComponent.selectMostConfidentResult(results, confidences);
                                 processResults(Collections.singletonList(result), actions, false);
                             },
-                            (ConversationalFlowComponent.OnRecognizerPartialResults) (results, confidences) -> {
+                            (RecognizerListener.OnPartialResults) (results, confidences) -> {
                                 String result = ConversationalFlowComponent.selectMostConfidentResult(results, confidences);
                                 processResults(Collections.singletonList(result), actions, true);
                             },
-                            (ConversationalFlowComponent.OnRecognizerError) (error, originalError) -> {
+                            (RecognizerListener.OnError) (error, originalError) -> {
                                 logger.e(TAG, "Conversation - listening Action error");
                                 if (mismatchAction[0] != null)
                                     noMatch(mismatchAction[0], error, null);
@@ -207,9 +206,9 @@ class ConversationImpl extends Flow.Edge implements Conversation {
     }
 
     private void noMatch(VoiceMismatch mismatchAction, int error, @Nullable List<String> results) {
-        boolean isUnexpected = error == RecognizerListener.RECOGNIZER_STOPPED_TOO_EARLY_ERROR;
-        boolean isLowSound = error == RecognizerListener.RECOGNIZER_LOW_SOUND_ERROR;
-        boolean isNoSound = error == RecognizerListener.RECOGNIZER_NO_SOUND_ERROR;
+        boolean isUnexpected = error == RecognizerListener.Status.RECOGNIZER_STOPPED_TOO_EARLY_ERROR;
+        boolean isLowSound = error == RecognizerListener.Status.RECOGNIZER_LOW_SOUND_ERROR;
+        boolean isNoSound = error == RecognizerListener.Status.RECOGNIZER_NO_SOUND_ERROR;
 
         if (mismatchAction.retries > 0) {
             mismatchAction.retries--;
@@ -247,7 +246,7 @@ class ConversationImpl extends Flow.Edge implements Conversation {
 
     private void play(String text, Runnable runnable) {
         // TODO: implement onError
-        speechSynthesizer.playText(text, (ConversationalFlowComponent.OnSynthesizerDone) utteranceId -> runnable.run());
+        speechSynthesizer.playText(text, (SynthesizerListener.OnDone) utteranceId -> runnable.run());
     }
 
     @NonNull

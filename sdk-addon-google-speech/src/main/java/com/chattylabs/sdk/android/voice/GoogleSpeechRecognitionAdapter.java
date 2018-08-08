@@ -3,67 +3,61 @@ package com.chattylabs.sdk.android.voice;
 import android.os.Bundle;
 import android.support.annotation.CallSuper;
 
-import com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerError;
-import com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerMostConfidentResult;
-import com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerPartialResults;
-import com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerReady;
-import com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerResults;
-
 abstract class GoogleSpeechRecognitionAdapter implements RecognizerUtteranceListener {
     private boolean tryAgain;
-    private OnRecognizerReady onReady;
-    private OnRecognizerResults onResults;
-    private OnRecognizerPartialResults onPartialResults;
-    private OnRecognizerMostConfidentResult onMostConfidentResult;
-    private OnRecognizerError onError;
+    private RecognizerListener.OnReady onReady;
+    private RecognizerListener.OnResults onResults;
+    private RecognizerListener.OnPartialResults onPartialResults;
+    private RecognizerListener.OnMostConfidentResult onMostConfidentResult;
+    private RecognizerListener.OnError onError;
 
     @Override
-    public void _setOnReady(OnRecognizerReady onReady) {
+    public void _setOnReady(RecognizerListener.OnReady onReady) {
         this.onReady = onReady;
     }
 
     @Override
-    public OnRecognizerResults _getOnResults() {
+    public RecognizerListener.OnResults _getOnResults() {
         return onResults;
     }
 
     @Override
-    public GoogleSpeechRecognitionAdapter _setOnResults(OnRecognizerResults onResults) {
+    public GoogleSpeechRecognitionAdapter _setOnResults(RecognizerListener.OnResults onResults) {
         this.onResults = onResults;
         return this;
     }
 
     @Override
-    public OnRecognizerPartialResults _getOnPartialResults() {
+    public RecognizerListener.OnPartialResults _getOnPartialResults() {
         return onPartialResults;
     }
 
     @Override
     public GoogleSpeechRecognitionAdapter _setOnPartialResults(
-            OnRecognizerPartialResults onPartialResults) {
+            RecognizerListener.OnPartialResults onPartialResults) {
         this.onPartialResults = onPartialResults;
         return this;
     }
 
     @Override
-    public OnRecognizerMostConfidentResult _getOnMostConfidentResult() {
+    public RecognizerListener.OnMostConfidentResult _getOnMostConfidentResult() {
         return onMostConfidentResult;
     }
 
     @Override
     public GoogleSpeechRecognitionAdapter _setOnMostConfidentResult(
-            OnRecognizerMostConfidentResult onMostConfidentResult) {
+            RecognizerListener.OnMostConfidentResult onMostConfidentResult) {
         this.onMostConfidentResult = onMostConfidentResult;
         return this;
     }
 
     @Override
-    public OnRecognizerError _getOnError() {
+    public RecognizerListener.OnError _getOnError() {
         return onError;
     }
 
     @Override
-    public GoogleSpeechRecognitionAdapter _setOnError(OnRecognizerError onError) {
+    public GoogleSpeechRecognitionAdapter _setOnError(RecognizerListener.OnError onError) {
         this.onError = onError;
         return this;
     }

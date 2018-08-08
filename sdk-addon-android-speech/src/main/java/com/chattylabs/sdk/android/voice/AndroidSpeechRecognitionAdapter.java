@@ -20,11 +20,11 @@ abstract class AndroidSpeechRecognitionAdapter
     static final int LOW_SOUND = 2;
     static final int NORMAL_SOUND = 3;
 
-    private OnRecognizerReady onReady;
-    private OnRecognizerResults onResults;
-    private OnRecognizerPartialResults onPartialResults;
-    private OnRecognizerMostConfidentResult onMostConfidentResult;
-    private OnRecognizerError onError;
+    private RecognizerListener.OnReady onReady;
+    private RecognizerListener.OnResults onResults;
+    private RecognizerListener.OnPartialResults onPartialResults;
+    private RecognizerListener.OnMostConfidentResult onMostConfidentResult;
+    private RecognizerListener.OnError onError;
 
     private boolean tryAgain;
     private int soundLevel = UNKNOWN;
@@ -35,52 +35,52 @@ abstract class AndroidSpeechRecognitionAdapter
     private int normalSoundIntents;
 
     @Override
-    public void _setOnReady(OnRecognizerReady onReady) {
+    public void _setOnReady(RecognizerListener.OnReady onReady) {
         this.onReady = onReady;
     }
 
     @Override
-    public OnRecognizerResults _getOnResults() {
+    public RecognizerListener.OnResults _getOnResults() {
         return onResults;
     }
 
     @Override
-    public AndroidSpeechRecognitionAdapter _setOnResults(OnRecognizerResults onResults) {
+    public AndroidSpeechRecognitionAdapter _setOnResults(RecognizerListener.OnResults onResults) {
         this.onResults = onResults;
         return this;
     }
 
     @Override
-    public OnRecognizerPartialResults _getOnPartialResults() {
+    public RecognizerListener.OnPartialResults _getOnPartialResults() {
         return onPartialResults;
     }
 
     @Override
     public AndroidSpeechRecognitionAdapter _setOnPartialResults(
-            OnRecognizerPartialResults onPartialResults) {
+            RecognizerListener.OnPartialResults onPartialResults) {
         this.onPartialResults = onPartialResults;
         return this;
     }
 
     @Override
-    public OnRecognizerMostConfidentResult _getOnMostConfidentResult() {
+    public RecognizerListener.OnMostConfidentResult _getOnMostConfidentResult() {
         return onMostConfidentResult;
     }
 
     @Override
     public AndroidSpeechRecognitionAdapter _setOnMostConfidentResult(
-            OnRecognizerMostConfidentResult onMostConfidentResult) {
+            RecognizerListener.OnMostConfidentResult onMostConfidentResult) {
         this.onMostConfidentResult = onMostConfidentResult;
         return this;
     }
 
     @Override
-    public OnRecognizerError _getOnError() {
+    public RecognizerListener.OnError _getOnError() {
         return onError;
     }
 
     @Override
-    public AndroidSpeechRecognitionAdapter _setOnError(OnRecognizerError onError) {
+    public AndroidSpeechRecognitionAdapter _setOnError(RecognizerListener.OnError onError) {
         this.onError = onError;
         return this;
     }

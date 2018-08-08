@@ -89,15 +89,14 @@ which component you will be using.
 
 ```java
 component.updateConfiguration(builder ->
-                builder .setRecognizerServiceType(() -> AndroidSpeechRecognizer.class)
-                        .setSynthesizerServiceType(() -> AndroidSpeechSynthesizer.class).build());
+    builder.setRecognizerServiceType(() -> AndroidSpeechRecognizer.class)
+           .setSynthesizerServiceType(() -> AndroidSpeechSynthesizer.class).build());
 
-component.setup(
-        context, status -> {
-            if (status.isAvailable()) {
-                // start using the functionality
-            }
-        });
+component.setup(context, status -> {
+    if (status.isAvailable()) {
+        // start using the functionality
+    }
+});
 ```
 
 The configuration builder is based on a `LazyProvider` interface. 

@@ -1,7 +1,5 @@
 package com.chattylabs.sdk.android.voice;
 
-import com.chattylabs.sdk.android.voice.ConversationalFlowComponent.Consumer;
-
 import java.util.List;
 
 public class VoiceMismatch implements VoiceAction {
@@ -9,7 +7,7 @@ public class VoiceMismatch implements VoiceAction {
     public final String lowSoundErrorMessage;
     public final String listeningErrorMessage;
     public final String unexpectedErrorMessage;
-    public final Consumer<List<String>> onNotMatched;
+    public final ComponentConsumer<List<String>> onNotMatched;
 
     private VoiceMismatch(Builder builder) {
         retries = builder.retries;
@@ -28,7 +26,7 @@ public class VoiceMismatch implements VoiceAction {
         private String lowSoundErrorMessage;
         private String listeningErrorMessage;
         private String unexpectedErrorMessage;
-        private Consumer<List<String>> onNotMatched;
+        private ComponentConsumer<List<String>> onNotMatched;
 
         private Builder() {}
 
@@ -52,7 +50,7 @@ public class VoiceMismatch implements VoiceAction {
             return this;
         }
 
-        public Builder setOnNotMatched(Consumer<List<String>> onNotMatched) {
+        public Builder setOnNotMatched(ComponentConsumer<List<String>> onNotMatched) {
             this.onNotMatched = onNotMatched;
             return this;
         }
