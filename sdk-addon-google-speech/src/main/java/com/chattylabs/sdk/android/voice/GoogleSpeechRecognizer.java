@@ -59,7 +59,7 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
                            AndroidAudioManager audioManager,
                            BluetoothSco bluetoothSco,
                            ILogger logger) {
-        super(configuration, bluetoothSco, audioManager, logger);
+        super(configuration, audioManager, bluetoothSco, logger);
         this.application = application;
         this.release();
         this.serialThread = ThreadUtils.newSerialThread();

@@ -12,10 +12,10 @@ public class AndroidAudioManager {
     private static final String TAG = Tag.make("AndroidAudioHandler");
 
     // States
-    private boolean requestAudioFocusMayDuck; // released
-    private boolean requestAudioFocusExclusive; // released
-    private boolean requestAudioExclusive; // released
-    private int audioMode = AudioManager.MODE_CURRENT; // released
+    private boolean requestAudioFocusMayDuck;
+    private boolean requestAudioFocusExclusive;
+    private boolean requestAudioExclusive;
+    private int audioMode = AudioManager.MODE_CURRENT;
 
     private int dtmfVolume;
     private int systemVolume;
@@ -138,9 +138,9 @@ public class AndroidAudioManager {
                 AudioManager.MODE_IN_CALL :
                 AudioManager.MODE_NORMAL);
 
-        // Enabling this option, the audio is not rooted to the speakers if the sco is activated
-        // Meaning that we can force bluetooth sco even with speakers connected
-        // Nice to have feature!
+        // By enabling this option, the audio is not rooted to the speakers if the sco is activated
+        // meaning that we can force bluetooth sco even with speakers connected
+        // TODO: Nice to have feature!
         //speakerphoneOn = audioManager.isSpeakerphoneOn();
         //boolean isHeadsetConnected = peripheral.get(Peripheral.Type.HEADSET).isConnected();
         //if (!isHeadsetConnected) { audioManager.setSpeakerphoneOn(!isBluetoothScoRequired()); }
@@ -150,13 +150,13 @@ public class AndroidAudioManager {
     public void unsetAudioMode() {
         audioManager.setMode(audioMode);
 
-        // Enabling this option, the audio is not rooted to the speakers if the sco is activated
-        // Meaning that we can force bluetooth sco even with speakers connected
-        // Nice to have feature!
+        // By enabling this option, the audio is not rooted to the speakers if the sco is activated
+        // meaning that we can force bluetooth sco even with speakers connected
+        // TODO: Nice to have feature!
         //audioManager.setSpeakerphoneOn(speakerphoneOn);
     }
 
-    private void adjustVolumeForBeep() {
+    private void setStreamToMaxVolume() {
         // Volume
         dtmfVolume = audioManager.getStreamVolume(AudioManager.STREAM_DTMF);
         audioManager.setStreamVolume(AudioManager.STREAM_DTMF, audioManager.getStreamMaxVolume(AudioManager.STREAM_DTMF), 0);
@@ -174,7 +174,7 @@ public class AndroidAudioManager {
         audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL, audioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL), 0);
     }
 
-    private void resetVolumeForBeep() {
+    private void resetVolumeToDefaultValues() {
         // Volume
         audioManager.setStreamVolume(AudioManager.STREAM_DTMF, dtmfVolume, 0);
         audioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, systemVolume, 0);

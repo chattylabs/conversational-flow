@@ -18,11 +18,29 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.TAG;
 
+/**
+ * When implementing from this class you must create a constructor that receives the following parameters
+ * in the same order:
+ * <p/>
+ * <pre>{@code
+ * public Constructor(Application, ComponentConfig, AndroidAudioManager, BluetoothSco, ILogger) {
+ *     super(ComponentConfig, AndroidAudioManager, BluetoothSco, ILogger);
+ *     //...
+ * }
+ * }</pre>
+ * Otherwise the addon initialization will throw and Exception on runtime.
+ *
+ * @see SpeechSynthesizerComponent
+ * @see android.app.Application
+ * @see ComponentConfig
+ * @see AndroidAudioManager
+ * @see BluetoothSco
+ * @see ILogger
+ */
 abstract class BaseSpeechSynthesizer implements SpeechSynthesizerComponent {
 
-    String DEFAULT_QUEUE_ID = "default_queue_id";
-
     // Constants
+    static final String DEFAULT_QUEUE_ID = "com.chattylabs.sdk.android.voice:default_queue_id";
     private static final String DEFAULT_UTTERANCE_ID = "u:";
     private static final String MAP_UTTERANCE_ID = "utteranceId";
     private static final String MAP_SILENCE = "silence";
@@ -37,13 +55,13 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizerComponent {
     private final Object lock = new Object();
 
     // States
-    private boolean isReady; // released
-    private boolean isOnHold; // released
-    private boolean isSpeaking; // released
+    private boolean isReady;
+    private boolean isOnHold;
+    private boolean isSpeaking;
 
     // Resources
-    private String queueId = DEFAULT_QUEUE_ID; // released
-    private SynthesizerUtteranceListener synthesizerUtteranceListener; // released
+    private String queueId = DEFAULT_QUEUE_ID;
+    private SynthesizerUtteranceListener synthesizerUtteranceListener;
     private String lastQueueId;
     private final AndroidAudioManager audioManager;
     private final BluetoothSco bluetoothSco;
@@ -282,7 +300,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizerComponent {
     }
 
     @Override
-    public void releaseCurrentQueue() {
+    public void freeCurrentQueue() {
         logger.w(TAG, "TTS - isOnHold set to false");
         isOnHold = false;
     }
@@ -303,7 +321,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizerComponent {
         // Audio focus
         audioManager.abandonAudioFocus();
         setSpeaking(false);
-        releaseCurrentQueue();
+        freeCurrentQueue();
     }
 
     @CallSuper
@@ -315,7 +333,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizerComponent {
             queue.put(DEFAULT_QUEUE_ID, new ConcurrentLinkedQueue<>());
         }
         queueId = DEFAULT_QUEUE_ID;
-        releaseCurrentQueue();
+        freeCurrentQueue();
         setReady(false);
         setSpeaking(false);
         logger.v(TAG, "TTS - states and resources released");
@@ -346,7 +364,6 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizerComponent {
     }
 
     private void run() {
-        // This is useless because it is being called already in onDone and onError
         moveToNextQueueIfNeeded();
         if (!isEmpty()) {
             // Gets and plays the current message in the queue
@@ -387,7 +404,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizerComponent {
                 @Override
                 public void onConnected() {
                     logger.i(getTag(), "TTS - Sco onConnected");
-                    runMap(map);
+                    chooseItemToPlay(map);
                 }
 
                 @Override
@@ -405,11 +422,11 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizerComponent {
         }
         else {
             logger.v(getTag(), "TTS - bluetooth sco is: %s", (bluetoothSco.isBluetoothScoOn() ? "on" : "off"));
-            runMap(map);
+            chooseItemToPlay(map);
         }
     }
 
-    private void runMap(Map<String, Object> map) {
+    private void chooseItemToPlay(Map<String, Object> map) {
         audioManager.requestAudioFocus(configuration.isAudioExclusiveRequiredForSynthesizer());
         if (map.containsKey(MAP_MESSAGE)) {
             //noinspection unchecked
@@ -420,7 +437,8 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizerComponent {
         else if (map.containsKey(MAP_SILENCE)) {
             //noinspection unchecked
             playSilence((String) map.get(MAP_UTTERANCE_ID), (long) map.get(MAP_SILENCE));
-        }
+        } else
+            throw new RuntimeException("No message or silence item to play");
     }
 
     @Override

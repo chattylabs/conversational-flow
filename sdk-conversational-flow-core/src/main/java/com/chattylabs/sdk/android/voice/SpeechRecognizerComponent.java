@@ -1,7 +1,11 @@
 package com.chattylabs.sdk.android.voice;
 
-@SuppressWarnings("unchecked")
+/**
+ * Instead of inheriting from this Interface you should extend {@link BaseSpeechRecognizer}
+ */
 public interface SpeechRecognizerComponent {
+
+    @SuppressWarnings("unchecked")
     <T extends RecognizerListener> void listen(T... listeners);
 
     void stop();

@@ -43,7 +43,7 @@ public class AndroidAudioRecorder {
     private static final int NO_SPEECH_TIMEOUT_MILLIS = 4000;
     private static final int MAX_SPEECH_LENGTH_MILLIS = 30 * 1000;
 
-    public static abstract class Callback {
+    public abstract static class Callback {
 
         /**
          * Called when the recorder starts hearing voice.
@@ -201,8 +201,14 @@ public class AndroidAudioRecorder {
     }
 
     /**
-     * Continuously processes the captured audio and notifies {@link #mCallback} of corresponding
+     * Continuously processes the captured audio and notifies {@link Callback} of corresponding
      * events.
+     * <p/>
+     * If no sound is recorder for more than the value of {@link #setNoSpeechTimeout(int)} it notifies
+     * {@link Callback#onVoiceError(int)} with {@link SpeechRecognizer#ERROR_SPEECH_TIMEOUT}.
+     * <p/>
+     * If sound is recorder for more than the value of {@link #setMaxSpeechLength(int)} it notifies
+     * {@link Callback#onVoiceEnd()}.
      */
     private class ProcessVoice implements Runnable {
 

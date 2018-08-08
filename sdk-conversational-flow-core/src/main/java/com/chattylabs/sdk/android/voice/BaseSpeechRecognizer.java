@@ -4,6 +4,25 @@ import android.support.annotation.CallSuper;
 
 import com.chattylabs.sdk.android.common.internal.ILogger;
 
+/**
+ * When implementing from this class you must create a constructor that receives the following parameters
+ * in the same order:
+ * <p/>
+ * <pre>{@code
+ * public Constructor(Application, ComponentConfig, AndroidAudioManager, BluetoothSco, ILogger) {
+ *     super(ComponentConfig, AndroidAudioManager, BluetoothSco, ILogger);
+ *     //...
+ * }
+ * }</pre>
+ * Otherwise the addon initialization will throw and Exception on runtime.
+ *
+ * @see SpeechRecognizerComponent
+ * @see android.app.Application
+ * @see ComponentConfig
+ * @see AndroidAudioManager
+ * @see BluetoothSco
+ * @see ILogger
+ */
 abstract class BaseSpeechRecognizer implements SpeechRecognizerComponent {
     // Minimum constants
     int MIN_VOICE_RECOGNITION_TIME_LISTENING = 2000;
@@ -17,9 +36,9 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizerComponent {
     protected final ILogger logger;
 
     BaseSpeechRecognizer(ComponentConfig configuration,
-                                BluetoothSco bluetoothSco,
-                                AndroidAudioManager audioManager,
-                                ILogger logger) {
+                         AndroidAudioManager audioManager,
+                         BluetoothSco bluetoothSco,
+                         ILogger logger) {
         this.configuration = configuration;
         this.bluetoothSco = bluetoothSco;
         this.audioManager = audioManager;
@@ -47,6 +66,10 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizerComponent {
         audioManager.abandonAudioFocus();
     }
 
+    /**
+     * Setting this option will forward a flag onto the {@link RecognizerUtteranceListener} implementation.
+     * <br/>The developer can then opt to record again the user voice as a second chance if there is no match.
+     */
     public void setTryAgain(boolean tryAgain) {
         getRecognitionListener().setTryAgain(tryAgain);
     }
@@ -83,7 +106,7 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizerComponent {
     @CallSuper
     @Override
     public void release() {
-
+        // No resources to release at this level
     }
 
     private void handleListeners(RecognizerListener... listeners) {

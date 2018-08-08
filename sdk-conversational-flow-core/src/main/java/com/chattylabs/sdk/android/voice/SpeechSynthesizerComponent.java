@@ -6,8 +6,11 @@ import android.support.annotation.WorkerThread;
 import java.util.List;
 import java.util.Set;
 
-@SuppressWarnings("unchecked")
+/**
+ * Instead of inheriting from this Interface you should extend {@link BaseSpeechSynthesizer}
+ */
 public interface SpeechSynthesizerComponent {
+
     @WorkerThread
     void setup(SynthesizerListener.OnSetup onSynthesizerSetup);
 
@@ -17,19 +20,23 @@ public interface SpeechSynthesizerComponent {
 
     void clearFilters();
 
+    @SuppressWarnings("unchecked")
     @WorkerThread
     <T extends SynthesizerListener> void playText(String text, String queueId, T... listeners);
 
+    @SuppressWarnings("unchecked")
     @WorkerThread
     <T extends SynthesizerListener> void playText(String text, T... listeners);
 
+    @SuppressWarnings("unchecked")
     @WorkerThread
     <T extends SynthesizerListener> void playSilence(long durationInMillis, String queueId, T... listeners);
 
+    @SuppressWarnings("unchecked")
     @WorkerThread
     <T extends SynthesizerListener> void playSilence(long durationInMillis, T... listeners);
 
-    void releaseCurrentQueue();
+    void freeCurrentQueue();
 
     void holdCurrentQueue();
 

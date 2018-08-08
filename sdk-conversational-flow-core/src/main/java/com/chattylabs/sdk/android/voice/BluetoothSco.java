@@ -20,13 +20,13 @@ public class BluetoothSco {
     private final Condition condition = lock.newCondition();
 
     // States
-    private boolean isScoReceiverRegistered; // released
+    private boolean isScoReceiverRegistered;
     private boolean isBluetoothScoOn;
 
     // Resources
     private Application application;
     private AndroidAudioManager audioManager;
-    private BluetoothScoReceiver bluetoothScoReceiver = new BluetoothScoReceiver();
+    private BluetoothScoReceiver bluetoothScoReceiver;
 
     // Log stuff
     private ILogger logger;
@@ -94,7 +94,7 @@ public class BluetoothSco {
             audioManager.stopBluetoothSco();
             lock.lock();
             try {
-                condition.await(5, TimeUnit.SECONDS);
+                condition.await(2, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 logger.logException(e);
             } finally {

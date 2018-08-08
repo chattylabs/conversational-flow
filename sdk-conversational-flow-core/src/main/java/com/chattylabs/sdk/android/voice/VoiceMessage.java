@@ -57,4 +57,9 @@ public class VoiceMessage implements VoiceNode {
             return new VoiceMessage(this);
         }
     }
+
+    @Override
+    public String getId() {
+        return id;
+    }
 }

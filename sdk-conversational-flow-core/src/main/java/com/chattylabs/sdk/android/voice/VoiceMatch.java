@@ -59,4 +59,9 @@ public class VoiceMatch implements VoiceAction {
             return new VoiceMatch(this);
         }
     }
+
+    @Override
+    public String getId() {
+        return id;
+    }
 }

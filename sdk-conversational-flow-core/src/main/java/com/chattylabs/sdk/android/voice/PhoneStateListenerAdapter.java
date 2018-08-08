@@ -1,6 +1,6 @@
 package com.chattylabs.sdk.android.voice;
 
-public class PhoneStateListenerAdapter {
+public abstract class PhoneStateListenerAdapter {
     public void onOutgoingCallStarts() {}
 
     public void onIncomingCallRinging() {}

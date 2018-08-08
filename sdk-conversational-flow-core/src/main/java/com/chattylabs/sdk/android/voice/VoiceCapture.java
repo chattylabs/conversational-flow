@@ -33,4 +33,9 @@ public class VoiceCapture implements VoiceAction {
             return new VoiceCapture(this);
         }
     }
+
+    @Override
+    public String getId() {
+        return id;
+    }
 }
