@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:animateLayoutChanges="true"
     android:background="#ffffff"
-    tools:context="com.chattylabs.demo.voice.CustomizeTheComponentActivity">
+    tools:context="com.chattylabs.demo.voice.CustomConversationActivity">
 
     <android.support.constraint.Guideline
         android:id="@+id/guideline"

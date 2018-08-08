@@ -1,19 +1,11 @@
 package com.chattylabs.demo.voice;
 
-import android.annotation.SuppressLint;
-import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.util.Pair;
 import android.util.SparseArray;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -25,24 +17,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.chattylabs.sdk.android.common.HtmlUtils;
-import com.chattylabs.sdk.android.common.PermissionsHelper;
 import com.chattylabs.sdk.android.common.Tag;
-import com.chattylabs.sdk.android.common.ThreadUtils;
-import com.chattylabs.sdk.android.voice.AndroidSpeechRecognizer;
 import com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer;
-import com.chattylabs.sdk.android.voice.ConversationalFlowComponent;
-import com.chattylabs.sdk.android.voice.GoogleSpeechRecognizer;
 import com.chattylabs.sdk.android.voice.GoogleSpeechSynthesizer;
 import com.chattylabs.sdk.android.voice.Peripheral;
-import com.chattylabs.sdk.android.voice.TextFilterForUrl;
-
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-
-import javax.inject.Inject;
-
-import dagger.android.support.DaggerAppCompatActivity;
 
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerError;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerMostConfidentResult;
@@ -50,135 +28,40 @@ import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRec
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerDone;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerError;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerStart;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SpeechRecognizer;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SpeechSynthesizer;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SynthesizerListener;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.matches;
 
 
-public class CustomizeTheComponentActivity extends DaggerAppCompatActivity
-        implements ActivityCompat.OnRequestPermissionsResultCallback {
+public class CustomConversationActivity extends BaseActivity {
 
-    private static final String TAG = Tag.make(CustomizeTheComponentActivity.class);
+    private static final String TAG = Tag.make(CustomConversationActivity.class);
 
     // Constants
     private static final int CHECK = 3;
     private static final int LISTEN = 2;
     private static final int READ = 1;
-
-    private static final String ANDROID = "Android";
-    private static final String GOOGLE = "Google";
     // ...
-
-    private static LinkedHashMap<Integer, String> addonMap = new LinkedHashMap<>();
-    static {
-        addonMap.put(0, ANDROID);
-        addonMap.put(1, GOOGLE);
-    }
-
-    private static String ADDON_TYPE = addonMap.get(0);
 
     // Resources
     private TextView execution;
     private Spinner actionSpinner;
-    private Spinner addonSpinner;
     private EditText text;
     private Button add;
     private Button clear;
     private Button proceed;
     private SparseArray<Pair<Integer, String>> queue = new SparseArray<>();
     private ArrayAdapter<CharSequence> actionAdapter;
-    private ArrayAdapter<String> addonAdapter;
-    private CheckBox scoCheck;
-    private ThreadUtils.SerialThread serialThread;
 
     // Components
-    @Inject ConversationalFlowComponent component;
-    private SpeechSynthesizer synthesizer;
-    private SpeechRecognizer recognizer;
     private Peripheral peripheral;
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.demos, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.demo_conversation:
-                ContextCompat.startActivity(this,
-                        new Intent(this, CustomizeTheComponentActivity.class), null);
-                return true;
-            case R.id.demo_components:
-                ContextCompat.startActivity(this,
-                        new Intent(this, BuildFromJsonActivity.class), null);
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_customize_the_component);
+        peripheral = new Peripheral((AudioManager) getSystemService(AUDIO_SERVICE));
         initViews();
         initActions();
-        peripheral = new Peripheral((AudioManager) getSystemService(AUDIO_SERVICE));
-        serialThread = ThreadUtils.newSerialThread();
-
-        setup();
-
-        //UpdateManager.register(this);
-    }
-
-    private void setup() {
-        String[] perms = component.requiredPermissions();
-        PermissionsHelper.check(this,
-                perms,
-                () -> onRequestPermissionsResult(
-                        PermissionsHelper.REQUEST_CODE, perms,
-                        new int[] {PackageManager.PERMISSION_GRANTED}));
-    }
-
-    @SuppressLint("MissingPermission")
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (PermissionsHelper.isPermissionRequest(requestCode)) {
-            if (PermissionsHelper.isPermissionGranted(grantResults)) {
-                serialThread.addTask(() -> {
-                    component.updateConfiguration(builder ->
-                            builder .setGoogleCredentialsResourceFile(() -> R.raw.credential)
-                                    .setRecognizerServiceType(() -> {
-                                        switch (ADDON_TYPE) {
-                                            case GOOGLE:
-                                                return GoogleSpeechRecognizer.class;
-                                            default:
-                                                return AndroidSpeechRecognizer.class;
-                                        }
-                                    })
-                                    .setSynthesizerServiceType(() -> {
-                                        switch (ADDON_TYPE) {
-                                            case GOOGLE:
-                                                return GoogleSpeechSynthesizer.class;
-                                            default:
-                                                return AndroidSpeechSynthesizer.class;
-                                        }
-                                    })
-                                    .build());
-                    component.setup(this, status -> {
-                        if (status.isAvailable()) {
-                            recognizer = component.getSpeechRecognizer(this);
-                            synthesizer = component.getSpeechSynthesizer(this);
-                            synthesizer.addFilter(new TextFilterForUrl());
-                        }
-                    });
-                });
-            }
-        }
     }
 
     private void initActions() {
@@ -240,12 +123,12 @@ public class CustomizeTheComponentActivity extends DaggerAppCompatActivity
         });
     }
 
-    private void play(String text, int index) {
+    private void playByIndex(String text, int index) {
         synthesizer.playText(text, "default",
-                (OnSynthesizerStart) s -> {
+                (OnSynthesizerStart) utteranceId -> {
                     representQueue(index);
                 },
-                (OnSynthesizerDone) s -> {
+                (OnSynthesizerDone) utteranceId -> {
                     Log.i(TAG, "on Done index: " + index);
                     Pair<Integer, String> next = queue.get(index + 1);
                     if (next != null && next.first == LISTEN) {
@@ -288,28 +171,17 @@ public class CustomizeTheComponentActivity extends DaggerAppCompatActivity
             } else synthesizer.resume();
         }, (OnRecognizerError) (i, i1) -> {
             Log.e(TAG, "Error " + i);
-            Log.e(TAG, "Original Error " + getErrorString(i1));
 
             synthesizer.releaseCurrentQueue();
             if (synthesizer.isEmpty()) {
                 component.shutdown();
             } else synthesizer.resume();
 
-//            runOnUiThread(() -> new AlertDialog.Builder(this)
-//                    .setTitle("Error")
-//                    .setMessage(getErrorString(i1))
-//                    .create().show());
+            //runOnUiThread(() -> new AlertDialog.Builder(this)
+            //        .setTitle("Error")
+            //        .setMessage(getErrorString(i1))
+            //        .create().show());
         });
-    }
-
-    @NonNull
-    private String getErrorString(int i1) {
-        switch (ADDON_TYPE) {
-            case GOOGLE:
-                return GoogleSpeechSynthesizer.getErrorType(i1);
-            default:
-                return AndroidSpeechSynthesizer.getErrorType(i1);
-        }
     }
 
     private SparseArray<String> getChecks(SparseArray<String> news, int index) {
@@ -323,11 +195,12 @@ public class CustomizeTheComponentActivity extends DaggerAppCompatActivity
 
     private void readAll() {
         serialThread.addTask(() -> {
+            Log.i(TAG, "Start processing the queue");
             for (int i = 0; i < queue.size(); i++) {
-                Log.i(TAG, "readAll index: " + i);
+                Log.i(TAG, "queue index: " + i);
                 Pair<Integer, String> item = queue.get(i);
                 if (item.first == READ) {
-                    play(item.second, i);
+                    playByIndex(item.second, i);
                 } else if (i == 0 && item.first == LISTEN) {
                     // FIXME: Check why it continues speaking sometimes after listening
                     listen(-1);
@@ -336,29 +209,14 @@ public class CustomizeTheComponentActivity extends DaggerAppCompatActivity
         });
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        //UpdateManager.unregister();
-        serialThread.shutdownNow();
-        component.shutdown();
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        //CrashManager.register(this);
-    }
-
     private void initViews() {
         execution = findViewById(R.id.execution);
         actionSpinner = findViewById(R.id.spinner);
-        addonSpinner = findViewById(R.id.addon);
         text = findViewById(R.id.text);
         add = findViewById(R.id.add);
         clear = findViewById(R.id.clear);
         proceed = findViewById(R.id.proceed);
-        scoCheck = findViewById(R.id.bluetooth_sco);
+        CheckBox scoCheck = findViewById(R.id.bluetooth_sco);
 
         // Check if there is a Bluetooth device connected and setup the config for a Sco connection
         scoCheck.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -389,25 +247,6 @@ public class CustomizeTheComponentActivity extends DaggerAppCompatActivity
                 add.setEnabled(isDefault);
                 text.setVisibility(View.VISIBLE);
                 if (position == LISTEN) text.setVisibility(View.GONE);
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
-        });
-
-        // Create an ArrayAdapter of the addons
-        List<String> addonList = Arrays.asList(addonMap.values().toArray(new String[addonMap.size()]));
-        addonAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item,
-                addonList);
-        addonAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        addonSpinner.setAdapter(addonAdapter);
-        addonSpinner.setSelection(0);
-        addonSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                ADDON_TYPE = addonMap.get(position);
-                setup();
             }
 
             @Override
