@@ -42,10 +42,8 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                             ComponentConfig configuration,
                             AndroidAudioManager audioManager,
                             BluetoothSco bluetoothSco,
-                            Creator<SpeechRecognizer>
-                                    recognizerCreator,
                             ILogger logger) {
-        super(configuration, bluetoothSco, audioManager, logger);
+        super(configuration, audioManager, bluetoothSco, logger);
         this.application = application;
         this.release();
         this.mainHandler = new AndroidHandlerImpl(Looper.getMainLooper());
@@ -54,7 +52,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
         this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, application.getPackageName());
         this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
         this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 5000L);
-        this.recognizerCreator = recognizerCreator;
+        this.recognizerCreator = () -> SpeechRecognizer.createSpeechRecognizer(application);
     }
 
     private final AndroidSpeechRecognitionAdapter listener = new AndroidSpeechRecognitionAdapter() {

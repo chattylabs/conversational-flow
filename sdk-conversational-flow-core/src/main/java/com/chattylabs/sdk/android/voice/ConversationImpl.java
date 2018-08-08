@@ -40,18 +40,18 @@ class ConversationImpl extends ConversationFlow.Edge implements Conversation {
     }
 
     @Override
-    public void addFlag(@Flag int flag) {
+    public void addFlag(@ConversationFlag int flag) {
         if (this.flags > 0) this.flags |= flag;
         else this.flags = flag;
     }
 
     @Override
-    public void removeFlag(@Flag int flag) {
+    public void removeFlag(@ConversationFlag int flag) {
         if (this.flags > 0) this.flags = this.flags & (~flag);
     }
 
     @Override
-    public boolean hasFlag(@Flag int flag) {
+    public boolean hasFlag(@ConversationFlag int flag) {
         return (this.flags > 0) && (this.flags & flag) == flag;
     }
 
@@ -64,23 +64,6 @@ class ConversationImpl extends ConversationFlow.Edge implements Conversation {
     public ConversationFlow prepare() {
         if (flow == null) flow = new ConversationFlow(this);
         return flow;
-    }
-
-    @Override
-    void addEdge(@NonNull VoiceNode node, @NonNull VoiceNode incomingEdge) {
-        if (!graph.containsKey(node) || !graph.containsKey(incomingEdge)) {
-            throw new IllegalArgumentException("All nodes must be present in the graph " +
-                    "before being added as an edge");
-        }
-
-        ArrayList<VoiceNode> edges = graph.get(node);
-        if (edges == null) {
-            // If edges is null, we should try and get one from the pool and add it to the graph
-            edges = getEmptyList();
-            graph.put(node, edges);
-        }
-        // Finally add the edge to the list
-        edges.add(incomingEdge);
     }
 
     @Override
@@ -308,5 +291,33 @@ class ConversationImpl extends ConversationFlow.Edge implements Conversation {
         } catch (ClassCastException ignored) {
             throw new IllegalStateException("Only Actions can represent several edges in the graph");
         }
+    }
+
+    @Override
+    void addEdge(@NonNull VoiceNode node, @NonNull VoiceNode incomingEdge) {
+        if (!graph.containsKey(node) || !graph.containsKey(incomingEdge)) {
+            throw new IllegalArgumentException("All nodes must be present in the graph before being added as an edge");
+        }
+
+        ArrayList<VoiceNode> edges = graph.get(node);
+        if (edges == null) {
+            // If edges is null, we should try and get one from the pool and add it to the graph
+            edges = getEmptyList();
+            graph.put(node, edges);
+        }
+        // Finally add the edge to the list
+        edges.add(incomingEdge);
+    }
+
+    @Override
+    VoiceNode getNode(@NonNull String id) {
+        for (int i = 0, size = graph.size(); i < size; i++) {
+            VoiceNode node = graph.keyAt(i);
+            if (node.getId().equals(id)) {
+                return node;
+            }
+        }
+        throw new IllegalArgumentException("Node \"" + id + "\" does not exists in the graph. " +
+                "Have you forgotten to add it with addNode(Node)?");
     }
 }

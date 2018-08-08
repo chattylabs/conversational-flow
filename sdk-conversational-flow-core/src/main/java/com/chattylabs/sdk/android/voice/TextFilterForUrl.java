@@ -7,6 +7,9 @@ import com.chattylabs.sdk.android.common.StringUtils;
 
 import java.util.List;
 
+/**
+ * Once applied it shortens an url leaving only {@code domain/first-path} as a string.
+ */
 public class TextFilterForUrl implements TextFilter {
     @Override
     public String apply(String message) {

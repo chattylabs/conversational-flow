@@ -1,6 +1,5 @@
 package com.chattylabs.sdk.android.voice;
 
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.*;
 
 abstract class GoogleSpeechSynthesizerAdapter implements SynthesizerUtteranceListener {
     private SynthesizerListener.OnStart onStartedListener;

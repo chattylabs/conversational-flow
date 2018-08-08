@@ -18,9 +18,13 @@ public final class Peripheral {
     }
 
     public Device get(Type type) {
-        Device device = () -> false;
-        if (type.equals(Type.WIRED_HEADSET)) device = new PeripheralHeadsetDevice(audioManager);
-        if (type.equals(Type.BLUETOOTH)) device = new PeripheralBluetoothDevice(audioManager);
-        return device;
+        switch (type) {
+            case WIRED_HEADSET:
+                return new PeripheralHeadsetDevice(audioManager);
+            case BLUETOOTH:
+                return new PeripheralBluetoothDevice(audioManager);
+            default:
+                throw new RuntimeException("Device type \"" + type + "\" does not exists");
+        }
     }
 }

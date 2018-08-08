@@ -94,37 +94,18 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
             if (ContextCompat.checkSelfPermission(application, perm) != PackageManager.PERMISSION_GRANTED)
                 throw new IllegalAccessError("Permission \"" + perm + "\" is not granted");
         if (audioManager == null) {
-            AudioManager audioManager = (AudioManager) application.getSystemService(Context.AUDIO_SERVICE);
-            this.audioManager = new AndroidAudioManager(audioManager, configuration, logger);
+            AudioManager systemAudioManager = (AudioManager) application.getSystemService(Context.AUDIO_SERVICE);
+            this.audioManager = new AndroidAudioManager(systemAudioManager, configuration, logger);
         }
         if (bluetoothSco == null) bluetoothSco = new BluetoothSco(application, audioManager, logger);
         try {
             if (speechSynthesizer == null) {
-                switch (configuration.getSynthesizerServiceType().getSimpleName()) {
-                    case ComponentConfig.SYNTHESIZER_SERVICE_GOOGLE:
-                        speechSynthesizer = newInstance(configuration.getSynthesizerServiceType(),
-                                application, configuration, audioManager, bluetoothSco, logger);
-                        break;
-                    default:
-                        speechSynthesizer = newInstance(configuration.getSynthesizerServiceType(),
-                                application, configuration, audioManager, bluetoothSco, logger);
-                        break;
-                }
+                speechSynthesizer = newInstance(configuration.getSynthesizerServiceType(),
+                        application, configuration, audioManager, bluetoothSco, logger);
             }
             if (speechRecognizer == null) {
-                switch (configuration.getRecognizerServiceType().getSimpleName()) {
-                    case ComponentConfig.RECOGNIZER_SERVICE_GOOGLE:
-                        speechRecognizer = newInstance(configuration.getRecognizerServiceType(),
-                                application, configuration, audioManager, bluetoothSco, logger);
-                        break;
-                    default:
-                        speechRecognizer = newInstance(configuration.getRecognizerServiceType(),
-                                application, configuration, audioManager, bluetoothSco,
-                                (SpeechRecognizerComponent.Creator) () ->
-                                        android.speech.SpeechRecognizer.createSpeechRecognizer(application),
-                                logger);
-                        break;
-                }
+                speechRecognizer = newInstance(configuration.getRecognizerServiceType(),
+                        application, configuration, audioManager, bluetoothSco, logger);
             }
         } catch (Exception e) {
             logger.logException(e);

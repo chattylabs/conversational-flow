@@ -1,5 +1,6 @@
 package com.chattylabs.sdk.android.voice;
 
+import android.annotation.SuppressLint;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.os.Build;
@@ -12,6 +13,7 @@ public final class PeripheralHeadsetDevice implements Peripheral.Device {
         this.audioManager = audioManager;
     }
 
+    @SuppressLint("NewApi")
     @SuppressWarnings("deprecation")
     @Override
     public boolean isConnected() {

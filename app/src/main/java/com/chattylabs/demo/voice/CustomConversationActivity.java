@@ -158,14 +158,14 @@ public class CustomConversationActivity extends BaseActivity {
                     }
                 }
             }
-            synthesizer.releaseCurrentQueue();
+            synthesizer.freeCurrentQueue();
             if (synthesizer.isEmpty()) {
                 component.shutdown();
             } else synthesizer.resume();
         }, (RecognizerListener.OnError) (i, i1) -> {
             Log.e(TAG, "Error " + i);
 
-            synthesizer.releaseCurrentQueue();
+            synthesizer.freeCurrentQueue();
             if (synthesizer.isEmpty()) {
                 component.shutdown();
             } else synthesizer.resume();

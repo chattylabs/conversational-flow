@@ -3,6 +3,7 @@ package com.chattylabs.sdk.android.voice;
 import java.util.List;
 
 public class VoiceMismatch implements VoiceAction {
+    public final String id;
     public int retries;
     public final String lowSoundErrorMessage;
     public final String listeningErrorMessage;
@@ -10,6 +11,7 @@ public class VoiceMismatch implements VoiceAction {
     public final ComponentConsumer<List<String>> onNotMatched;
 
     private VoiceMismatch(Builder builder) {
+        id = builder.id;
         retries = builder.retries;
         lowSoundErrorMessage = builder.lowSoundErrorMessage;
         listeningErrorMessage = builder.listeningErrorMessage;
@@ -22,6 +24,7 @@ public class VoiceMismatch implements VoiceAction {
     }
 
     public static final class Builder {
+        private String id;
         private int retries;
         private String lowSoundErrorMessage;
         private String listeningErrorMessage;
@@ -29,6 +32,11 @@ public class VoiceMismatch implements VoiceAction {
         private ComponentConsumer<List<String>> onNotMatched;
 
         private Builder() {}
+
+        public Builder setId(String id) {
+            this.id = id;
+            return this;
+        }
 
         public Builder setRetries(int retries) {
             this.retries = retries;
@@ -58,5 +66,10 @@ public class VoiceMismatch implements VoiceAction {
         public VoiceMismatch build() {
             return new VoiceMismatch(this);
         }
+    }
+
+    @Override
+    public String getId() {
+        return id;
     }
 }
