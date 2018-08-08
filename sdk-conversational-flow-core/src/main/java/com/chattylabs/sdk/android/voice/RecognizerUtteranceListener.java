@@ -3,25 +3,25 @@ package com.chattylabs.sdk.android.voice;
 import android.os.Bundle;
 
 interface RecognizerUtteranceListener {
-    void _setOnReady(ConversationalFlowComponent.OnRecognizerReady onReady);
+    void _setOnReady(RecognizerListener.OnReady onReady);
 
-    ConversationalFlowComponent.OnRecognizerResults _getOnResults();
+    RecognizerListener.OnResults _getOnResults();
 
-    RecognizerUtteranceListener _setOnResults(ConversationalFlowComponent.OnRecognizerResults onResults);
+    RecognizerUtteranceListener _setOnResults(RecognizerListener.OnResults onResults);
 
-    ConversationalFlowComponent.OnRecognizerPartialResults _getOnPartialResults();
+    RecognizerListener.OnPartialResults _getOnPartialResults();
 
     RecognizerUtteranceListener _setOnPartialResults(
-            ConversationalFlowComponent.OnRecognizerPartialResults onPartialResults);
+            RecognizerListener.OnPartialResults onPartialResults);
 
-    ConversationalFlowComponent.OnRecognizerMostConfidentResult _getOnMostConfidentResult();
+    RecognizerListener.OnMostConfidentResult _getOnMostConfidentResult();
 
     RecognizerUtteranceListener _setOnMostConfidentResult(
-            ConversationalFlowComponent.OnRecognizerMostConfidentResult onMostConfidentResult);
+            RecognizerListener.OnMostConfidentResult onMostConfidentResult);
 
-    ConversationalFlowComponent.OnRecognizerError _getOnError();
+    RecognizerListener.OnError _getOnError();
 
-    RecognizerUtteranceListener _setOnError(ConversationalFlowComponent.OnRecognizerError onError);
+    RecognizerUtteranceListener _setOnError(RecognizerListener.OnError onError);
 
     RecognizerUtteranceListener setTryAgain(boolean tryAgain);
 

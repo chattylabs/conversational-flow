@@ -35,19 +35,19 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
     private ComponentConfig configuration;
     private AndroidAudioManager audioManager;
     private BluetoothSco bluetoothSco;
-    private SpeechSynthesizer speechSynthesizer;
-    private SpeechRecognizer speechRecognizer;
+    private SpeechSynthesizerComponent speechSynthesizer;
+    private SpeechRecognizerComponent speechRecognizer;
     private PhoneStateHandler phoneStateHandler;
 
     // Log stuff
     private ILogger logger;
 
     ConversationalFlowComponentImpl() {
-        configuration = new ComponentConfig.Builder()
+        setConfiguration(new ComponentConfig.Builder()
                 .setBluetoothScoRequired(() -> false)
                 .setAudioExclusiveRequiredForSynthesizer(() -> false)
                 .setAudioExclusiveRequiredForRecognizer(() -> true)
-                .build();
+                .build());
         Instance.instanceOf = new SoftReference<>(this);
     }
 
@@ -58,13 +58,12 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
     }
 
     @Override
-    public void updateConfiguration(ComponentConfig.Update update) {
-        configuration = update.run(new ComponentConfig.Builder(configuration));
+    public void updateConfiguration(ComponentConfig.Update onUpdate) {
+        configuration = onUpdate.run(new ComponentConfig.Builder(configuration));
         reset();
     }
 
-    @Override
-    public void reset() {
+    private void reset() {
         shutdown();
         audioManager = null;
         bluetoothSco = null;
@@ -121,7 +120,7 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
                     default:
                         speechRecognizer = newInstance(configuration.getRecognizerServiceType(),
                                 application, configuration, audioManager, bluetoothSco,
-                                (SpeechRecognizerCreator) () ->
+                                (SpeechRecognizerComponent.Creator) () ->
                                         android.speech.SpeechRecognizer.createSpeechRecognizer(application),
                                 logger);
                         break;
@@ -148,21 +147,21 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
     }
 
     @Override
-    public void setup(Context context, OnSetup onSetup) {
+    public void setup(Context context, ComponentSetup onSetup) {
         final Application application = (Application) context.getApplicationContext();
         init(application);
         speechSynthesizer.setup(synthesizerStatus -> {
             int androidRecognizerStatus = android.speech.SpeechRecognizer.isRecognitionAvailable(application) ?
-                    RecognizerListener.RECOGNIZER_AVAILABLE : RecognizerListener.RECOGNIZER_NOT_AVAILABLE;
+                    RecognizerListener.Status.RECOGNIZER_AVAILABLE : RecognizerListener.Status.RECOGNIZER_NOT_AVAILABLE;
             int speechRecognizerStatus = configuration.getRecognizerServiceType().getSimpleName().equals(
                     ComponentConfig.RECOGNIZER_SERVICE_ANDROID) ? androidRecognizerStatus
-                    : RecognizerListener.RECOGNIZER_AVAILABLE;
-            onSetup.execute(new Status() {
+                    : RecognizerListener.Status.RECOGNIZER_AVAILABLE;
+            onSetup.execute(new ComponentStatus() {
                 @SuppressLint("MissingPermission")
                 @Override
                 public boolean isAvailable() {
-                    return synthesizerStatus == SynthesizerListener.AVAILABLE &&
-                           speechRecognizerStatus == RecognizerListener.RECOGNIZER_AVAILABLE;
+                    return synthesizerStatus == SynthesizerListener.Status.AVAILABLE &&
+                           speechRecognizerStatus == RecognizerListener.Status.RECOGNIZER_AVAILABLE;
                 }
 
                 @SuppressLint("MissingPermission")
@@ -181,7 +180,7 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
     }
 
     @Override
-    public ConversationalFlowComponent.SpeechSynthesizer getSpeechSynthesizer(Context context) {
+    public SpeechSynthesizerComponent getSpeechSynthesizer(Context context) {
         init((Application) context.getApplicationContext());
         return speechSynthesizer;
     }
@@ -189,7 +188,7 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
     @SuppressLint("MissingPermission")
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     @Override
-    public ConversationalFlowComponent.SpeechRecognizer getSpeechRecognizer(Context context) {
+    public SpeechRecognizerComponent getSpeechRecognizer(Context context) {
         init((Application) context.getApplicationContext());
         return speechRecognizer;
     }

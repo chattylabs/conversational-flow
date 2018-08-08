@@ -24,14 +24,14 @@ import android.support.annotation.NonNull;
 
 
 /**
- * Continuously records audio and notifies the {@link AudioRecorder.Callback} when voice (or any
+ * Continuously records audio and notifies the {@link AndroidAudioRecorder.Callback} when voice (or any
  * sound) is heard.
  *
  * <p>The recorded audio format is always {@link AudioFormat#ENCODING_PCM_16BIT} and
  * {@link AudioFormat#CHANNEL_IN_MONO}. This class will automatically pick the right sample rate
  * for the device. Use {@link #getSampleRate()} to get the selected value.</p>
  */
-public class AudioRecorder {
+public class AndroidAudioRecorder {
 
     private static final int[] SAMPLE_RATE_CANDIDATES = new int[]{16000, 11025, 22050, 44100};
 
@@ -98,7 +98,7 @@ public class AudioRecorder {
     /** The timeout with no sound recording until it stops */
     private int noSpeechTimeout = NO_SPEECH_TIMEOUT_MILLIS;
 
-    public AudioRecorder(@NonNull Callback callback) {
+    public AndroidAudioRecorder(@NonNull Callback callback) {
         mCallback = callback;
     }
 
@@ -125,7 +125,7 @@ public class AudioRecorder {
         // Try to create a new recording session.
         mAudioRecord = createAudioRecord();
         if (mAudioRecord == null) {
-            throw new RuntimeException("Cannot instantiate AudioRecorder");
+            throw new RuntimeException("Cannot instantiate AndroidAudioRecorder");
         }
         // Start recording.
         mAudioRecord.startRecording();

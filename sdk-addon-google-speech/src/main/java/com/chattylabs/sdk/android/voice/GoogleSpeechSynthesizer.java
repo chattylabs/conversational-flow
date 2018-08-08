@@ -45,10 +45,6 @@ import java.util.TimerTask;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerInitialised;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerSetup;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SynthesizerListener;
-
 public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     private static final int MAX_SPEECH_TIME_SEC = 60;
@@ -77,7 +73,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     @WorkerThread
     @Override
-    public void setup(OnSynthesizerSetup onSynthesizerSetup) {
+    public void setup(SynthesizerListener.OnSetup onSynthesizerSetup) {
         logger.i(TAG, "GOOGLE TTS - setup and check language");
         try (TextToSpeechClient ttsClient = generateFromRawFile(
                 application, getConfiguration().getGoogleCredentialsResourceFile())) {
@@ -85,14 +81,14 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
             ttsClient.shutdownNow();
             ttsClient.awaitTermination(2, TimeUnit.SECONDS);
             if (response.getVoicesCount() > 0) {
-                onSynthesizerSetup.execute(SynthesizerListener.AVAILABLE);
+                onSynthesizerSetup.execute(SynthesizerListener.Status.AVAILABLE);
             } else {
-                onSynthesizerSetup.execute(SynthesizerListener.LANGUAGE_NOT_SUPPORTED_ERROR);
+                onSynthesizerSetup.execute(SynthesizerListener.Status.LANGUAGE_NOT_SUPPORTED_ERROR);
             }
         } catch (Exception e) {
             logger.logException(e);
             shutdown();
-            onSynthesizerSetup.execute(SynthesizerListener.NOT_AVAILABLE_ERROR);
+            onSynthesizerSetup.execute(SynthesizerListener.Status.NOT_AVAILABLE_ERROR);
         }
     }
 
@@ -206,7 +202,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
     }
 
     @Override
-    void initTts(OnSynthesizerInitialised onSynthesizerInitialised) {
+    void initTts(SynthesizerListener.OnInitialised onSynthesizerInitialised) {
         if (isTtsNull()) {
             setReady(false);
             logger.i(TAG, "GOOGLE TTS - creating new instance of TextToSpeechClient.class");
@@ -218,16 +214,16 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
                 this.audioConfig = AudioConfig.newBuilder().setAudioEncoding(AudioEncoding.MP3).build();
                 setupLanguage();
                 setSynthesizerUtteranceListener(createUtterancesListener());
-                onSynthesizerInitialised.execute(SynthesizerListener.SUCCESS);
+                onSynthesizerInitialised.execute(SynthesizerListener.Status.SUCCESS);
             } catch (Exception e) {
                 logger.logException(e);
                 shutdown();
-                onSynthesizerInitialised.execute(SynthesizerListener.ERROR);
+                onSynthesizerInitialised.execute(SynthesizerListener.Status.ERROR);
             }
         }
         else if (isReady()) {
             setupLanguage();
-            onSynthesizerInitialised.execute(SynthesizerListener.SUCCESS);
+            onSynthesizerInitialised.execute(SynthesizerListener.Status.SUCCESS);
         }
     }
 
@@ -260,13 +256,13 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
                         if (!isTtsSpeaking()) {
                             logger.e(getTag(), "GOOGLE TTS[%s] - is null or not speaking && reached timeout", utteranceId);
                             stop();
-                            onError(utteranceId, SynthesizerListener.TIMEOUT);
+                            onError(utteranceId, SynthesizerListener.Status.TIMEOUT);
                         }
                         else {
                             if ((System.currentTimeMillis() - timestamp) > TimeUnit.SECONDS.toMillis(MAX_SPEECH_TIME_SEC)) {
                                 logger.e(getTag(), "GOOGLE TTS[%s] - exceeded %s seconds", utteranceId, MAX_SPEECH_TIME_SEC);
                                 stop();
-                                onError(utteranceId, SynthesizerListener.TIMEOUT);
+                                onError(utteranceId, SynthesizerListener.Status.TIMEOUT);
                             }
                             else {
                                 clearTimeout(utteranceId);
@@ -379,7 +375,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
         logger.i(TAG, "GOOGLE TTS[%s] - reading out loud: \"%s\"", utteranceId, text);
         getSynthesizerUtteranceListener().onStart(utteranceId);
         initTts(status -> {
-            if (status == SynthesizerListener.SUCCESS) {
+            if (status == SynthesizerListener.Status.SUCCESS) {
                 mCondVar.close();
                 completed = false;
 
@@ -409,7 +405,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
 
                     mediaPlayer = MediaPlayer.create(application, Uri.fromFile(tempMp3));
                     if (mediaPlayer == null) {
-                        getSynthesizerUtteranceListener().onError(utteranceId, SynthesizerListener.UNKNOWN_ERROR);
+                        getSynthesizerUtteranceListener().onError(utteranceId, SynthesizerListener.Status.UNKNOWN_ERROR);
                         return;
                     }
 
@@ -440,7 +436,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
             }
             else {
                 logger.e(TAG, "GOOGLE TTS[%s] - internal playText status ERROR ", utteranceId);
-                getSynthesizerUtteranceListener().onError(utteranceId, SynthesizerListener.ERROR);
+                getSynthesizerUtteranceListener().onError(utteranceId, SynthesizerListener.Status.ERROR);
             }
         });
     }

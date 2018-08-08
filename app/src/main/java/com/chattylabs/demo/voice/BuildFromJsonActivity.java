@@ -11,7 +11,7 @@ import android.widget.TextView;
 
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.voice.Conversation;
-import com.chattylabs.sdk.android.voice.Flow;
+import com.chattylabs.sdk.android.voice.ConversationFlow;
 import com.chattylabs.sdk.android.voice.VoiceMatch;
 import com.chattylabs.sdk.android.voice.VoiceMessage;
 import com.chattylabs.sdk.android.voice.VoiceMismatch;
@@ -35,6 +35,7 @@ public class BuildFromJsonActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_build_from_json);
+        initCommonViews();
         initViews();
     }
 
@@ -63,7 +64,7 @@ public class BuildFromJsonActivity extends BaseActivity {
         listViewAdapter.clear();
         listViewAdapter.notifyDataSetChanged();
         Conversation conversation = component.create(this);
-        Flow flow = conversation.prepare();
+        ConversationFlow flow = conversation.prepare();
         try {
             String dots = ". . .";
             VoiceNode firstNode = null;

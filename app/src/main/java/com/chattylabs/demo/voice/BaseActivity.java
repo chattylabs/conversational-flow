@@ -22,6 +22,8 @@ import com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer;
 import com.chattylabs.sdk.android.voice.ConversationalFlowComponent;
 import com.chattylabs.sdk.android.voice.GoogleSpeechRecognizer;
 import com.chattylabs.sdk.android.voice.GoogleSpeechSynthesizer;
+import com.chattylabs.sdk.android.voice.SpeechRecognizerComponent;
+import com.chattylabs.sdk.android.voice.SpeechSynthesizerComponent;
 import com.chattylabs.sdk.android.voice.TextFilterForUrl;
 
 import java.util.Arrays;
@@ -32,36 +34,29 @@ import javax.inject.Inject;
 
 import dagger.android.support.DaggerAppCompatActivity;
 
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.*;
-
 public class BaseActivity extends DaggerAppCompatActivity
         implements ActivityCompat.OnRequestPermissionsResultCallback {
 
     private static final String ANDROID = "Android";
     private static final String GOOGLE = "Google";
 
+    private String addonType = ANDROID;
     private static LinkedHashMap<Integer, String> addonMap = new LinkedHashMap<>();
     static {
         addonMap.put(0, ANDROID);
         addonMap.put(1, GOOGLE);
     }
 
-    private static String ADDON_TYPE = ANDROID;
-
     @Inject ConversationalFlowComponent component;
     ThreadUtils.SerialThread serialThread;
-    SpeechSynthesizer synthesizer;
-    SpeechRecognizer recognizer;
-
-    private Spinner addonSpinner;
-    private ArrayAdapter<String> addonAdapter;
+    SpeechSynthesizerComponent synthesizer;
+    SpeechRecognizerComponent recognizer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         serialThread = ThreadUtils.newSerialThread();
         setup();
-        initCommonViews();
         //UpdateManager.register(this);
     }
 
@@ -79,19 +74,19 @@ public class BaseActivity extends DaggerAppCompatActivity
         component.shutdown();
     }
 
-    private void initCommonViews() {
-        addonSpinner = findViewById(R.id.addon);
+    void initCommonViews() {
+        Spinner addonSpinner = findViewById(R.id.addon);
         if (addonSpinner != null) {
             // Create an ArrayAdapter of the addons
             List<String> addonList = Arrays.asList(addonMap.values().toArray(new String[addonMap.size()]));
-            addonAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, addonList);
+            ArrayAdapter<String> addonAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, addonList);
             addonAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
             addonSpinner.setAdapter(addonAdapter);
             addonSpinner.setSelection(0);
             addonSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override
                 public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                    ADDON_TYPE = addonMap.get(position);
+                    addonType = addonMap.get(position);
                     setup();
                 }
 
@@ -106,14 +101,14 @@ public class BaseActivity extends DaggerAppCompatActivity
         component.updateConfiguration(builder ->
                 builder .setGoogleCredentialsResourceFile(() -> R.raw.credential)
                         .setRecognizerServiceType(() -> {
-                            if (GOOGLE.equals(ADDON_TYPE)) {
+                            if (GOOGLE.equals(addonType)) {
                                 return GoogleSpeechRecognizer.class;
                             } else {
                                 return AndroidSpeechRecognizer.class;
                             }
                         })
                         .setSynthesizerServiceType(() -> {
-                            if (GOOGLE.equals(ADDON_TYPE)) {
+                            if (GOOGLE.equals(addonType)) {
                                 return GoogleSpeechSynthesizer.class;
                             } else {
                                 return AndroidSpeechSynthesizer.class;

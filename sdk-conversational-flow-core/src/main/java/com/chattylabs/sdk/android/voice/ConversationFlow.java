@@ -2,21 +2,21 @@ package com.chattylabs.sdk.android.voice;
 
 import android.support.annotation.NonNull;
 
-public class Flow implements FlowSource {
+public class ConversationFlow implements ConversationFlowSource {
     private VoiceNode from;
     private Edge edge;
 
-    Flow(Edge edge) {
+    ConversationFlow(Edge edge) {
         this.edge = edge;
     }
 
     @Override
-    public FlowTarget from(@NonNull VoiceNode node) {
+    public ConversationFlowTarget from(@NonNull VoiceNode node) {
         from = node;
         return target;
     }
 
-    private FlowTarget target = (node, optNodes) -> {
+    private ConversationFlowTarget target = (node, optNodes) -> {
         edge.addEdge(node, from);
         for (VoiceNode n : optNodes) edge.addEdge(n, from);
     };

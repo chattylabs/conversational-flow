@@ -35,11 +35,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerError;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerMostConfidentResult;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerPartialResults;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerResults;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.RecognizerListener;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.selectMostConfidentResult;
 
 public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
@@ -55,7 +50,7 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
     // Resources
     private final Application application;
     private ThreadUtils.SerialThread serialThread;
-    private AudioRecorder mAudioRecorder;
+    private AndroidAudioRecorder mAudioRecorder;
     private SpeechClient speech;
     private Bundle lastResult;
 
@@ -70,7 +65,7 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
         this.serialThread = ThreadUtils.newSerialThread();
     }
 
-    private final AudioRecorder.Callback mVoiceCallback = new AudioRecorder.Callback() {
+    private final AndroidAudioRecorder.Callback mVoiceCallback = new AndroidAudioRecorder.Callback() {
 
         @Override
         public void onVoiceStart() {
@@ -165,7 +160,7 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
                     });
                 }
             };
-            timeout.schedule(task, RecognizerListener.MIN_VOICE_RECOGNITION_TIME_LISTENING * 3);
+            timeout.schedule(task, MIN_VOICE_RECOGNITION_TIME_LISTENING * 3);
         }
 
         private void cleanup() {
@@ -199,16 +194,15 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
             // We consider 2 sec as the minimum to record audio
             // If it last less than that, there was an audio issue
             // So potentially we retry listening again
-            boolean stoppedTooEarly = (System.currentTimeMillis() - elapsedTime) <
-                    RecognizerListener.MIN_VOICE_RECOGNITION_TIME_LISTENING;
-            OnRecognizerError errorListener = _getOnError();
+            boolean stoppedTooEarly = (System.currentTimeMillis() - elapsedTime) < MIN_VOICE_RECOGNITION_TIME_LISTENING;
+            RecognizerListener.OnError errorListener = _getOnError();
             cancel();
             if (errorListener != null) {
                 if (needRetry(error)) {
-                    errorListener.execute(RecognizerListener.RECOGNIZER_UNAVAILABLE_ERROR, error);
+                    errorListener.execute(RecognizerListener.Status.RECOGNIZER_UNAVAILABLE_ERROR, error);
                 }
                 else if (stoppedTooEarly) {
-                    errorListener.execute(RecognizerListener.RECOGNIZER_STOPPED_TOO_EARLY_ERROR, error);
+                    errorListener.execute(RecognizerListener.Status.RECOGNIZER_STOPPED_TOO_EARLY_ERROR, error);
                 }
 //                else if (soundLevel == NO_SOUND) {
 //                    errorListener.execute(RECOGNIZER_NO_SOUND_ERROR, error);
@@ -217,15 +211,15 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
 //                    errorListener.execute(RECOGNIZER_LOW_SOUND_ERROR, error);
 //                }
                 else if (intents > 0) {
-                    errorListener.execute(RecognizerListener.RECOGNIZER_AFTER_PARTIALS_ERROR, error);
+                    errorListener.execute(RecognizerListener.Status.RECOGNIZER_AFTER_PARTIALS_ERROR, error);
                 }
                 else if (isTryAgain()) {
                     errorListener.execute(error == SpeechRecognizer.ERROR_NO_MATCH ?
-                            RecognizerListener.RECOGNIZER_UNKNOWN_ERROR :
-                            RecognizerListener.RECOGNIZER_RETRY_ERROR, error);
+                            RecognizerListener.Status.RECOGNIZER_UNKNOWN_ERROR :
+                            RecognizerListener.Status.RECOGNIZER_RETRY_ERROR, error);
                 }
                 else { // Restore ANDROID VOICE
-                    errorListener.execute(RecognizerListener.RECOGNIZER_UNKNOWN_ERROR, error);
+                    errorListener.execute(RecognizerListener.Status.RECOGNIZER_UNKNOWN_ERROR, error);
                 }
             }
         }
@@ -233,8 +227,8 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
         @Override
         public void onResults(Bundle results) {
             releaseTimeout();
-            OnRecognizerResults resultsListener = _getOnResults();
-            OnRecognizerMostConfidentResult mostConfidentResult = _getOnMostConfidentResult();
+            RecognizerListener.OnResults resultsListener = _getOnResults();
+            RecognizerListener.OnMostConfidentResult mostConfidentResult = _getOnMostConfidentResult();
             if (resultsListener == null && mostConfidentResult == null) return;
             List<String> textResults = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
             float[] confidences = results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
@@ -253,9 +247,9 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
             }
             else {
                 logger.e(TAG, "GOOGLE VOICE - NO results");
-                OnRecognizerError listener = _getOnError();
+                RecognizerListener.OnError listener = _getOnError();
                 reset();
-                if (listener != null) listener.execute(RecognizerListener.RECOGNIZER_EMPTY_RESULTS_ERROR, -1);
+                if (listener != null) listener.execute(RecognizerListener.Status.RECOGNIZER_EMPTY_RESULTS_ERROR, -1);
             }
         }
 
@@ -265,7 +259,7 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
             releaseTimeout();
             intents++;
             startTimeout(); lastResult = partialResults;
-            OnRecognizerPartialResults listener = _getOnPartialResults();
+            RecognizerListener.OnPartialResults listener = _getOnPartialResults();
             if (listener == null) return;
             List<String> textResults = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
             float[] confidences = partialResults.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
@@ -358,7 +352,7 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
 
     private void startVoiceRecorder() {
         stopVoiceRecorder();
-        mAudioRecorder = new AudioRecorder(mVoiceCallback);
+        mAudioRecorder = new AndroidAudioRecorder(mVoiceCallback);
         mAudioRecorder.start();
     }
 

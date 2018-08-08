@@ -1,10 +1,8 @@
 package com.chattylabs.sdk.android.voice;
 
-import com.chattylabs.sdk.android.voice.ConversationalFlowComponent.Consumer;
-
 public class VoiceCapture implements VoiceAction {
     public final String id;
-    public final Consumer<String> onCaptured;
+    public final ComponentConsumer<String> onCaptured;
 
     private VoiceCapture(Builder builder) {
         id = builder.id;
@@ -17,7 +15,7 @@ public class VoiceCapture implements VoiceAction {
 
     public static final class Builder {
         private String id;
-        private Consumer<String> onCaptured;
+        private ComponentConsumer<String> onCaptured;
 
         private Builder() {}
 
@@ -26,7 +24,7 @@ public class VoiceCapture implements VoiceAction {
             return this;
         }
 
-        public Builder setOnCaptured(Consumer<String> onCaptured) {
+        public Builder setOnCaptured(ComponentConsumer<String> onCaptured) {
             this.onCaptured = onCaptured;
             return this;
         }

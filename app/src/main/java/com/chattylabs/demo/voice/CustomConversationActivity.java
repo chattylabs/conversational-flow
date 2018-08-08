@@ -2,7 +2,6 @@ package com.chattylabs.demo.voice;
 
 import android.media.AudioManager;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.util.Log;
 import android.util.Pair;
 import android.util.SparseArray;
@@ -18,17 +17,10 @@ import android.widget.Toast;
 
 import com.chattylabs.sdk.android.common.HtmlUtils;
 import com.chattylabs.sdk.android.common.Tag;
-import com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer;
-import com.chattylabs.sdk.android.voice.GoogleSpeechSynthesizer;
+import com.chattylabs.sdk.android.voice.RecognizerListener;
 import com.chattylabs.sdk.android.voice.Peripheral;
 
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerError;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerMostConfidentResult;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerReady;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerDone;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerError;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerStart;
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SynthesizerListener;
+import com.chattylabs.sdk.android.voice.SynthesizerListener;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.matches;
 
 
@@ -60,6 +52,7 @@ public class CustomConversationActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_customize_the_component);
         peripheral = new Peripheral((AudioManager) getSystemService(AUDIO_SERVICE));
+        initCommonViews();
         initViews();
         initActions();
     }
@@ -125,10 +118,10 @@ public class CustomConversationActivity extends BaseActivity {
 
     private void playByIndex(String text, int index) {
         synthesizer.playText(text, "default",
-                (OnSynthesizerStart) utteranceId -> {
+                (SynthesizerListener.OnStart) utteranceId -> {
                     representQueue(index);
                 },
-                (OnSynthesizerDone) utteranceId -> {
+                (SynthesizerListener.OnDone) utteranceId -> {
                     Log.i(TAG, "on Done index: " + index);
                     Pair<Integer, String> next = queue.get(index + 1);
                     if (next != null && next.first == LISTEN) {
@@ -140,8 +133,8 @@ public class CustomConversationActivity extends BaseActivity {
                         } else synthesizer.resume();
                     }
                 },
-                (OnSynthesizerError) (utteranceId, errorCode) -> {
-                    if (errorCode == SynthesizerListener.UNKNOWN_ERROR) {
+                (SynthesizerListener.OnError) (utteranceId, errorCode) -> {
+                    if (errorCode == SynthesizerListener.Status.UNKNOWN_ERROR) {
                         if (synthesizer.isEmpty()) {
                             component.shutdown();
                         } else synthesizer.resume();
@@ -152,9 +145,9 @@ public class CustomConversationActivity extends BaseActivity {
     }
 
     private void listen(int index) {
-        recognizer.listen((OnRecognizerReady) bundle -> {
+        recognizer.listen((RecognizerListener.OnReady) bundle -> {
             representQueue(index + 1);
-        }, (OnRecognizerMostConfidentResult) o -> {
+        }, (RecognizerListener.OnMostConfidentResult) o -> {
             representQueue(-1);
             SparseArray<String> news = getChecks(new SparseArray<>(), index + 1);
             if (news.size() > 0) {
@@ -169,7 +162,7 @@ public class CustomConversationActivity extends BaseActivity {
             if (synthesizer.isEmpty()) {
                 component.shutdown();
             } else synthesizer.resume();
-        }, (OnRecognizerError) (i, i1) -> {
+        }, (RecognizerListener.OnError) (i, i1) -> {
             Log.e(TAG, "Error " + i);
 
             synthesizer.releaseCurrentQueue();

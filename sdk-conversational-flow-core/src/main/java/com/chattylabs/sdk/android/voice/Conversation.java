@@ -22,7 +22,7 @@ public interface Conversation {
 
     void addNode(@NonNull VoiceNode node);
 
-    Flow prepare();
+    ConversationFlow prepare();
 
     void start(VoiceNode root);
 
