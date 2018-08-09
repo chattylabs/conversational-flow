@@ -17,9 +17,6 @@ apply plugin: 'com.novoda.bintray-release'
 apply plugin: 'com.chattylabs.versioning'
 apply from: '../buildsystem/android.gradle'
 
-group = 'com.chattylabs.sdk.android'
-version = android.defaultConfig.versionName
-
 
 versioning {
 
@@ -52,6 +49,9 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:2.19.1'
     testImplementation 'org.robolectric:robolectric:3.8'
 }
+
+group = 'com.chattylabs.sdk.android'
+version = android.defaultConfig.versionName
 
 publish {
     userOrg = 'chattylabs'
