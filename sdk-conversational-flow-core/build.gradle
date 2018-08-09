@@ -1,6 +1,7 @@
 buildscript {
     repositories {
         jcenter()
+        maven { url "https://dl.bintray.com/chattylabs/maven" }
     }
     dependencies {
         classpath 'com.novoda:bintray-release:0.8.1'

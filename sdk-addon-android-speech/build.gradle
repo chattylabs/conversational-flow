@@ -1,6 +1,7 @@
 buildscript {
     repositories {
         jcenter()
+        maven { url "https://dl.bintray.com/chattylabs/maven" }
     }
     dependencies {
         classpath 'com.novoda:bintray-release:0.8.1'
@@ -45,7 +46,6 @@ dependencies {
     kapt 'com.google.dagger:dagger-compiler:2.15'
     // SDK
     api 'com.chattylabs.sdk.android:common:+'
-    //api 'com.chattylabs.sdk.android:conversational-flow-core:+'
     api project(':sdk-conversational-flow-core')
 }
 

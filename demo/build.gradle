@@ -1,3 +1,10 @@
+buildscript {
+    repositories {
+        jcenter()
+        maven { url "https://dl.bintray.com/chattylabs/maven" }
+    }
+}
+
 repositories {
     maven { url "https://dl.bintray.com/chattylabs/maven" }
 }
@@ -39,10 +46,6 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-
-//    packagingOptions {
-//        exclude 'META-INF/io.netty.versions.properties'
-//    }
 }
 
 dependencies {
@@ -64,9 +67,6 @@ dependencies {
     // SDK
     implementation 'net.hockeyapp.android:HockeySDK:5.1.0'
     implementation "com.chattylabs.sdk.android:common:+"
-    //implementation 'com.chattylabs.sdk.android:conversational-flow-core:+'
-    //implementation 'com.chattylabs.sdk.android:addon-android-speech:+'
-    //implementation 'com.chattylabs.sdk.android:addon-google-speech:+'
     implementation project(':sdk-conversational-flow-core')
     implementation project(':sdk-addon-android-speech')
     implementation project(':sdk-addon-google-speech')
@@ -78,7 +78,7 @@ dependencies {
 }
 
 task copySecretKey(type: Copy) {
-    // Search this on internet and ADD the Env Variable on your Machine.
+    // Search GOOGLE_APPLICATION_CREDENTIALS on internet and ADD the Env Variable on your Machine.
     def File secretKey = file "$System.env.GOOGLE_APPLICATION_CREDENTIALS"
     from secretKey.getParent()
     include secretKey.getName()
