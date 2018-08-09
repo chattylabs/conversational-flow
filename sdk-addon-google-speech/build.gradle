@@ -1,6 +1,7 @@
 buildscript {
     repositories {
         jcenter()
+        maven { url "https://dl.bintray.com/chattylabs/maven" }
     }
     dependencies {
         classpath 'com.novoda:bintray-release:0.8.1'
@@ -43,20 +44,6 @@ ext {
     grpcVersion = '1.13.1'
 }
 
-configurations.all {
-//    resolutionStrategy.force 'com.google.code.findbugs:jsr305:3.0.2'
-//    resolutionStrategy.force 'com.google.http-client:google-http-client:1.23.0'
-//    resolutionStrategy.force 'io.grpc:grpc-stub:1.13.1'
-//    resolutionStrategy.force 'io.grpc:grpc-auth:1.13.1'
-//    resolutionStrategy.force 'io.grpc:grpc-protobuf:1.13.1'
-    //resolutionStrategy.force 'io.grpc:grpc-netty:1.13.1'
-    //resolutionStrategy.force 'com.google.guava:guava:20.0'
-//    resolutionStrategy.force "com.android.support:support-annotations:$supportLibraryVersion"
-
-//    exclude module: 'httpclient'
-//    exclude module: 'jsr305'
-}
-
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
@@ -66,16 +53,10 @@ dependencies {
 
     // SDK
     api 'com.chattylabs.sdk.android:common:+'
-    //api 'com.chattylabs.sdk.android:conversational-flow-core:+'
     api project(':sdk-conversational-flow-core')
 
     // Google Cloud
     implementation "io.grpc:grpc-okhttp:$grpcVersion"
-    //implementation "io.grpc:grpc-protobuf-lite:$grpcVersion"
-    //implementation "io.grpc:grpc-stub:$grpcVersion"
-    //implementation "io.grpc:grpc-auth:$grpcVersion"
-    //implementation "io.grpc:grpc-netty:1.13.1"
-    //implementation "net.sourceforge.argparse4j:argparse4j:0.8.1"
     implementation "com.google.cloud:google-cloud-texttospeech:0.55.0-beta"
     implementation "com.google.cloud:google-cloud-speech:0.55.0-beta"
 }
