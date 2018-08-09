@@ -48,7 +48,9 @@ android/gen/
 out/
 
 # Avoid ignoring Project Code Style Settings
-!/.idea/codeStyleSettings.xml
+!.idea/codeStyles/Project.xml
+!.idea/codeStyleSettings.xml
+!.idea/modules.xml
 
 # Intellij IDEA (see https://intellij-support.jetbrains.com/entries/23393067)
 .idea/tasks.xml
@@ -107,7 +109,5 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-
 ## Custom
-
 version.properties
