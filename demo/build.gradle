@@ -79,7 +79,11 @@ dependencies {
 
 task copySecretKey(type: Copy) {
     // Search GOOGLE_APPLICATION_CREDENTIALS on internet and ADD the Env Variable on your Machine.
-    def File secretKey = file "$System.env.GOOGLE_APPLICATION_CREDENTIALS"
+    File secretKey = file "$System.env.GOOGLE_APPLICATION_CREDENTIALS"
+    if (project.ext.isCi || !secretKey.exists()) {
+        secretKey = File.createTempFile('temp', 'file')
+        secretKey.deleteOnExit()
+    }
     from secretKey.getParent()
     include secretKey.getName()
     into 'src/main/res/raw'
