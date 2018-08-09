@@ -17,9 +17,6 @@ apply plugin: 'com.novoda.bintray-release'
 apply plugin: 'com.chattylabs.versioning'
 apply from: '../buildsystem/android.gradle'
 
-group = 'com.chattylabs.sdk.android'
-version = android.defaultConfig.versionName
-
 
 versioning {
 
@@ -60,6 +57,9 @@ dependencies {
     implementation "com.google.cloud:google-cloud-texttospeech:0.55.0-beta"
     implementation "com.google.cloud:google-cloud-speech:0.55.0-beta"
 }
+
+group = 'com.chattylabs.sdk.android'
+version = android.defaultConfig.versionName
 
 publish {
     userOrg = 'chattylabs'

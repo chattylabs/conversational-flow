@@ -17,9 +17,6 @@ apply plugin: 'com.novoda.bintray-release'
 apply plugin: 'com.chattylabs.versioning'
 apply from: '../buildsystem/android.gradle'
 
-group = 'com.chattylabs.sdk.android'
-version = android.defaultConfig.versionName
-
 
 versioning {
 
@@ -48,6 +45,9 @@ dependencies {
     api 'com.chattylabs.sdk.android:common:+'
     api project(':sdk-conversational-flow-core')
 }
+
+group = 'com.chattylabs.sdk.android'
+version = android.defaultConfig.versionName
 
 publish {
     userOrg = 'chattylabs'
