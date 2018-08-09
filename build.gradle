@@ -28,10 +28,7 @@ task clean(type: Delete) {
     delete rootProject.buildDir
 }
 
-File buildsystem = file("buildsystem")
-if (!buildsystem.exists() || buildsystem.list().length == 0) {
-    println "Initializing buildsystem..."
-    exec {
-        commandLine "git", "submodule", "update", "--init"
-    }
+println "Checking buildsystem..."
+exec {
+    commandLine "git", "submodule", "update", "--init"
 }
