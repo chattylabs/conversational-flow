@@ -2,7 +2,9 @@ package com.chattylabs.demo.voice;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
+import android.support.constraint.ConstraintLayout;
 import android.view.Gravity;
+import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -40,6 +42,7 @@ public class BuildFromJsonActivity extends BaseActivity {
     }
 
     private void initViews() {
+        ViewGroup root = findViewById(R.id.root);
         Button proceed = findViewById(R.id.proceed);
         proceed.setOnClickListener(v -> {
             loadConversation();
@@ -50,13 +53,8 @@ public class BuildFromJsonActivity extends BaseActivity {
                 R.id.conversation_item_text,
                 new ArrayList<>());
         listViewAdapter.setNotifyOnChange(true);
-        TextView emptyView = new TextView(this);
-        emptyView.setText("Choose an addon and press on proceed");
-        emptyView.setLayoutParams(new AbsListView.LayoutParams(
-                AbsListView.LayoutParams.WRAP_CONTENT,
-                AbsListView.LayoutParams.WRAP_CONTENT, Gravity.CENTER));
+        conversationListView.setEmptyView(findViewById(R.id.empty_text));
         conversationListView.setAdapter(listViewAdapter);
-        conversationListView.setEmptyView(emptyView);
     }
 
     @SuppressLint("MissingPermission")

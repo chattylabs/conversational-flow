@@ -16,6 +16,16 @@
         android:orientation="horizontal"
         app:layout_constraintGuide_percent="0.65" />
 
+    <TextView
+        android:id="@+id/empty_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Choose an addon and press on proceed"
+        app:layout_constraintBottom_toBottomOf="@+id/conversation"
+        app:layout_constraintStart_toStartOf="@+id/conversation"
+        app:layout_constraintEnd_toEndOf="@+id/conversation"
+        app:layout_constraintTop_toTopOf="@+id/conversation" />
+
     <ListView
         android:id="@+id/conversation"
         android:layout_width="0dp"
@@ -36,9 +46,9 @@
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="@android:color/black"
-        app:layout_constraintTop_toTopOf="@+id/guideline"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"/>
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/guideline" />
 
     <Spinner
         android:id="@+id/addon"
