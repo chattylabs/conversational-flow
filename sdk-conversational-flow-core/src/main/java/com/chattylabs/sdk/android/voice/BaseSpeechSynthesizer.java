@@ -19,18 +19,44 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.TAG;
 
 /**
- * When implementing from this class you must create a constructor that receives the following parameters
- * in the same order:
+ * This is the base class that handles internally and holds a queue of messages to be played out.
+ * <br/>You only need to implement the contract of {@link SpeechSynthesizerComponent} and extend to this
+ * class.
  * <p/>
- * <pre>{@code
+ * The technical requirements while implementing the {@link SpeechSynthesizerComponent} through
+ * this base class are:
+ * <p/>
+ * - You will create a constructor that receives the following parameters in the same order:
+ * <br/><pre>{@code
  * public Constructor(Application, ComponentConfig, AndroidAudioManager, BluetoothSco, ILogger) {
  *     super(ComponentConfig, AndroidAudioManager, BluetoothSco, ILogger);
  *     //...
  * }
  * }</pre>
- * Otherwise the addon initialization will throw and Exception on runtime.
+ * If the parameters are not in the same order the addon initialization will throw an Exception.
+ * <p/>
+ * - You will implement {@link #setup(SynthesizerListener.OnSetup)} which is
+ * in charge of testing whether the client provider work and to check whether the required language
+ * is available.
+ * <p/>
+ * - You will implement {@link #initTts(SynthesizerListener.OnInitialised)} which is the entry point
+ * for any call to {@link #playText(String, SynthesizerListener[])} or
+ * {@link #playSilence(long, SynthesizerListener[])} and its variations.
+ * <br/>This method behaves like {@link #setup(SynthesizerListener.OnSetup)} but it stores the current
+ * Text To Speech client, sets up the current required language, and initializes a
+ * {@link SynthesizerUtteranceListener}.
+ * <br/>This method should check whether the current client instance is available or create a new one.
+ * <p/>
+ * - You will implement {@link #createUtteranceListener(SynthesizerListener...)} where you handle
+ * the lifecycle of the played utterance.
+ * <p/>
+ * - You will implement {@link #executeOnTtsReady(String, String, HashMap)} where you can apply any
+ * {@link TextFilter}, escape HTML entities, split a string into chunks if needed, any other treatment
+ * on the message to be played and ultimately to play the message through the implemented Provider.
  *
+ * @see SynthesizerListener
  * @see SpeechSynthesizerComponent
+ * @see SynthesizerUtteranceListener
  * @see android.app.Application
  * @see ComponentConfig
  * @see AndroidAudioManager
@@ -86,8 +112,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizerComponent {
 
     abstract void initTts(SynthesizerListener.OnInitialised onSynthesizerInitialised);
 
-    abstract void executeOnTtsReady(
-            String utteranceId, String text, HashMap<String, String> params);
+    abstract void executeOnTtsReady(String utteranceId, String text, HashMap<String, String> params);
 
     abstract void playSilence(String utteranceId, long durationInMillis);
 
@@ -97,8 +122,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizerComponent {
 
     abstract boolean isTtsSpeaking();
 
-    abstract SynthesizerUtteranceListener createUtteranceListener(
-            SynthesizerListener[] listeners);
+    abstract SynthesizerUtteranceListener createUtteranceListener(SynthesizerListener[] listeners);
 
     void setReady(boolean ready) {
         logger.w(TAG, "TTS - ready set to " + Boolean.toString(ready));
