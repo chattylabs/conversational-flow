@@ -1,5 +1,8 @@
 package com.chattylabs.sdk.android.voice;
 
+/**
+ * @see android.speech.tts.UtteranceProgressListener
+ */
 interface SynthesizerUtteranceListener {
 
     SynthesizerListener.OnStart _getOnStartedListener();
