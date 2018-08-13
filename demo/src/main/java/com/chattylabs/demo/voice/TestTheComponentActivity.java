@@ -24,9 +24,9 @@ import com.chattylabs.sdk.android.voice.SynthesizerListener;
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.matches;
 
 
-public class CustomConversationActivity extends BaseActivity {
+public class TestTheComponentActivity extends BaseActivity {
 
-    private static final String TAG = Tag.make(CustomConversationActivity.class);
+    private static final String TAG = Tag.make(TestTheComponentActivity.class);
 
     // Constants
     private static final int CHECK = 3;
@@ -50,7 +50,7 @@ public class CustomConversationActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_customize_the_component);
+        setContentView(R.layout.activity_test_the_component);
         peripheral = new Peripheral((AudioManager) getSystemService(AUDIO_SERVICE));
         initCommonViews();
         initViews();
@@ -102,10 +102,10 @@ public class CustomConversationActivity extends BaseActivity {
                     }
                 }
                 String action = label + (item.first == LISTEN ? "" : " \"<i>" + text + "</i>\" ");
-                tx = new StringBuilder(tx == null || tx.length() == 0 ?
-                        action :
-                        tx.append((item.first == READ ? "<br/>" : "<br/>...then "))
-                          .append(action));
+                if (tx == null) {
+                    tx = new StringBuilder();
+                }
+                tx.append("<br/><br/> > ").append(action);
                 isChecking = item.first == CHECK;
             }
         }

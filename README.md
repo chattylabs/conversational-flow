@@ -10,15 +10,15 @@
 
 Part of the [Voice & User Interaction SDK]().
 
-This library combines both native built-in resources and cloud services from various providers into 
-a Component capable to run reliably a Speech Synthesizer and a Voice Recognizer.
+This library combines both native built-in resources and cloud services into 
+a software component capable to run reliably a Speech Synthesizer and a Voice Recognizer.
 
-Besides, it provides an [Interface](#create-a-conversation) based on a 
+Besides, it provides an [Interface](#how-to-create-a-conversation) based on a 
 [Directed Graph](https://en.wikipedia.org/wiki/Directed_graph) 
 implementation with [Directed Cycles](https://en.wikipedia.org/wiki/Cycle_(graph_theory)) 
 that allows a developer to create connected nodes and build a consistent conversation flow between 
 a device and a user with ease. 
-<br/>**Consistency** here stands for the needless to code the flow using conditional statements or 
+<br/>_Consistency_ here stands for the needless to code the flow using conditional statements or 
 any extra state complexity while ensuring the conversation will behave as expected.
 
 It enables currently the following providers:
@@ -27,13 +27,13 @@ It enables currently the following providers:
     - [TextToSpeech](https://developer.android.com/reference/android/speech/tts/TextToSpeech)
     - [SpeechRecognizer](https://developer.android.com/reference/android/speech/SpeechRecognizer)
 - [Google Cloud](https://cloud.google.com/)
-    - [Speech-To-Text](https://cloud.google.com/speech-to-text/)
     - [Text-To-Speech](https://cloud.google.com/text-to-speech/)
+    - [Speech-To-Text](https://cloud.google.com/speech-to-text/)
     
     like Android, Google Cloud, 
     (Amazon, Wit.ai, Temi, Bing Speech, IBM, ...)
 
-<p align="center"><img src="assets/demo-sample.jpg" alt="demo-sample"/></p>
+<p align="center"><img src="art/demo-sample.jpg" alt="demo-sample"/></p>
 
 ## Why choosing this library?
 
@@ -95,7 +95,7 @@ conversation.start(question);
 
 There are different [Voice Nodes](), check the [wiki page]()
 
-<p align="center"><img src="assets/flow-sample.jpg" alt="flow-sample"/></p>
+<p align="center"><img src="art/flow-sample.jpg" alt="flow-sample"/></p>
 
 &nbsp;
 

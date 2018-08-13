@@ -152,7 +152,7 @@ public class BaseActivity extends DaggerAppCompatActivity
         switch (item.getItemId()) {
             case R.id.demo_custom_conversation:
                 ContextCompat.startActivity(this,
-                        new Intent(this, CustomConversationActivity.class), null);
+                        new Intent(this, TestTheComponentActivity.class), null);
                 return true;
             case R.id.demo_build_from_json:
                 ContextCompat.startActivity(this,
