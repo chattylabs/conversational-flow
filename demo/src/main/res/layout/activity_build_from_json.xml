@@ -7,14 +7,14 @@
     android:layout_height="match_parent"
     android:animateLayoutChanges="true"
     android:background="#ffffff"
-    tools:context="com.chattylabs.demo.voice.CustomConversationActivity">
+    tools:context="com.chattylabs.demo.voice.TestTheComponentActivity">
 
     <android.support.constraint.Guideline
         android:id="@+id/guideline"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.65" />
+        app:layout_constraintGuide_percent="0.85" />
 
     <TextView
         android:id="@+id/empty_text"
@@ -22,8 +22,8 @@
         android:layout_height="wrap_content"
         android:text="Choose an addon and press on proceed"
         app:layout_constraintBottom_toBottomOf="@+id/conversation"
-        app:layout_constraintStart_toStartOf="@+id/conversation"
         app:layout_constraintEnd_toEndOf="@+id/conversation"
+        app:layout_constraintStart_toStartOf="@+id/conversation"
         app:layout_constraintTop_toTopOf="@+id/conversation" />
 
     <ListView

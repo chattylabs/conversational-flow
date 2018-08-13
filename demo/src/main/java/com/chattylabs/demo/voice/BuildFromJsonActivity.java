@@ -2,15 +2,13 @@ package com.chattylabs.demo.voice;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
-import android.support.constraint.ConstraintLayout;
-import android.view.Gravity;
+import android.text.Spanned;
 import android.view.ViewGroup;
-import android.widget.AbsListView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
-import android.widget.TextView;
 
+import com.chattylabs.sdk.android.common.HtmlUtils;
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.voice.Conversation;
 import com.chattylabs.sdk.android.voice.ConversationFlow;
@@ -31,7 +29,7 @@ public class BuildFromJsonActivity extends BaseActivity {
 
     private static final String TAG = Tag.make(BuildFromJsonActivity.class);
 
-    private ArrayAdapter<String> listViewAdapter;
+    private ArrayAdapter<Spanned> listViewAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,8 +48,7 @@ public class BuildFromJsonActivity extends BaseActivity {
 
         ListView conversationListView = findViewById(R.id.conversation);
         listViewAdapter = new ArrayAdapter<>(this, R.layout.item_block,
-                R.id.conversation_item_text,
-                new ArrayList<>());
+                R.id.conversation_item_text, new ArrayList<>());
         listViewAdapter.setNotifyOnChange(true);
         conversationListView.setEmptyView(findViewById(R.id.empty_text));
         conversationListView.setAdapter(listViewAdapter);
@@ -76,9 +73,7 @@ public class BuildFromJsonActivity extends BaseActivity {
                 VoiceMessage message = VoiceMessage.newBuilder()
                         .setText(text)
                         .setOnReady(() -> {
-                            runOnUiThread(() -> {
-                                listViewAdapter.add(text);
-                            });
+                            addIntoAdapter(text);
                         }).build();
 
                 VoiceMatch matches = null;
@@ -91,22 +86,22 @@ public class BuildFromJsonActivity extends BaseActivity {
                     }
                     matches = VoiceMatch.newBuilder()
                             .setOnReady(() -> {
-                                listViewAdapter.add(dots);
+                                addIntoAdapter(dots);
                             })
                             .setExpectedResults(stringArray)
                             .setOnMatched(strings -> {
-                                listViewAdapter.remove(dots);
+                                removeLastFromAdapter();
                                 if (strings != null) {
-                                    listViewAdapter.add(strings.get(0));
+                                    addIntoAdapter("<b>You said:</b> " + strings.get(0));
                                     conversation.next();
                                 }
                             })
                             .build();
                     noMatches = VoiceMismatch.newBuilder()
                             .setOnNotMatched(strings -> {
-                                listViewAdapter.remove(dots);
-                                listViewAdapter.add("You said: " + strings);
-                                listViewAdapter.add("I did not expect that. Please try again!");
+                                removeLastFromAdapter();
+                                addIntoAdapter("<b>You said:</b> " + strings);
+                                addIntoAdapter("I was not expecting that. Please try again!");
                             }).build();
                 }
 
@@ -128,6 +123,20 @@ public class BuildFromJsonActivity extends BaseActivity {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+    }
+
+    private void removeLastFromAdapter() {
+        runOnUiThread(() -> {
+            listViewAdapter.remove(listViewAdapter.getItem(
+                    listViewAdapter.getCount() - 1
+            ));
+        });
+    }
+
+    private void addIntoAdapter(String text) {
+        runOnUiThread(() -> {
+            listViewAdapter.add(HtmlUtils.from(text));
+        });
     }
 
     public String loadJSONFromAsset() {

@@ -1,16 +1,16 @@
 [
   {
-    "message": "Hi!"
-  },
-  {
-    "message": "How are you?",
+    "message": "Hi! How are you doing today?",
     "results": ["good", "fine", "not bad"]
   },
   {
-    "message": "Good!. Are you ok if we keep talking?",
+    "message": "Good! Are you ok if we keep talking?",
     "results": ["yes", "sure", "no", "of course"]
   },
+  { "message": "Ok. I'm a voice synthesizer created to assist you." },
   {
-    "message": "Ok. I'm a bit lazy now, let's try next time."
-  }
+    "message": "Do you have any query so far?",
+    "results": ["yes", "sure", "no", "of course"]
+  },
+  { "message": "Ok. Let's keep that in mind in our next talk!" }
 ]

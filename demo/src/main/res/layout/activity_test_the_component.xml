@@ -6,14 +6,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:animateLayoutChanges="true"
-    tools:context="com.chattylabs.demo.voice.CustomConversationActivity">
+    tools:context="com.chattylabs.demo.voice.TestTheComponentActivity">
 
     <android.support.constraint.Guideline
         android:id="@+id/guideline"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        app:layout_constraintGuide_percent="0.35" />
+        app:layout_constraintGuide_percent="0.55" />
 
     <TextView
         android:id="@+id/execution"
@@ -24,6 +24,7 @@
         android:padding="10dp"
         android:scrollbars="vertical"
         android:textColor="@android:color/darker_gray"
+        android:typeface="monospace"
         app:layout_constraintBottom_toTopOf="@+id/guideline"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
