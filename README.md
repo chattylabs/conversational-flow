@@ -13,6 +13,11 @@ Part of the [Voice & User Interaction SDK]().
 This library combines both native built-in resources and cloud services into 
 a software component capable to run reliably a Speech Synthesizer and a Voice Recognizer.
 
+
+<img src="art/test-min.png" width="190" alt="test-sample"/>&nbsp;&nbsp;&nbsp;&nbsp;
+<img src="art/json-min.png" width="190" alt="json-sample"/>
+
+
 Besides, it provides an [Interface](#how-to-create-a-conversation) based on a 
 [Directed Graph](https://en.wikipedia.org/wiki/Directed_graph) 
 implementation with [Directed Cycles](https://en.wikipedia.org/wiki/Cycle_(graph_theory)) 
@@ -20,6 +25,7 @@ that allows a developer to create connected nodes and build a consistent convers
 a device and a user with ease. 
 <br/>_Consistency_ here stands for the needless to code the flow using conditional statements or 
 any extra state complexity while ensuring the conversation will behave as expected.
+
 
 It enables currently the following providers:
 
@@ -32,8 +38,6 @@ It enables currently the following providers:
     
     like Android, Google Cloud, 
     (Amazon, Wit.ai, Temi, Bing Speech, IBM, ...)
-
-<p align="center"><img src="art/demo-sample.jpg" alt="demo-sample"/></p>
 
 ## Why choosing this library?
 
