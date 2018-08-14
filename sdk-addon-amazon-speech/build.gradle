@@ -1,0 +1,47 @@
+apply plugin: 'com.android.library'
+apply plugin: 'com.chattylabs.versioning'
+apply from: '../buildsystem/android.gradle'
+
+versioning {
+
+    tagPrefix "addon-amazon-version/"
+
+    keywords {
+        minor "[addon-amazon-feature]"
+        patch "[addon-amazon-bug]", "[addon-amazon-patch]"
+    }
+}
+
+ext {
+    publishDescription = 'AmazonSpeechSynthesizerAdapter Conversational Flow Component (VUI SDK)'
+}
+
+apply from: '../publish.gradle'
+
+android {
+    defaultConfig {
+        versionCode versioning.code()
+        versionName versioning.name()
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    // AmazonSpeechSynthesizerAdapter mobile client and polly
+    implementation('com.amazonaws:aws-android-sdk-mobile-client:2.6.+@aar') { transitive = true }
+    implementation group: 'com.amazonaws', name: 'aws-android-sdk-polly', version: '2.6.27'
+
+    // Dagger
+    api 'com.google.dagger:dagger:2.15'
+    kapt 'com.google.dagger:dagger-compiler:2.15'
+
+    // SDK
+    api 'com.chattylabs.sdk.android:common:+'
+    api project(':sdk-conversational-flow-core')
+
+    implementation 'com.android.support:appcompat-v7:27.1.1'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+}

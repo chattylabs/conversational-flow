@@ -39,7 +39,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
     private TextToSpeech tts; // released
     private SynthesizerListener.OnSetup onSynthesizerSetup;
 
-    AndroidSpeechSynthesizer(Application application,
+    public AndroidSpeechSynthesizer(Application application,
                              ComponentConfig configuration,
                              AndroidAudioManager audioManager,
                              BluetoothSco bluetoothSco,

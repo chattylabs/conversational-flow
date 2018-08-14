@@ -38,7 +38,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
     private ThreadUtils.SerialThread serialThread;
     private SpeechRecognizer speechRecognizer;
 
-    AndroidSpeechRecognizer(Application application,
+    public AndroidSpeechRecognizer(Application application,
                             ComponentConfig configuration,
                             AndroidAudioManager audioManager,
                             BluetoothSco bluetoothSco,

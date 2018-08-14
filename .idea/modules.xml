@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/android-conversational-flow.iml" filepath="$PROJECT_DIR$/android-conversational-flow.iml" />
       <module fileurl="file://$PROJECT_DIR$/demo/demo.iml" filepath="$PROJECT_DIR$/demo/demo.iml" />
+      <module fileurl="file://$PROJECT_DIR$/sdk-addon-amazon-speech/sdk-addon-amazon-speech.iml" filepath="$PROJECT_DIR$/sdk-addon-amazon-speech/sdk-addon-amazon-speech.iml" />
       <module fileurl="file://$PROJECT_DIR$/sdk-addon-android-speech/sdk-addon-android-speech.iml" filepath="$PROJECT_DIR$/sdk-addon-android-speech/sdk-addon-android-speech.iml" />
       <module fileurl="file://$PROJECT_DIR$/sdk-addon-google-speech/sdk-addon-google-speech.iml" filepath="$PROJECT_DIR$/sdk-addon-google-speech/sdk-addon-google-speech.iml" />
       <module fileurl="file://$PROJECT_DIR$/sdk-conversational-flow-core/sdk-conversational-flow-core.iml" filepath="$PROJECT_DIR$/sdk-conversational-flow-core/sdk-conversational-flow-core.iml" />

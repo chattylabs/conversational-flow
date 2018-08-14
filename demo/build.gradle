@@ -70,6 +70,7 @@ dependencies {
     implementation project(':sdk-conversational-flow-core')
     implementation project(':sdk-addon-android-speech')
     implementation project(':sdk-addon-google-speech')
+    implementation project(':sdk-addon-amazon-speech')
 
     // Test dependencies
     testImplementation 'junit:junit:4.12'
