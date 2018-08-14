@@ -1,22 +1,7 @@
-buildscript {
-    repositories {
-        jcenter()
-        maven { url "https://dl.bintray.com/chattylabs/maven" }
-    }
-    dependencies {
-        classpath 'com.novoda:bintray-release:0.8.1'
-    }
-}
-
-repositories {
-    maven { url "https://dl.bintray.com/chattylabs/maven" }
-}
-
 apply plugin: 'com.android.library'
 apply plugin: 'com.novoda.bintray-release'
 apply plugin: 'com.chattylabs.versioning'
 apply from: '../buildsystem/android.gradle'
-
 
 versioning {
 
@@ -27,6 +12,12 @@ versioning {
         patch "[addon-google-bug]", "[addon-google-patch]"
     }
 }
+
+ext {
+    publishDescription = 'Google Conversational Flow Component (VUI SDK)'
+}
+
+apply from: '../publish.gradle'
 
 android {
     defaultConfig {

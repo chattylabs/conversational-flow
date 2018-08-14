@@ -17,6 +17,7 @@ import android.widget.Spinner;
 
 import com.chattylabs.sdk.android.common.PermissionsHelper;
 import com.chattylabs.sdk.android.common.ThreadUtils;
+import com.chattylabs.sdk.android.voice.AmazonSpeechSynthesizer;
 import com.chattylabs.sdk.android.voice.AndroidSpeechRecognizer;
 import com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer;
 import com.chattylabs.sdk.android.voice.ConversationalFlowComponent;
@@ -39,12 +40,15 @@ public class BaseActivity extends DaggerAppCompatActivity
 
     private static final String ANDROID = "Android";
     private static final String GOOGLE = "Google";
+    private static final String POLLY = "Polly";
 
-    private String addonType = ANDROID;
+    private String addonType = POLLY;
     private static LinkedHashMap<Integer, String> addonMap = new LinkedHashMap<>();
+
     static {
         addonMap.put(0, ANDROID);
         addonMap.put(1, GOOGLE);
+        addonMap.put(2, POLLY);
     }
 
     @Inject ConversationalFlowComponent component;
@@ -99,7 +103,7 @@ public class BaseActivity extends DaggerAppCompatActivity
 
     private void setup() {
         component.updateConfiguration(builder ->
-                builder .setGoogleCredentialsResourceFile(() -> R.raw.credential)
+                builder.setGoogleCredentialsResourceFile(() -> R.raw.credential)
                         .setRecognizerServiceType(() -> {
                             if (GOOGLE.equals(addonType)) {
                                 return GoogleSpeechRecognizer.class;
@@ -108,7 +112,9 @@ public class BaseActivity extends DaggerAppCompatActivity
                             }
                         })
                         .setSynthesizerServiceType(() -> {
-                            if (GOOGLE.equals(addonType)) {
+                            if (POLLY.equals(addonType)) {
+                                return AmazonSpeechSynthesizer.class;
+                            } else if (GOOGLE.equals(addonType)) {
                                 return GoogleSpeechSynthesizer.class;
                             } else {
                                 return AndroidSpeechSynthesizer.class;
@@ -120,7 +126,7 @@ public class BaseActivity extends DaggerAppCompatActivity
                 perms,
                 () -> onRequestPermissionsResult(
                         PermissionsHelper.REQUEST_CODE, perms,
-                        new int[] {PackageManager.PERMISSION_GRANTED}));
+                        new int[]{PackageManager.PERMISSION_GRANTED}));
     }
 
     @SuppressLint("MissingPermission")
@@ -129,7 +135,7 @@ public class BaseActivity extends DaggerAppCompatActivity
                                            @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
         if (PermissionsHelper.isPermissionRequest(requestCode) &&
-            PermissionsHelper.isPermissionGranted(grantResults)) {
+                PermissionsHelper.isPermissionGranted(grantResults)) {
             serialThread.addTask(() -> component.setup(this, status -> {
                 if (status.isAvailable()) {
                     recognizer = component.getSpeechRecognizer(this);
