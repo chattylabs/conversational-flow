@@ -21,8 +21,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.*;
-
 public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     private static final String CHECKING_UTTERANCE_ID = "<CHECKING_UTTERANCE_ID>";
@@ -57,7 +55,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
         logger.i(TAG, "ANDROID TTS - setup and check language");
         this.onSynthesizerSetup = onSynthesizerSetup;
         try {
-            initTts(status -> {
+            prepare(status -> {
                 if (status == SynthesizerListener.Status.SUCCESS) {
                     tryToDownloadTtsData();
                 }
@@ -167,7 +165,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
     }
 
     @Override
-    void initTts(SynthesizerListener.OnInitialised onSynthesizerInitialised) {
+    void prepare(SynthesizerListener.OnPrepared onSynthesizerPrepared) {
         if (isTtsNull()) {
             setReady(false);
             logger.i(TAG, "ANDROID TTS - creating new instance of TextToSpeech.class");
@@ -177,7 +175,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
                     setReady(true);
                     setupLanguage();
                 }
-                onSynthesizerInitialised.execute(status == TextToSpeech.SUCCESS ?
+                onSynthesizerPrepared.execute(status == TextToSpeech.SUCCESS ?
                         SynthesizerListener.Status.SUCCESS : SynthesizerListener.Status.ERROR);
             });
             setSynthesizerUtteranceListener(createUtterancesListener());
@@ -185,7 +183,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
         }
         else if (isReady()) {
             setupLanguage();
-            onSynthesizerInitialised.execute(SynthesizerListener.Status.SUCCESS);
+            onSynthesizerPrepared.execute(SynthesizerListener.Status.SUCCESS);
         }
     }
 
@@ -389,7 +387,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
     @Override
     void playSilence(String utteranceId, long durationInMillis) {
         logger.i(TAG, "ANDROID TTS[%s] - play internal silence", utteranceId);
-        initTts(status -> {
+        prepare(status -> {
             if (status == SynthesizerListener.Status.SUCCESS) {
                 tts.playSilentUtterance(durationInMillis, TextToSpeech.QUEUE_ADD, utteranceId);
             }
@@ -402,7 +400,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     private void play(String utteranceId, String text, HashMap<String, String> params) {
         logger.i(TAG, "ANDROID TTS[%s] - reading out loud: \"%s\"", utteranceId, text);
-        initTts(status -> {
+        prepare(status -> {
             if (status == SynthesizerListener.Status.SUCCESS) {
                 Bundle newParams = new Bundle();
                 String paramStream = params.get(TextToSpeech.Engine.KEY_PARAM_STREAM);

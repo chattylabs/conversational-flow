@@ -16,8 +16,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Main contract that contains all the interfaces being used within this component.
- *
+ * Main contract.
  *
  */
 @dagger.Reusable
@@ -26,7 +25,7 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
 
     /**
      * It checks if the Synthesizer and Recognizer are available and returns a {@link ComponentStatus}
-     * object as part of the {@link ComponentSetup} interface.
+     * object as part of the {@link OnComponentSetup} interface.
      * <br/>Based on the returned {@link ComponentStatus} you can decide either to use only one or
      * all the functionality.
      * <br/><pre>{@code
@@ -36,11 +35,11 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
      *      }
      * });
      * }</pre>
-     * @see ComponentSetup
+     * @see OnComponentSetup
      */
     @WorkerThread
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
-    void setup(Context context, ComponentSetup onSetup);
+    void setup(Context context, OnComponentSetup onComponentSetup);
 
     /**
      * Overrides a new {@link ComponentConfig}.
@@ -98,7 +97,7 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
     void stop();
 
     /**
-     * Shut all internal components down and resets resources.
+     * Shuts all internal components down and resets resources.
      * <br/>code...
      */
     void shutdown();

@@ -14,7 +14,7 @@ public interface SynthesizerListener {
         void execute(int synthesizerStatus);
     }
 
-    interface OnInitialised extends SynthesizerListener {
+    interface OnPrepared extends SynthesizerListener {
         void execute(int synthesizerStatus);
     }
 

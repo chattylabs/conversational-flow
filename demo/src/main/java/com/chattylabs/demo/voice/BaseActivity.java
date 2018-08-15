@@ -162,6 +162,4 @@ public class BaseActivity extends DaggerAppCompatActivity
                 return super.onOptionsItemSelected(item);
         }
     }
-
-
 }
