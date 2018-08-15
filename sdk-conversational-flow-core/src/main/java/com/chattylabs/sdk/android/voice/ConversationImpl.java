@@ -189,9 +189,9 @@ class ConversationImpl extends ConversationFlow.Edge implements Conversation {
     }
 
     private void noMatch(VoiceMismatch mismatchAction, int error, @Nullable List<String> results) {
-        boolean isUnexpected = error == RecognizerListener.Status.RECOGNIZER_STOPPED_TOO_EARLY_ERROR;
-        boolean isLowSound = error == RecognizerListener.Status.RECOGNIZER_LOW_SOUND_ERROR;
-        boolean isNoSound = error == RecognizerListener.Status.RECOGNIZER_NO_SOUND_ERROR;
+        boolean isUnexpected = error == RecognizerListener.Status.STOPPED_TOO_EARLY_ERROR;
+        boolean isLowSound = error == RecognizerListener.Status.LOW_SOUND_ERROR;
+        boolean isNoSound = error == RecognizerListener.Status.NO_SOUND_ERROR;
 
         if (mismatchAction.retries > 0) {
             mismatchAction.retries--;

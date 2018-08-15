@@ -30,16 +30,16 @@ public interface RecognizerListener {
 
     final class Status {
         private Status() {}
-        public static final int RECOGNIZER_AVAILABLE = 201;
-        public static final int RECOGNIZER_NOT_AVAILABLE = 202;
-        public static final int RECOGNIZER_UNKNOWN_ERROR = 203;
-        public static final int RECOGNIZER_EMPTY_RESULTS_ERROR = 204;
-        public static final int RECOGNIZER_UNAVAILABLE_ERROR = 205;
-        public static final int RECOGNIZER_STOPPED_TOO_EARLY_ERROR = 206;
-        public static final int RECOGNIZER_RETRY_ERROR = 207;
-        public static final int RECOGNIZER_AFTER_PARTIALS_ERROR = 208;
-        public static final int RECOGNIZER_NO_SOUND_ERROR = 209;
-        public static final int RECOGNIZER_LOW_SOUND_ERROR = 210;
+        public static final int AVAILABLE = 201;
+        public static final int NOT_AVAILABLE = 202;
+        public static final int UNKNOWN_ERROR = 203;
+        public static final int EMPTY_RESULTS_ERROR = 204;
+        public static final int UNAVAILABLE_ERROR = 205;
+        public static final int STOPPED_TOO_EARLY_ERROR = 206;
+        public static final int RETRY_ERROR = 207;
+        public static final int AFTER_PARTIALS_ERROR = 208;
+        public static final int NO_SOUND_ERROR = 209;
+        public static final int LOW_SOUND_ERROR = 210;
     }
 }
 
