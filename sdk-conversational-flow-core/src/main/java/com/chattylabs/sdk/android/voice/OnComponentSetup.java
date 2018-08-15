@@ -1,5 +1,5 @@
 package com.chattylabs.sdk.android.voice;
 
-public interface ComponentSetup {
+public interface OnComponentSetup {
     void execute(ComponentStatus status);
 }

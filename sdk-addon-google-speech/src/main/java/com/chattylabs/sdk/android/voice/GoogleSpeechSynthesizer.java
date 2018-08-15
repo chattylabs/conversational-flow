@@ -202,7 +202,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
     }
 
     @Override
-    void initTts(SynthesizerListener.OnInitialised onSynthesizerInitialised) {
+    void prepare(SynthesizerListener.OnPrepared onSynthesizerPrepared) {
         if (isTtsNull()) {
             setReady(false);
             logger.i(TAG, "GOOGLE TTS - creating new instance of TextToSpeechClient.class");
@@ -214,16 +214,16 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
                 this.audioConfig = AudioConfig.newBuilder().setAudioEncoding(AudioEncoding.MP3).build();
                 setupLanguage();
                 setSynthesizerUtteranceListener(createUtterancesListener());
-                onSynthesizerInitialised.execute(SynthesizerListener.Status.SUCCESS);
+                onSynthesizerPrepared.execute(SynthesizerListener.Status.SUCCESS);
             } catch (Exception e) {
                 logger.logException(e);
                 shutdown();
-                onSynthesizerInitialised.execute(SynthesizerListener.Status.ERROR);
+                onSynthesizerPrepared.execute(SynthesizerListener.Status.ERROR);
             }
         }
         else if (isReady()) {
             setupLanguage();
-            onSynthesizerInitialised.execute(SynthesizerListener.Status.SUCCESS);
+            onSynthesizerPrepared.execute(SynthesizerListener.Status.SUCCESS);
         }
     }
 
@@ -374,7 +374,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
     private void play(String utteranceId, String text, HashMap<String, String> params) {
         logger.i(TAG, "GOOGLE TTS[%s] - reading out loud: \"%s\"", utteranceId, text);
         getSynthesizerUtteranceListener().onStart(utteranceId);
-        initTts(status -> {
+        prepare(status -> {
             if (status == SynthesizerListener.Status.SUCCESS) {
                 mCondVar.close();
                 completed = false;

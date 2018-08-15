@@ -39,7 +39,7 @@ import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.TAG;
  * in charge of testing whether the client provider work and to check whether the required language
  * is available.
  * <p/>
- * - You will implement {@link #initTts(SynthesizerListener.OnInitialised)} which is the entry point
+ * - You will implement {@link #prepare(SynthesizerListener.OnPrepared)} which is the entry point
  * for any call to {@link #playText(String, SynthesizerListener[])} or
  * {@link #playSilence(long, SynthesizerListener[])} and its variations.
  * <br/>This method behaves like {@link #setup(SynthesizerListener.OnSetup)} but it stores the current
@@ -110,7 +110,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizerComponent {
 
     abstract String getTag();
 
-    abstract void initTts(SynthesizerListener.OnInitialised onSynthesizerInitialised);
+    abstract void prepare(SynthesizerListener.OnPrepared onSynthesizerPrepared);
 
     abstract void executeOnTtsReady(String utteranceId, String text, HashMap<String, String> params);
 
@@ -217,7 +217,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizerComponent {
                 uId, Boolean.toString(isReady), Boolean.toString(isSpeaking), Boolean.toString(isOnHold));
         if (isTtsNull() && !isSpeaking) {
             setSpeaking(true);
-            initTts(status -> {
+            prepare(status -> {
                 if (status == SynthesizerListener.Status.SUCCESS) {
                     run();
                 }
@@ -251,7 +251,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizerComponent {
         map.put(MAP_PARAMS, params);
         logger.i(TAG, "TTS[%s] - ready: %s | speaking: %s",
                 uId, Boolean.toString(isReady), Boolean.toString(isSpeaking));
-        initTts(status -> {
+        prepare(status -> {
             if (status == SynthesizerListener.Status.SUCCESS) {
                 playTheCurrentQueue(map);
             }
@@ -279,7 +279,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizerComponent {
                 uId, Boolean.toString(isReady), Boolean.toString(isSpeaking), Boolean.toString(isOnHold));
         if (isTtsNull() && !isSpeaking) {
             setSpeaking(true);
-            initTts(status -> {
+            prepare(status -> {
                 if (status == SynthesizerListener.Status.SUCCESS) {
                     run();
                 }
@@ -312,7 +312,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizerComponent {
         map.put(MAP_SILENCE, durationInMillis);
         logger.i(TAG, "TTS[%s] - ready: %s | speaking: %s",
                 uId, Boolean.toString(isReady), Boolean.toString(isSpeaking));
-        initTts(status -> {
+        prepare(status -> {
             if (status == SynthesizerListener.Status.SUCCESS) {
                 playTheCurrentQueue(map);
             }
@@ -375,7 +375,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizerComponent {
         final String uId = utteranceId;
         logger.i(getTag(), "TTS[%s] - resume queue <%s>", uId, queueId);
         if (!isEmpty()) setSpeaking(true);
-        initTts(status -> {
+        prepare(status -> {
             if (status == SynthesizerListener.Status.SUCCESS) {
                 run();
             }
