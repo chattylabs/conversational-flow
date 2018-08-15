@@ -133,16 +133,16 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
         init(application);
         speechSynthesizer.setup(synthesizerStatus -> {
             int androidRecognizerStatus = android.speech.SpeechRecognizer.isRecognitionAvailable(application) ?
-                    RecognizerListener.Status.RECOGNIZER_AVAILABLE : RecognizerListener.Status.RECOGNIZER_NOT_AVAILABLE;
+                    RecognizerListener.Status.AVAILABLE : RecognizerListener.Status.NOT_AVAILABLE;
             int speechRecognizerStatus = configuration.getRecognizerServiceType().getSimpleName().equals(
                     ComponentConfig.RECOGNIZER_SERVICE_ANDROID) ? androidRecognizerStatus
-                    : RecognizerListener.Status.RECOGNIZER_AVAILABLE;
+                    : RecognizerListener.Status.AVAILABLE;
             onComponentSetup.execute(new ComponentStatus() {
                 @SuppressLint("MissingPermission")
                 @Override
                 public boolean isAvailable() {
                     return synthesizerStatus == SynthesizerListener.Status.AVAILABLE &&
-                           speechRecognizerStatus == RecognizerListener.Status.RECOGNIZER_AVAILABLE;
+                           speechRecognizerStatus == RecognizerListener.Status.AVAILABLE;
                 }
 
                 @SuppressLint("MissingPermission")

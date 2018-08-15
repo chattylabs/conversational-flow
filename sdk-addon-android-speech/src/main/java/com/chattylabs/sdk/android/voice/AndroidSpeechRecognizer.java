@@ -135,27 +135,27 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
             cancel();
             if (errorListener != null) {
                 if (needRetry(error)) {
-                    errorListener.execute(RecognizerListener.Status.RECOGNIZER_UNAVAILABLE_ERROR, error);
+                    errorListener.execute(RecognizerListener.Status.UNAVAILABLE_ERROR, error);
                 }
                 else if (stoppedTooEarly) {
-                    errorListener.execute(RecognizerListener.Status.RECOGNIZER_STOPPED_TOO_EARLY_ERROR, error);
+                    errorListener.execute(RecognizerListener.Status.STOPPED_TOO_EARLY_ERROR, error);
                 }
                 else if (soundLevel == NO_SOUND) {
-                    errorListener.execute(RecognizerListener.Status.RECOGNIZER_NO_SOUND_ERROR, error);
+                    errorListener.execute(RecognizerListener.Status.NO_SOUND_ERROR, error);
                 }
                 else if (soundLevel == LOW_SOUND) {
-                    errorListener.execute(RecognizerListener.Status.RECOGNIZER_LOW_SOUND_ERROR, error);
+                    errorListener.execute(RecognizerListener.Status.LOW_SOUND_ERROR, error);
                 }
                 else if (intents > 0) {
-                    errorListener.execute(RecognizerListener.Status.RECOGNIZER_AFTER_PARTIALS_ERROR, error);
+                    errorListener.execute(RecognizerListener.Status.AFTER_PARTIALS_ERROR, error);
                 }
                 else if (this.isTryAgain()) {
                     errorListener.execute(error == SpeechRecognizer.ERROR_NO_MATCH ?
-                            RecognizerListener.Status.RECOGNIZER_UNKNOWN_ERROR :
-                            RecognizerListener.Status.RECOGNIZER_RETRY_ERROR, error);
+                            RecognizerListener.Status.UNKNOWN_ERROR :
+                            RecognizerListener.Status.RETRY_ERROR, error);
                 }
                 else { // Restore ANDROID VOICE
-                    errorListener.execute(RecognizerListener.Status.RECOGNIZER_UNKNOWN_ERROR, error);
+                    errorListener.execute(RecognizerListener.Status.UNKNOWN_ERROR, error);
                 }
             }
         }
@@ -185,7 +185,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                 logger.e(TAG, "ANDROID VOICE - NO results");
                 RecognizerListener.OnError listener = _getOnError();
                 reset();
-                if (listener != null) listener.execute(RecognizerListener.Status.RECOGNIZER_EMPTY_RESULTS_ERROR, -1);
+                if (listener != null) listener.execute(RecognizerListener.Status.EMPTY_RESULTS_ERROR, -1);
             }
         }
 
