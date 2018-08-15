@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 public class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     private static final int MAX_SPEECH_TIME_SEC = 60;
+    private static final String TAG = "AMAZON_POLLY";
 
     private final Application mApplication;
     private MediaPlayer mMediaPlayer;
@@ -47,7 +48,7 @@ public class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     @Override
     String getTag() {
-        return null;
+        return TAG;
     }
 
     @Override
@@ -76,25 +77,27 @@ public class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
 
             @Override
             public void clearTimeout(String utteranceId) {
-                logger.v(getTag(), "GOOGLE TTS[%s] - utterance timeout cleared", utteranceId);
+                logger.v(getTag(), "AMAZON TTS[%s] - utterance timeout cleared", utteranceId);
                 if (task != null) task.cancel();
                 if (timer != null) timer.cancel();
             }
 
             @Override
             public void startTimeout(String utteranceId) {
-                logger.i(getTag(), "ANDROID TTS[%s] - started timeout", utteranceId);
+                logger.i(getTag(), "AMAZON TTS[%s] - started timeout", utteranceId);
                 timer = new Timer();
                 task = new TimerTask() {
                     @Override
                     public void run() {
                         if (!isTtsSpeaking()) {
-                            logger.e(getTag(), "GOOGLE TTS[%s] - is null or not speaking && reached timeout", utteranceId);
+                            logger.e(getTag(), "AMAZON TTS[%s] - is null or not speaking && reached timeout",
+                                    utteranceId);
                             stop();
                             onError(utteranceId, SynthesizerListener.Status.TIMEOUT);
                         } else {
                             if ((System.currentTimeMillis() - timestamp) > TimeUnit.SECONDS.toMillis(MAX_SPEECH_TIME_SEC)) {
-                                logger.e(getTag(), "GOOGLE TTS[%s] - exceeded %s seconds", utteranceId, MAX_SPEECH_TIME_SEC);
+                                logger.e(getTag(), "AMAZON TTS[%s] - exceeded %s seconds", utteranceId,
+                                        MAX_SPEECH_TIME_SEC);
                                 stop();
                                 onError(utteranceId, SynthesizerListener.Status.TIMEOUT);
                             } else {
@@ -109,7 +112,7 @@ public class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
 
             @Override
             public void onStart(String utteranceId) {
-                logger.v(getTag(), "GOOGLE TTS[%s] - on start", utteranceId);
+                logger.v(getTag(), "AMAZON TTS[%s] - on start", utteranceId);
 
                 startTimeout(utteranceId);
                 timestamp = System.currentTimeMillis();
@@ -125,16 +128,16 @@ public class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
             @Override
             public void onDone(String utteranceId) {
                 clearTimeout(utteranceId);
-                logger.v(getTag(), "GOOGLE TTS[%s] - on done <%s> - check for Empty Queue", utteranceId, getCurrentQueueId());
+                logger.v(getTag(), "AMAZON TTS[%s] - on done <%s> - check for Empty Queue", utteranceId, getCurrentQueueId());
                 moveToNextQueueIfNeeded();
                 if (isEmpty()) {
                     stop();
-                    logger.i(getTag(), "GOOGLE TTS[%s] - on done <%s> - Stream Finished", utteranceId, getCurrentQueueId());
+                    logger.i(getTag(), "AMAZON TTS[%s] - on done <%s> - Stream Finished", utteranceId, getCurrentQueueId());
                 }
                 setSpeaking(false);
                 if (getListenersMap().size() > 0) {
                     SynthesizerUtteranceListener listener = removeListener(utteranceId);
-                    logger.v(getTag(), "GOOGLE TTS[%s] - on done <%s> - execute listener.onDone", utteranceId, getCurrentQueueId());
+                    logger.v(getTag(), "AMAZON TTS[%s] - on done <%s> - execute listener.onDone", utteranceId, getCurrentQueueId());
                     if (listener != null) {
                         listener.onDone(utteranceId);
                     }
@@ -145,14 +148,14 @@ public class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
             @TargetApi(Build.VERSION_CODES.LOLLIPOP)
             public void onError(String utteranceId, int errorCode) {
                 clearTimeout(utteranceId);
-                logger.e(getTag(), "GOOGLE TTS[%s] - on error <%s> -> stop timeout", utteranceId, getCurrentQueueId());
+                logger.e(getTag(), "AMAZON TTS[%s] - on error <%s> -> stop timeout", utteranceId, getCurrentQueueId());
                 // TODO: Print Error for error code.
-//                logger.e(getTag(), "GOOGLE TTS[%s] - error code: %s", utteranceId, getErrorType(errorCode));
-                logger.e(getTag(), "GOOGLE TTS[%s] - error code: %s", utteranceId, "" + errorCode);
+//                logger.e(getTag(), "AMAZON TTS[%s] - error code: %s", utteranceId, getErrorType(errorCode));
+                logger.e(getTag(), "AMAZON TTS[%s] - error code: %s", utteranceId, "" + errorCode);
                 moveToNextQueueIfNeeded();
                 if (isEmpty()) {
                     stop();
-                    logger.i(getTag(), "GOOGLE TTS[%s] - ERROR <%s> - Stream Finished", utteranceId, getCurrentQueueId());
+                    logger.i(getTag(), "AMAZON TTS[%s] - ERROR <%s> - Stream Finished", utteranceId, getCurrentQueueId());
                 }
                 setSpeaking(false);
                 if (getListenersMap().size() > 0 && getListenersMap().containsKey(utteranceId)) {
