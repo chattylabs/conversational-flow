@@ -51,7 +51,7 @@ public class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
     }
 
     @Override
-    void initTts(SynthesizerListener.OnInitialised onSynthesizerInitialised) {
+    void prepare(SynthesizerListener.OnPrepared onSynthesizerPrepared) {
         if (isTtsNull()) {
             // TODO: need to set it from config. in this case AWSMobileClient should not even need to be initialized.
             final CognitoCachingCredentialsProvider credentialsProvider = new CognitoCachingCredentialsProvider(
@@ -62,9 +62,9 @@ public class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
 
             setSynthesizerUtteranceListener(createUtterancesListener());
             mAmazonSpeechClient = new AmazonPollyPresigningClient(credentialsProvider);
-            onSynthesizerInitialised.execute(SynthesizerListener.Status.SUCCESS);
+            onSynthesizerPrepared.execute(SynthesizerListener.Status.SUCCESS);
         } else {
-            onSynthesizerInitialised.execute(SynthesizerListener.Status.SUCCESS);
+            onSynthesizerPrepared.execute(SynthesizerListener.Status.SUCCESS);
         }
     }
 
@@ -168,7 +168,7 @@ public class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     @Override
     void executeOnTtsReady(String utteranceId, String text, HashMap<String, String> params) {
-        initTts(synthesizerStatus -> {
+        prepare(synthesizerStatus -> {
             final URL audioUrl = mAmazonSpeechClient.getPresignedSynthesizeSpeechUrl(
                     new SynthesizeSpeechPresignRequest().withVoiceId(mDefaultVoices.getId())
                             .withOutputFormat(OutputFormat.Mp3)
@@ -265,7 +265,7 @@ public class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     @Override
     public void setup(SynthesizerListener.OnSetup onSynthesizerSetup) {
-        initTts(synthesizerStatus -> {
+        prepare(synthesizerStatus -> {
             // TODO: Language should be derived from config
             final DescribeVoicesResult voicesResult = mAmazonSpeechClient.describeVoices(new DescribeVoicesRequest()
                     .withLanguageCode(LanguageCode.EnGB));
