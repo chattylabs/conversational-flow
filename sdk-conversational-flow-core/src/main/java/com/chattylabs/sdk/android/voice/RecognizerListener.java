@@ -42,4 +42,3 @@ public interface RecognizerListener {
         public static final int LOW_SOUND_ERROR = 210;
     }
 }
-
