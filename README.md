@@ -13,11 +13,6 @@ Part of the [Voice & User Interaction SDK]().
 This library combines both native built-in resources and cloud services into 
 a software component capable to run reliably a Speech Synthesizer and a Voice Recognizer.
 
-
-<img src="art/test-min.png" width="190" alt="test-sample"/>&nbsp;&nbsp;&nbsp;&nbsp;
-<img src="art/json-min.png" width="190" alt="json-sample"/>
-
-
 Besides, it provides an [Interface](#how-to-create-a-conversation) based on a 
 [Directed Graph](https://en.wikipedia.org/wiki/Directed_graph) 
 implementation with [Directed Cycles](https://en.wikipedia.org/wiki/Cycle_(graph_theory)) 
@@ -29,15 +24,22 @@ any extra state complexity while ensuring the conversation will behave as expect
 
 It enables currently the following providers:
 
-- [Built-in Android](https://developers.google.com/voice-actions/interaction/voice-interactions)
-    - [TextToSpeech](https://developer.android.com/reference/android/speech/tts/TextToSpeech)
-    - [SpeechRecognizer](https://developer.android.com/reference/android/speech/SpeechRecognizer)
-- [Google Cloud](https://cloud.google.com/)
-    - [Text-To-Speech](https://cloud.google.com/text-to-speech/)
-    - [Speech-To-Text](https://cloud.google.com/speech-to-text/)
+- [Built-in Android][p1] (@kuassivi)
+    - [TextToSpeech][p2]
+    - [SpeechRecognizer][p3]
+- [Google Cloud][p4] (@kuassivi)
+    - [Text-To-Speech][p5]
+    - [Speech-To-Text][p6]
+- [Amazon][p4] (@xvelx)
+    - [Polly][p5]
+    - [Transcribe][p6]
     
-    like Android, Google Cloud, 
-    (Amazon, Wit.ai, Temi, Bing Speech, IBM, ...)
+Other providers you can contribute with are:
+
+- _Wit.ai_
+- _Temi_ 
+- _Bing (Microsoft)_ 
+- _IBM_
 
 ## Why choosing this library?
 
@@ -55,10 +57,6 @@ The SDK works on Android version 5.0 (Lollipop) and above. _(for lower versions 
 
 ## Dependencies
 
-    repositories {
-        maven { url "https://dl.bintray.com/chattylabs/maven" }
-    }
-     
     dependencies {
         // Required
         implementation 'com.chattylabs.sdk.android:conversational-flow-core:x.y.z'
@@ -72,34 +70,26 @@ The SDK works on Android version 5.0 (Lollipop) and above. _(for lower versions 
 ### How to create a Conversation?
 
 You can use the component at any [Context]() level, both in an [Activity]() and a [Service](). 
-<br/>You will create a set of `VoiceNode` objects and build a flow.
+<br/>You will create a set of `VoiceNode` objects, add them into the graph and build a flow.
 
 ```java
-// Retrieve the Component
 component = ConversationalFlowModule.provideComponent(...);
  
-// Create a new instance of a Conversation
 Conversation conversation = component.create(context);
  
-// Create the various nodes you need
 VoiceMessage question = ...;
 VoiceMatch answers = ...;
  
-// Add the nodes into the current instance
 conversation.addNode(question);
 conversation.addNode(answers);
  
-// Connect the nodes each other
 ConversationFlow flow = conversation.prepare();
 flow.from(question).to(answers);
  
-// Start the conversation
 conversation.start(question);
 ```
 
-There are different [Voice Nodes](), check the [wiki page]()
-
-<p align="center"><img src="art/flow-sample.jpg" alt="flow-sample"/></p>
+There are different [Voice Nodes]() and [Configurations](), check the [wiki page]()
 
 &nbsp;
 
@@ -117,3 +107,10 @@ There are different [Voice Nodes](), check the [wiki page]()
 [c1]: https://coveralls.io/repos/chattylabs/conversational-flow-core/badge.svg?branch=master&service=github
 [c2]: https://coveralls.io/repos/chattylabs/addon-android-speech/badge.svg?branch=master&service=github
 [c3]: https://coveralls.io/repos/chattylabs/addon-google-speech/badge.svg?branch=master&service=github
+
+[p1]: https://developers.google.com/voice-actions/interaction/voice-interactions
+[p2]: https://developer.android.com/reference/android/speech/tts/TextToSpeech
+[p3]: https://developer.android.com/reference/android/speech/SpeechRecognizer
+[p4]: https://cloud.google.com/
+[p5]: https://cloud.google.com/text-to-speech/
+[p6]: https://cloud.google.com/speech-to-text/
