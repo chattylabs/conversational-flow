@@ -2,12 +2,12 @@ package com.chattylabs.sdk.android.voice;
 
 import android.support.annotation.RawRes;
 
-public class ComponentConfig {
-    static final String SYNTHESIZER_SERVICE_ANDROID = "AndroidSpeechSynthesizer";
-    static final String RECOGNIZER_SERVICE_ANDROID = "AndroidSpeechRecognizer";
-    static final String SYNTHESIZER_SERVICE_GOOGLE = "GoogleSpeechSynthesizer";
-    static final String RECOGNIZER_SERVICE_GOOGLE = "GoogleSpeechRecognizer";
+import java.util.Locale;
 
+public class ComponentConfig {
+    static final String RECOGNIZER_SERVICE_ANDROID = "AndroidSpeechRecognizer";
+
+    private LazyProvider<Locale> speechLanguage;
     private LazyProvider<Boolean> bluetoothScoRequired;
     private LazyProvider<Boolean> audioExclusiveRequiredForSynthesizer;
     private LazyProvider<Boolean> audioExclusiveRequiredForRecognizer;
@@ -16,12 +16,17 @@ public class ComponentConfig {
     private RawResourceLazyProvider googleCredentialsResourceFile;
 
     private ComponentConfig(Builder builder) {
+        speechLanguage = builder.speechLanguage;
         bluetoothScoRequired = builder.bluetoothScoRequired;
         audioExclusiveRequiredForSynthesizer = builder.audioExclusiveRequiredForSynthesizer;
         audioExclusiveRequiredForRecognizer = builder.audioExclusiveRequiredForRecognizer;
         recognizerServiceType = builder.recognizerServiceType;
         synthesizerServiceType = builder.synthesizerServiceType;
         googleCredentialsResourceFile = builder.googleCredentialsResourceFile;
+    }
+
+    public Locale getSpeechLanguage() {
+        return speechLanguage.get();
     }
 
     public boolean isBluetoothScoRequired() {
@@ -50,6 +55,7 @@ public class ComponentConfig {
     }
 
     public static final class Builder {
+        private LazyProvider<Locale> speechLanguage;
         private LazyProvider<Boolean> bluetoothScoRequired;
         private LazyProvider<Boolean> audioExclusiveRequiredForSynthesizer;
         private LazyProvider<Boolean> audioExclusiveRequiredForRecognizer;
@@ -61,12 +67,18 @@ public class ComponentConfig {
         }
 
         public Builder(ComponentConfig copy) {
+            speechLanguage = copy.speechLanguage;
             bluetoothScoRequired = copy.bluetoothScoRequired;
             audioExclusiveRequiredForSynthesizer = copy.audioExclusiveRequiredForSynthesizer;
             audioExclusiveRequiredForRecognizer = copy.audioExclusiveRequiredForRecognizer;
             recognizerServiceType = copy.recognizerServiceType;
             synthesizerServiceType = copy.synthesizerServiceType;
             googleCredentialsResourceFile = copy.googleCredentialsResourceFile;
+        }
+
+        public Builder setSpeechLanguage(LazyProvider<Locale> speechLanguage) {
+            this.speechLanguage = speechLanguage;
+            return this;
         }
 
         public Builder setBluetoothScoRequired(LazyProvider<Boolean> lazyProvider) {
