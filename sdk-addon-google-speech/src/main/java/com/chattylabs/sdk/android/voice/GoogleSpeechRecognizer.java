@@ -368,7 +368,7 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
         super.stop();
         // Stop recording
         stopVoiceRecorder();
-        serialThread.addTask(lock::unlock);
+        if (serialThread != null) serialThread.addTask(lock::unlock);
     }
 
     @Override
@@ -410,9 +410,7 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
     @Override
     public void release() {
         super.release();
-        if (serialThread != null) {
-            serialThread.addTask(lock::unlock);
-        }
+        if (serialThread != null) serialThread.addTask(lock::unlock);
         if (speech != null) {
             speech.close();
             speech = null;
