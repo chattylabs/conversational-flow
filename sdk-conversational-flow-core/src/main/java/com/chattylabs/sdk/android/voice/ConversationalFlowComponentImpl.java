@@ -83,7 +83,7 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
     private <T> T newInstance(Class cls, Object... parameters) throws
             IllegalAccessException, InvocationTargetException, InstantiationException {
         //noinspection unchecked
-        Constructor constructor = cls.getConstructors()[0];
+        Constructor constructor = cls.getDeclaredConstructors()[0];
         //noinspection unchecked
         return (T) constructor.newInstance(parameters);
     }
