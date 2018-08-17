@@ -273,7 +273,8 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
     public void stop() {
         logger.w(TAG, "ANDROID VOICE - do stop");
         super.stop();
-        serialThread.addTask(() -> {
+        if (serialThread != null)
+            serialThread.addTask(() -> {
             printLock();
             lock.lock();
             mainHandler.post(() -> {
@@ -292,7 +293,8 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
         super.cancel();
         if (speechRecognizer != null) {
             speechRecognizer.setRecognitionListener(null);
-            serialThread.addTask(() -> {
+            if (serialThread != null)
+                serialThread.addTask(() -> {
                 printLock();
                 lock.lock();
                 mainHandler.post(() -> {
