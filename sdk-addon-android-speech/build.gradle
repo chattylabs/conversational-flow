@@ -54,6 +54,6 @@ publish {
     groupId = project.group
     artifactId = project.name.replace("sdk-", "")
     publishVersion = project.version
-    desc = 'Built-in Speech addon for the Android Conversational Flow Component (VUI SDK)'
-    website = 'https://github.com/chattylabs/sdk-conversational-flow'
+    desc = 'Android Speech addon (VUI SDK)'
+    website = 'https://github.com/chattylabs/android-conversational-flow'
 }
