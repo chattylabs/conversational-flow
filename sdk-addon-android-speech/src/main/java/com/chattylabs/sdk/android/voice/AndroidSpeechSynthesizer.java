@@ -190,10 +190,14 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
     private void setupLanguage() {
         // setLanguage might throw an IllegalArgumentException: Invalid int: "OS" - Samsung Android 6
         try {
-            if (tts != null)
-                tts.setLanguage(Locale.getDefault());
+            if (tts != null) tts.setLanguage(getLanguage());
         } catch (Exception ignored) {
             logger.logException(ignored); }
+    }
+
+    private Locale getLanguage() {
+        Locale speechLanguage = getConfiguration().getSpeechLanguage();
+        return speechLanguage != null ? speechLanguage : Locale.getDefault();
     }
 
     private SynthesizerUtteranceListener createUtterancesListener() {
@@ -361,7 +365,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
     }
 
     private void checkLanguage(boolean fromUtterance) {
-        int result = tts.isLanguageAvailable(Locale.getDefault());
+        int result = tts.isLanguageAvailable(getLanguage());
         if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
             if (reviewAgain && !fromUtterance) {
                 reviewAgain = false;
