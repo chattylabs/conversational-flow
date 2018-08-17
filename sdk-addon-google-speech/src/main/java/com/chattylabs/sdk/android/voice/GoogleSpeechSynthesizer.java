@@ -332,7 +332,8 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
     }
 
     private String getDefaultLanguageCode() {
-        final Locale locale = Locale.getDefault();
+        Locale speechLanguage = getConfiguration().getSpeechLanguage();
+        final Locale locale = speechLanguage != null ? speechLanguage : Locale.getDefault();
         final StringBuilder language = new StringBuilder(locale.getLanguage());
         final String country = locale.getCountry();
         if (!TextUtils.isEmpty(country)) {
