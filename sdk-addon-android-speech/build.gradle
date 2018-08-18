@@ -12,9 +12,7 @@ versioning {
     }
 }
 
-ext {
-    publishDescription = 'Built-in Speech addon for the Android Conversational Flow Component (VUI SDK)'
-}
+description = 'Built-in Speech addon for the Android Conversational Flow Component (VUI SDK)'
 
 apply from: '../publish.gradle'
 
@@ -28,9 +26,7 @@ android {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    // Dagger
-    api 'com.google.dagger:dagger:2.15'
-    kapt 'com.google.dagger:dagger-compiler:2.15'
+
     // SDK
     implementation 'com.chattylabs.sdk.android:common:+'
     api project(':sdk-conversational-flow-core')

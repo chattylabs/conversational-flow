@@ -40,15 +40,15 @@ public class BaseActivity extends DaggerAppCompatActivity
 
     private static final String ANDROID = "Android";
     private static final String GOOGLE = "Google";
-    private static final String POLLY = "Polly";
+    private static final String AMAZON = "Amazon";
 
-    private String addonType = POLLY;
+    private String addonType = ANDROID;
     private static LinkedHashMap<Integer, String> addonMap = new LinkedHashMap<>();
 
     static {
         addonMap.put(0, ANDROID);
         addonMap.put(1, GOOGLE);
-        addonMap.put(2, POLLY);
+        addonMap.put(2, AMAZON);
     }
 
     @Inject ConversationalFlowComponent component;
@@ -112,7 +112,7 @@ public class BaseActivity extends DaggerAppCompatActivity
                             }
                         })
                         .setSynthesizerServiceType(() -> {
-                            if (POLLY.equals(addonType)) {
+                            if (AMAZON.equals(addonType)) {
                                 return AmazonSpeechSynthesizer.class;
                             } else if (GOOGLE.equals(addonType)) {
                                 return GoogleSpeechSynthesizer.class;

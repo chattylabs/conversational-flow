@@ -1,12 +1,10 @@
 package com.chattylabs.sdk.android.voice;
 
-import android.annotation.TargetApi;
 import android.app.Application;
 import android.content.Context;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
-import android.os.Build;
 import android.os.ConditionVariable;
 import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
@@ -40,16 +38,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Locale;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
 
-    private static final int MAX_SPEECH_TIME_SEC = 60;
-
-    private final String TAG = Tag.make("GoogleSpeechSynthesizer");
+    private static final String TAG = Tag.make("GoogleSpeechSynthesizer");
+    private static final String LOG_LABEL = "GOOGLE TTS";
 
     // Resources
     private final Application application;
@@ -99,9 +94,9 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
         return TextToSpeechClient.create(TextToSpeechSettings.newBuilder()
                 .setExecutorProvider(
                         FixedExecutorProvider.create(
-                            Executors.newScheduledThreadPool(
-                                Math.max(2, Math.min(Runtime.getRuntime().availableProcessors() - 1, 4))
-                            )
+                                Executors.newScheduledThreadPool(
+                                        Math.max(2, Math.min(Runtime.getRuntime().availableProcessors() - 1, 4))
+                                )
                         )
                 )
                 .setCredentialsProvider(
@@ -111,21 +106,10 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     @Override
     SynthesizerUtteranceListener createUtteranceListener(@NonNull SynthesizerListener... listeners) {
-        return new GoogleSpeechSynthesizerAdapter()
-        {
+        return new BaseSynthesizerUtteranceListener(this) {
             @Override
-            public void onStart(String utteranceId) {
-                _getOnStartedListener().execute(utteranceId);
-            }
-
-            @Override
-            public void onDone(String utteranceId) {
-                _getOnDoneListener().execute(utteranceId);
-            }
-
-            @Override
-            public void onError(String utteranceId, int errorCode) {
-                _getOnErrorListener().execute(utteranceId, errorCode);
+            String getTtsLogLabel() {
+                return LOG_LABEL;
             }
         };
     }
@@ -179,15 +163,16 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
             try {
                 tts.close();
                 tts.shutdown();
-                tts.awaitTermination(2 ,TimeUnit.SECONDS);
+                tts.awaitTermination(2, TimeUnit.SECONDS);
                 logger.v(TAG, "GOOGLE TTS - destroyed");
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             tts = null;
         }
     }
 
     @Override
-    public void  release() {
+    public void release() {
         super.release();
         tts = null;
         voice = null;
@@ -220,8 +205,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
                 shutdown();
                 onSynthesizerPrepared.execute(SynthesizerListener.Status.ERROR);
             }
-        }
-        else if (isReady()) {
+        } else if (isReady()) {
             setupLanguage();
             onSynthesizerPrepared.execute(SynthesizerListener.Status.SUCCESS);
         }
@@ -234,99 +218,28 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
     }
 
     private SynthesizerUtteranceListener createUtterancesListener() {
-        return new GoogleSpeechSynthesizerAdapter() {
-            private long timestamp;
-            private TimerTask task;
-            private Timer timer;
+        return new BaseSynthesizerUtteranceListener(this,
+                BaseSynthesizerUtteranceListener.Mode.DELEGATE) {
 
             @Override
-            public void clearTimeout(String utteranceId) {
-                logger.v(getTag(), "GOOGLE TTS[%s] - utterance timeout cleared", utteranceId);
-                if (task != null) task.cancel();
-                if (timer != null) timer.cancel();
+            String getTtsLogLabel() {
+                return LOG_LABEL;
             }
 
             @Override
-            public void startTimeout(String utteranceId) {
-                logger.i(getTag(), "ANDROID TTS[%s] - started timeout", utteranceId);
-                timer = new Timer();
-                task = new TimerTask() {
-                    @Override
-                    public void run() {
-                        if (!isTtsSpeaking()) {
-                            logger.e(getTag(), "GOOGLE TTS[%s] - is null or not speaking && reached timeout", utteranceId);
-                            stop();
-                            onError(utteranceId, SynthesizerListener.Status.TIMEOUT);
-                        }
-                        else {
-                            if ((System.currentTimeMillis() - timestamp) > TimeUnit.SECONDS.toMillis(MAX_SPEECH_TIME_SEC)) {
-                                logger.e(getTag(), "GOOGLE TTS[%s] - exceeded %s seconds", utteranceId, MAX_SPEECH_TIME_SEC);
-                                stop();
-                                onError(utteranceId, SynthesizerListener.Status.TIMEOUT);
-                            }
-                            else {
-                                clearTimeout(utteranceId);
-                                startTimeout(utteranceId);
-                            }
-                        }
-                    }
-                };
-                timer.schedule(task, TimeUnit.SECONDS.toMillis(10));
-            }
-
-            @Override
-            public void onStart(String utteranceId) {
-                logger.v(getTag(), "GOOGLE TTS[%s] - on start", utteranceId);
-
-                startTimeout(utteranceId);
-                timestamp = System.currentTimeMillis();
-
-                if (getListenersMap().size() > 0) {
-                    SynthesizerUtteranceListener listener = getListenersMap().get(utteranceId);
-                    if (listener != null) {
-                        listener.onStart(utteranceId);
-                    }
+            protected String getErrorType(int error) {
+                switch (error) {
+                    case MediaPlayer.MEDIA_ERROR_IO:
+                        return "MEDIA_ERROR_IO";
+                    case MediaPlayer.MEDIA_ERROR_MALFORMED:
+                        return "MEDIA_ERROR_MALFORMED";
+                    case MediaPlayer.MEDIA_ERROR_UNSUPPORTED:
+                        return "MEDIA_ERROR_UNSUPPORTED";
+                    case MediaPlayer.MEDIA_ERROR_TIMED_OUT:
+                        return "MEDIA_ERROR_TIMED_OUT";
+                    default:
+                        return "ERROR_UNKNOWN";
                 }
-            }
-
-            @Override
-            public void onDone(String utteranceId) {
-                clearTimeout(utteranceId);
-                logger.v(getTag(), "GOOGLE TTS[%s] - on done <%s> - check for Empty Queue", utteranceId, getCurrentQueueId());
-                moveToNextQueueIfNeeded();
-                if (isEmpty()) {
-                    stop();
-                    logger.i(getTag(), "GOOGLE TTS[%s] - on done <%s> - Stream Finished", utteranceId, getCurrentQueueId());
-                }
-                setSpeaking(false);
-                if (getListenersMap().size() > 0) {
-                    SynthesizerUtteranceListener listener = removeListener(utteranceId);
-                    logger.v(getTag(), "GOOGLE TTS[%s] - on done <%s> - execute listener.onDone", utteranceId, getCurrentQueueId());
-                    if (listener != null) {
-                        listener.onDone(utteranceId);
-                    }
-                }
-            }
-
-            @Override
-            @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-            public void onError(String utteranceId, int errorCode) {
-                clearTimeout(utteranceId);
-                logger.e(getTag(), "GOOGLE TTS[%s] - on error <%s> -> stop timeout", utteranceId, getCurrentQueueId());
-                logger.e(getTag(), "GOOGLE TTS[%s] - error code: %s", utteranceId, getErrorType(errorCode));
-                moveToNextQueueIfNeeded();
-                if (isEmpty()) {
-                    stop();
-                    logger.i(getTag(), "GOOGLE TTS[%s] - ERROR <%s> - Stream Finished", utteranceId, getCurrentQueueId());
-                }
-                setSpeaking(false);
-                if (getListenersMap().size() > 0 && getListenersMap().containsKey(utteranceId)) {
-                    SynthesizerUtteranceListener listener = removeListener(utteranceId);
-                    shutdown();
-                    if (listener != null) {
-                        listener.onError(utteranceId, errorCode);
-                    }
-                } else shutdown();
             }
         };
     }
@@ -358,8 +271,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
             for (String item : split) {
                 play(utteranceId, item, params);
             }
-        }
-        else {
+        } else {
             play(utteranceId, finalText, params);
         }
     }
@@ -434,26 +346,10 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
                     // TODO: When I release the timeout, since I already run onError, it might be called twice
                     getSynthesizerUtteranceListener().onError(utteranceId, extraCode);
                 }
-            }
-            else {
+            } else {
                 logger.e(TAG, "GOOGLE TTS[%s] - internal playText status ERROR ", utteranceId);
                 getSynthesizerUtteranceListener().onError(utteranceId, SynthesizerListener.Status.ERROR);
             }
         });
-    }
-
-    public static String getErrorType(int error) {
-        switch (error) {
-            case MediaPlayer.MEDIA_ERROR_IO:
-                return "MEDIA_ERROR_IO";
-            case MediaPlayer.MEDIA_ERROR_MALFORMED:
-                return "MEDIA_ERROR_MALFORMED";
-            case MediaPlayer.MEDIA_ERROR_UNSUPPORTED:
-                return "MEDIA_ERROR_UNSUPPORTED";
-            case MediaPlayer.MEDIA_ERROR_TIMED_OUT:
-                return "MEDIA_ERROR_TIMED_OUT";
-            default:
-                return "ERROR_UNKNOWN";
-        }
     }
 }

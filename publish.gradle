@@ -8,6 +8,6 @@ publish {
     groupId = project.group
     artifactId = project.name.replace("sdk-", "")
     publishVersion = project.version
-    desc = publishDescription
+    desc = project.description
     website = 'https://github.com/chattylabs/sdk-conversational-flow'
 }
