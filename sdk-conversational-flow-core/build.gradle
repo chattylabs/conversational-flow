@@ -13,9 +13,7 @@ versioning {
     }
 }
 
-ext {
-    publishDescription = 'Android Conversational Flow Component (VUI SDK)'
-}
+description = 'Android Conversational Flow Component (VUI SDK)'
 
 apply from: '../publish.gradle'
 

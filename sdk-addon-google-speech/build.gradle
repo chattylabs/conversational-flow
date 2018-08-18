@@ -13,9 +13,7 @@ versioning {
     }
 }
 
-ext {
-    publishDescription = 'Google Conversational Flow Component (VUI SDK)'
-}
+description = 'Google Conversational Flow Component (VUI SDK)'
 
 apply from: '../publish.gradle'
 
@@ -34,12 +32,11 @@ ext {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    // Dagger
-    api 'com.google.dagger:dagger:2.15'
-    kapt 'com.google.dagger:dagger-compiler:2.15'
+
     // SDK
     implementation 'com.chattylabs.sdk.android:common:+'
     api project(':sdk-conversational-flow-core')
+
     // Google Cloud
     implementation "io.grpc:grpc-okhttp:$grpcVersion"
     implementation "com.google.cloud:google-cloud-texttospeech:0.55.0-beta"
