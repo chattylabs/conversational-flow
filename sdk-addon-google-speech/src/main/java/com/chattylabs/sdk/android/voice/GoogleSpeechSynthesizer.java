@@ -58,8 +58,6 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
     private AudioConfig audioConfig;
     private MediaPlayer mediaPlayer;
     private final ConditionVariable mCondVar = new ConditionVariable();
-    private boolean completed; //released
-    private int extraCode; //released
 
     GoogleSpeechSynthesizer(Application application,
                             ComponentConfig configuration,
@@ -75,11 +73,10 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
     @Override
     public void setup(SynthesizerListener.OnSetup onSynthesizerSetup) {
         logger.i(TAG, "GOOGLE TTS - setup and check language");
+        // At this stage, we only want to check whether the api works and the language is available
         try (TextToSpeechClient ttsClient = generateFromRawFile(
                 application, getConfiguration().getGoogleCredentialsResourceFile())) {
             ListVoicesResponse response = ttsClient.listVoices(getDefaultLanguageCode());
-            ttsClient.shutdownNow();
-            ttsClient.awaitTermination(2, TimeUnit.SECONDS);
             if (response.getVoicesCount() > 0) {
                 onSynthesizerSetup.execute(SynthesizerListener.Status.AVAILABLE);
             } else {
@@ -158,12 +155,24 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
             if (mediaPlayer != null) mediaPlayer.stop();
             logger.v(TAG, "GOOGLE TTS - stopped");
         } catch (IllegalStateException ex) {
-            // Do nothing, the player is already stopped
+            // Does nothing, the player is already stopped
         }
         mCondVar.open();
         if (mediaPlayer != null) {
             mediaPlayer.release();
             mediaPlayer = null;
+        }
+    }
+
+    private void destroyTts() {
+        if (!isTtsNull()) {
+            try {
+                tts.close();
+                tts.shutdown();
+                tts.awaitTermination(2, TimeUnit.SECONDS);
+                logger.v(TAG, "GOOGLE TTS - destroyed");
+            } catch (Exception ignored) {}
+            tts = null;
         }
     }
 
@@ -174,26 +183,12 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
         release();
     }
 
-    private void destroyTts() {
-        if (!isTtsNull()) {
-            try {
-                tts.close();
-                tts.shutdown();
-                tts.awaitTermination(2 ,TimeUnit.SECONDS);
-                logger.v(TAG, "GOOGLE TTS - destroyed");
-            } catch (Exception ignored) {}
-            tts = null;
-        }
-    }
-
     @Override
     public void  release() {
         super.release();
         tts = null;
         voice = null;
         audioConfig = null;
-        completed = true;
-        extraCode = 0;
     }
 
     @Override
@@ -206,11 +201,11 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
         if (isTtsNull()) {
             setReady(false);
             logger.i(TAG, "GOOGLE TTS - creating new instance of TextToSpeechClient.class");
-            try (TextToSpeechClient ttsClient = generateFromRawFile(
-                    application, getConfiguration().getGoogleCredentialsResourceFile())) {
+            try {
                 logger.i(TAG, "GOOGLE TTS - new instance created");
                 setReady(true);
-                this.tts = ttsClient;
+                this.tts = generateFromRawFile(
+                        application, getConfiguration().getGoogleCredentialsResourceFile());
                 this.audioConfig = AudioConfig.newBuilder().setAudioEncoding(AudioEncoding.MP3).build();
                 setupLanguage();
                 setSynthesizerUtteranceListener(createUtterancesListener());
@@ -278,7 +273,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
             public void onStart(String utteranceId) {
                 logger.v(getTag(), "GOOGLE TTS[%s] - on start", utteranceId);
 
-                startTimeout(utteranceId);
+                //startTimeout(utteranceId);
                 timestamp = System.currentTimeMillis();
 
                 if (getListenersMap().size() > 0) {
@@ -377,22 +372,18 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
         getSynthesizerUtteranceListener().onStart(utteranceId);
         prepare(status -> {
             if (status == SynthesizerListener.Status.SUCCESS) {
-                mCondVar.close();
-                completed = false;
 
                 SynthesisInput input = SynthesisInput.newBuilder()
                         .setText(text)
                         .build();
                 SynthesizeSpeechResponse response = tts.synthesizeSpeech(input, voice, audioConfig);
-                destroyTts();
+                //destroyTts();
 
                 // Get the audio contents from the response
                 ByteString audioContents = response.getAudioContent();
 
                 logger.d(getTag(), "audio: %s", audioContents);
                 logger.d(getTag(), "audio string: %s", audioContents.toStringUtf8());
-
-                extraCode = -1;
 
                 try {
                     File tempMp3 = File.createTempFile("output", "mp3",
@@ -410,29 +401,20 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
                         return;
                     }
 
-                    mediaPlayer.setOnCompletionListener(mp -> {
-                        completed = true;
-                        mCondVar.open();
+                    mediaPlayer.setOnCompletionListener(mediaPlayer -> {
+                        finishPlayer();
+                        getSynthesizerUtteranceListener().onDone(utteranceId);
                     });
                     mediaPlayer.setOnErrorListener((mp, what, extra) -> {
-                        extraCode = extra;
-                        mCondVar.open();
+                        finishPlayer();
+                        // TODO: When I release the timeout, since I already run onError, it might be called twice
+                        getSynthesizerUtteranceListener().onError(utteranceId, extra);
                         return true;
                     });
                     mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
                     mediaPlayer.start();
-                    mCondVar.block();
-                    finishPlayer();
                 } catch (Exception ex) {
                     logger.logException(ex);
-                    mCondVar.open();
-                }
-
-                if (completed) {
-                    getSynthesizerUtteranceListener().onDone(utteranceId);
-                } else {
-                    // TODO: When I release the timeout, since I already run onError, it might be called twice
-                    getSynthesizerUtteranceListener().onError(utteranceId, extraCode);
                 }
             }
             else {

@@ -188,7 +188,7 @@ public class AndroidAudioRecorder {
             if (sizeInBytes == AudioRecord.ERROR_BAD_VALUE) {
                 continue;
             }
-            final AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.DEFAULT,
+            final AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
                     sampleRate, CHANNEL, ENCODING, sizeInBytes);
             if (audioRecord.getState() == AudioRecord.STATE_INITIALIZED) {
                 mBuffer = new byte[sizeInBytes];

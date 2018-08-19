@@ -74,6 +74,9 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
 
         @Override
         public void onVoice(byte[] data, int size) {
+
+            
+
             RecognitionConfig.AudioEncoding encoding =
                     RecognitionConfig.AudioEncoding.LINEAR16;
             RecognitionConfig config = RecognitionConfig.newBuilder()
@@ -81,11 +84,11 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
                     //.setProfanityFilter(true)
                     .setEncoding(encoding)
                     .setSampleRateHertz(mAudioRecorder.getSampleRate())
-                    .setLanguageCode(getDefaultLanguageCode())
+                    .setLanguageCode("en-US")
                     .build();
 
             RecognitionAudio audio = RecognitionAudio.newBuilder()
-                    .setContent(ByteString.copyFrom(data))
+                    .setContent(ByteString.copyFrom(data, 0, size))
                     .build();
 
             try (SpeechClient speech = generateFromRawFile(
