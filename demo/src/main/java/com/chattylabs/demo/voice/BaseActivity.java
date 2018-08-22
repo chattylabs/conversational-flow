@@ -30,6 +30,7 @@ import com.chattylabs.sdk.android.voice.TextFilterForUrl;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 
 import javax.inject.Inject;
 
@@ -119,7 +120,8 @@ public class BaseActivity extends DaggerAppCompatActivity
                             } else {
                                 return AndroidSpeechSynthesizer.class;
                             }
-                        }).build());
+                        })
+                        .setSpeechLanguage(Locale::getDefault).build());
 
         String[] perms = component.requiredPermissions();
         PermissionsHelper.check(this,

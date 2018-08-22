@@ -36,7 +36,7 @@ abstract class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceL
     }
 
     BaseSynthesizerUtteranceListener(@NonNull final BaseSpeechSynthesizer speechSynthesizer) {
-        this(speechSynthesizer, Mode.INTIALIZE);
+        this(speechSynthesizer, Mode.INITIALIZE);
     }
 
     abstract String getTtsLogLabel();
@@ -79,7 +79,7 @@ abstract class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceL
 
     @Override
     public void onStart(String utteranceId) {
-        if (this.mode == Mode.INTIALIZE) {
+        if (this.mode == Mode.INITIALIZE) {
             _getOnStartedListener().execute(utteranceId);
             return;
         }
@@ -100,7 +100,7 @@ abstract class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceL
 
     @Override
     public void onDone(String utteranceId) {
-        if (this.mode == Mode.INTIALIZE) {
+        if (this.mode == Mode.INITIALIZE) {
             _getOnDoneListener().execute(utteranceId);
             return;
         }
@@ -124,7 +124,7 @@ abstract class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceL
 
     @Override
     public void onError(String utteranceId, int errorCode) {
-        if (this.mode == Mode.INTIALIZE) {
+        if (this.mode == Mode.INITIALIZE) {
             _getOnErrorListener().execute(utteranceId, errorCode);
             return;
         }
@@ -230,10 +230,10 @@ abstract class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceL
         speechSynthesizer.shutdown();
     }
 
-    @IntDef({Mode.INTIALIZE, Mode.DELEGATE})
+    @IntDef({Mode.INITIALIZE, Mode.DELEGATE})
     @Retention(RetentionPolicy.SOURCE)
     @interface Mode {
-        int INTIALIZE = 0;
+        int INITIALIZE = 0;
         int DELEGATE = 1;
     }
 }

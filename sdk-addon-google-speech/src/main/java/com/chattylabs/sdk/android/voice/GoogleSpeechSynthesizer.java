@@ -278,9 +278,9 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     @Override
     void playSilence(String utteranceId, long durationInMillis) {
-        getSynthesizerUtteranceListener()._getOnStartedListener().execute(utteranceId);
+        getSynthesizerUtteranceListener().onStart(utteranceId);
         mCondVar.block(durationInMillis);
-        getSynthesizerUtteranceListener()._getOnDoneListener().execute(utteranceId);
+        getSynthesizerUtteranceListener().onDone(utteranceId);
     }
 
     @WorkerThread
