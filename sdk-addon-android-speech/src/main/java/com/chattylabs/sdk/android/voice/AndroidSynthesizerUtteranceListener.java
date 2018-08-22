@@ -41,17 +41,12 @@ class AndroidSynthesizerUtteranceListener extends BaseSynthesizerUtteranceListen
 
     AndroidSynthesizerUtteranceListener(@NonNull BaseSpeechSynthesizer speechSynthesizer,
                                         @NonNull AndroidSynthesizerUtteranceSupplier supplier) {
-        this(speechSynthesizer, supplier, Mode.INTIALIZE);
+        this(speechSynthesizer, supplier, Mode.INITIALIZE);
     }
 
     @Override
     public void onDone(String utteranceId) {
-        if (mode == Mode.INTIALIZE) {
-            super.onDone(utteranceId);
-            return;
-        }
-
-        if (utteranceId.equals(supplier.getCheckingUtteranceId())) {
+        if (mode != Mode.INITIALIZE && utteranceId.equals(supplier.getCheckingUtteranceId())) {
             clearTimeout(utteranceId);
             logger.v(getTag(), "ANDROID TTS[%s] - on done <%s> -> go to setup language", utteranceId, getCurrentQueueId());
             supplier.checkLanguage(true);
@@ -62,14 +57,9 @@ class AndroidSynthesizerUtteranceListener extends BaseSynthesizerUtteranceListen
 
     @Override
     public void onError(String utteranceId, int errorCode) {
-        if (mode == Mode.INTIALIZE) {
-            super.onError(utteranceId, errorCode);
-            return;
-        }
-
         logger.e(getTag(), "ANDROID TTS[%s] - on error <%s> -> stop timeout", utteranceId, getCurrentQueueId());
         logger.e(getTag(), "ANDROID TTS[%s] - error code: %s", utteranceId, getErrorType(errorCode));
-        if (utteranceId.equals(supplier.getCheckingUtteranceId())) {
+        if (mode != Mode.INITIALIZE && utteranceId.equals(supplier.getCheckingUtteranceId())) {
             clearTimeout(utteranceId);
             shutdown();
             if (errorCode == TextToSpeech.ERROR_NOT_INSTALLED_YET) {

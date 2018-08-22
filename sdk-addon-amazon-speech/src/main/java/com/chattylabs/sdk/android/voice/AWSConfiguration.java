@@ -1,4 +1,4 @@
-package com.chattylabs.sdk.android.voice.model;
+package com.chattylabs.sdk.android.voice;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -6,7 +6,7 @@ import com.google.gson.JsonParser;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-public class AWSConfiguration {
+class AWSConfiguration {
 
     private String poolId;
 

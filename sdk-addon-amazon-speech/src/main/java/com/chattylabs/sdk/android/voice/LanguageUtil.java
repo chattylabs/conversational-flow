@@ -1,10 +1,10 @@
-package com.chattylabs.sdk.android.voice.util;
+package com.chattylabs.sdk.android.voice;
 
 import com.amazonaws.services.polly.model.LanguageCode;
 
 import java.util.Locale;
 
-public final class LanguageUtil {
+final class LanguageUtil {
 
     private LanguageUtil() {
         // Language Util

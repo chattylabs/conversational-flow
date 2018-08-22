@@ -18,8 +18,6 @@ import com.chattylabs.sdk.android.common.HtmlUtils;
 import com.chattylabs.sdk.android.common.Tag;
 import com.chattylabs.sdk.android.common.internal.ILogger;
 import com.chattylabs.sdk.android.voice.addon.amazon.R;
-import com.chattylabs.sdk.android.voice.model.AWSConfiguration;
-import com.chattylabs.sdk.android.voice.util.LanguageUtil;
 
 import java.io.IOException;
 import java.net.URL;
@@ -28,7 +26,7 @@ import java.util.Map;
 
 public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
 
-    private static final String TAG = Tag.make(AmazonSpeechSynthesizer.class.getSimpleName());
+    private static final String TAG = Tag.make("AmazonSpeechSynthesizer");
     private static final String LOG_LABEL = "AMAZON TTS";
 
     private final Application mApplication;
@@ -155,9 +153,9 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     @Override
     void playSilence(String utteranceId, long durationInMillis) {
-        getSynthesizerUtteranceListener()._getOnStartedListener().execute(utteranceId);
+        getSynthesizerUtteranceListener().onStart(utteranceId);
         mCondVar.block(durationInMillis);
-        getSynthesizerUtteranceListener()._getOnDoneListener().execute(utteranceId);
+        getSynthesizerUtteranceListener().onDone(utteranceId);
     }
 
     @Override
