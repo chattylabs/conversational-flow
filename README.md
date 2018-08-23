@@ -4,8 +4,9 @@
 |--------------------------- |:-------:	|---------------------- |-------------------- |:-----------------------:|
 | `demo`                     | _demo_  	| ![Latest demo][v0]    | ![Build Status][s0] | ![Coverage Status][c0]  |
 | `conversational-flow-core` | _core_  	| ![Latest version][v1] | ![Build Status][s1] | ![Coverage Status][c1]  |
-| `addon-android-speech`     | _addon_ 	| ![Latest version][v2] | ![Build Status][s2] | ![Coverage Status][c2] |
-| `addon-google-speech`      | _addon_	| ![Latest version][v3] | ![Build Status][s3] | ![Coverage Status][c3] |
+| `addon-android-speech`     | _addon_ 	| ![Latest version][v2] | ![Build Status][s2] | ![Coverage Status][c2]  |
+| `addon-google-speech`      | _addon_	| ![Latest version][v3] | ![Build Status][s3] | ![Coverage Status][c3]  |
+| `addon-amazon-speech`      | _addon_	| ![Latest version][v4] | ![Build Status][s4] | ![Coverage Status][c4]  |
 
 
 Part of the [Voice & User Interaction SDK]().
@@ -18,7 +19,8 @@ Besides, it provides an [Interface](#how-to-create-a-conversation) based on a
 implementation with [Directed Cycles](https://en.wikipedia.org/wiki/Cycle_(graph_theory)) 
 that allows a developer to create connected nodes and build a consistent conversation flow between 
 a device and a user with ease. 
-<br/>_Consistency_ here stands for the needless to code the flow using conditional statements or 
+
+_Consistency_ here stands for the needless to code the flow using conditional statements or 
 any extra state complexity while ensuring the conversation will behave as expected.
 
 
@@ -36,10 +38,10 @@ It enables currently the following providers:
     
 Other providers you can contribute with are:
 
-- _Wit.ai_
-- _Temi_ 
 - _Bing (Microsoft)_ 
 - _IBM_
+- _Wit.ai_
+- _Temi_ 
 
 ## Why choosing this library?
 
@@ -49,7 +51,6 @@ Apart from the above mentioned, it also helps you when:
 - noise is impacting considerably the communication
 - android components force you to create a lot of boilerplate
 - some countries don't allow Google Play Services
-- etc.
 
     
 ## Prerequisites
@@ -59,12 +60,12 @@ The SDK works on Android version 5.0 (Lollipop) and above. _(for lower versions 
 
     dependencies {
         // Required
-        implementation 'com.chattylabs.sdk.android:conversational-flow-core:x.y.z'
+        implementation 'com.chattylabs.sdk.android:conversational-flow-core:<latest version>'
          
         // You can either use only one or combine addons
         // i.e. the Voice Recognizer of Google with the Synthesizer of Android
-        implementation 'com.chattylabs.sdk.android:addon-android-speech:x.y.z'
-        implementation 'com.chattylabs.sdk.android:addon-google-speech:x.y.z'
+        implementation 'com.chattylabs.sdk.android:addon-android-speech:<latest version>'
+        implementation 'com.chattylabs.sdk.android:addon-google-speech:<latest version>'
     }
 
 ### How to create a Conversation?
@@ -97,16 +98,19 @@ There are different [Voice Nodes]() and [Configurations](), check the [wiki page
 [v1]: https://api.bintray.com/packages/chattylabs/maven/conversational-flow-core/images/download.svg?label=Latest%20version
 [v2]: https://api.bintray.com/packages/chattylabs/maven/addon-android-speech/images/download.svg?label=Latest%20version
 [v3]: https://api.bintray.com/packages/chattylabs/maven/addon-google-speech/images/download.svg?label=Latest%20version
+[v4]: https://api.bintray.com/packages/chattylabs/maven/addon-amazon-speech/images/download.svg?label=Latest%20version
 
 [s0]: https://app.bitrise.io/app/140e33e4fa4ab888/status.svg?token=QxUVT4wZRj6JGkZb4zSVAA&branch=master
 [s1]: https://app.bitrise.io/app/0967af538a0efcc5/status.svg?token=95j60AolkTmhbMvDK5zhFw&branch=master
 [s2]: https://app.bitrise.io/app/b555517d495ac587/status.svg?token=Fa2M4c_F5YHkhPddufLCNA&branch=master
 [s3]: https://app.bitrise.io/app/6a8c16b3b5c964a8/status.svg?token=Q6_u9joriJEzfzcWaLuVjg&branch=master
+[s4]: https://app.bitrise.io/app/beb0060592365303/status.svg?token=Nn2JIfPDel5PkqA2vDkuWw&branch=master
 
 [c0]: https://coveralls.io/repos/chattylabs/unknown/badge.svg?branch=master&service=github
 [c1]: https://coveralls.io/repos/chattylabs/conversational-flow-core/badge.svg?branch=master&service=github
 [c2]: https://coveralls.io/repos/chattylabs/addon-android-speech/badge.svg?branch=master&service=github
 [c3]: https://coveralls.io/repos/chattylabs/addon-google-speech/badge.svg?branch=master&service=github
+[c4]: https://coveralls.io/repos/chattylabs/addon-amazon-speech/badge.svg?branch=master&service=github
 
 [p1]: https://developers.google.com/voice-actions/interaction/voice-interactions
 [p2]: https://developer.android.com/reference/android/speech/tts/TextToSpeech
