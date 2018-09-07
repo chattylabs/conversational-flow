@@ -12,9 +12,7 @@ versioning {
     }
 }
 
-description = 'Built-in Speech addon for the Android Conversational Flow Component (VUI SDK)'
-
-apply from: '../publish.gradle'
+description = 'Android Speech addon (VUI SDK)'
 
 android {
     defaultConfig {
@@ -31,3 +29,5 @@ dependencies {
     implementation 'com.chattylabs.sdk.android:common:+'
     api project(':sdk-conversational-flow-core')
 }
+
+apply from: '../publish.gradle'

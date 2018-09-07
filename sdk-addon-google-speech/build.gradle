@@ -1,5 +1,4 @@
 apply plugin: 'com.android.library'
-apply plugin: 'com.novoda.bintray-release'
 apply plugin: 'com.chattylabs.versioning'
 apply from: '../buildsystem/android.gradle'
 
@@ -13,9 +12,7 @@ versioning {
     }
 }
 
-description = 'Google Conversational Flow Component (VUI SDK)'
-
-apply from: '../publish.gradle'
+description = 'Google Speech addon (VUI SDK)'
 
 android {
     defaultConfig {
@@ -26,7 +23,6 @@ android {
 }
 
 ext {
-    supportLibraryVersion = '27.1.1'
     grpcVersion = '1.13.1'
 }
 
@@ -43,14 +39,4 @@ dependencies {
     implementation "com.google.cloud:google-cloud-speech:0.55.0-beta"
 }
 
-group = 'com.chattylabs.sdk.android'
-version = android.defaultConfig.versionName
-
-publish {
-    userOrg = 'chattylabs'
-    groupId = project.group
-    artifactId = project.name.replace("sdk-", "")
-    publishVersion = project.version
-    desc = 'Google Speech addon (VUI SDK)'
-    website = 'https://github.com/chattylabs/android-conversational-flow'
-}
+apply from: '../publish.gradle'
