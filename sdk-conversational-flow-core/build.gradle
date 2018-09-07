@@ -1,5 +1,4 @@
 apply plugin: 'com.android.library'
-apply plugin: 'com.novoda.bintray-release'
 apply plugin: 'com.chattylabs.versioning'
 apply from: '../buildsystem/android.gradle'
 
@@ -13,9 +12,7 @@ versioning {
     }
 }
 
-description = 'Android Conversational Flow Component (VUI SDK)'
-
-apply from: '../publish.gradle'
+description = 'Android Conversational Flow (VUI SDK)'
 
 android {
     defaultConfig {
@@ -38,3 +35,5 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:2.19.1'
     testImplementation 'org.robolectric:robolectric:3.8'
 }
+
+apply from: '../publish.gradle'
