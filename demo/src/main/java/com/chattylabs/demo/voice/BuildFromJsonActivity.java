@@ -118,7 +118,7 @@ public class BuildFromJsonActivity extends BaseActivity {
                 lastNode = matches != null ? matches : message;
             }
 
-            conversation.start(firstNode);
+            flow.start(firstNode);
 
         } catch (JSONException e) {
             e.printStackTrace();
