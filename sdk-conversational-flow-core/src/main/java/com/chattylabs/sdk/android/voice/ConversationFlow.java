@@ -22,6 +22,10 @@ public class ConversationFlow implements ConversationFlowSource, ConversationFlo
         return targetId;
     }
 
+    public void start(VoiceNode root) {
+        edge.start(root);
+    }
+
     private ConversationFlowTarget target = (node, optNodes) -> {
         edge.addEdge(node, from);
         for (VoiceNode n : optNodes) edge.addEdge(n, from);
@@ -35,5 +39,6 @@ public class ConversationFlow implements ConversationFlowSource, ConversationFlo
     abstract static class Edge {
         abstract VoiceNode getNode(@NonNull String id);
         abstract void addEdge(@NonNull VoiceNode node, @NonNull VoiceNode incomingEdge);
+        abstract void start(@NonNull VoiceNode root);
     }
 }

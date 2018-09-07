@@ -43,18 +43,13 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
     private ILogger logger;
 
     ConversationalFlowComponentImpl() {
-        setConfiguration(new ComponentConfig.Builder()
+        this.configuration = new ComponentConfig.Builder()
                 .setBluetoothScoRequired(() -> false)
                 .setAudioExclusiveRequiredForSynthesizer(() -> false)
                 .setAudioExclusiveRequiredForRecognizer(() -> true)
-                .build());
-        Instance.instanceOf = new SoftReference<>(this);
-    }
-
-    @Override
-    public void setConfiguration(ComponentConfig configuration) {
-        this.configuration = configuration;
+                .build();
         reset();
+        Instance.instanceOf = new SoftReference<>(this);
     }
 
     @Override
