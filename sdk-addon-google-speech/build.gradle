@@ -30,7 +30,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     // SDK
-    implementation 'com.chattylabs.sdk.android:common:+'
+    implementation 'com.chattylabs.sdk.android:common:0.4.18'
     api project(':sdk-conversational-flow-core')
 
     // Google Cloud
