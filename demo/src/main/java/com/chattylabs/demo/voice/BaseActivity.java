@@ -36,7 +36,7 @@ import javax.inject.Inject;
 
 import dagger.android.support.DaggerAppCompatActivity;
 
-public class BaseActivity extends DaggerAppCompatActivity
+abstract class BaseActivity extends DaggerAppCompatActivity
         implements ActivityCompat.OnRequestPermissionsResultCallback {
 
     private static final String ANDROID = "Android";
