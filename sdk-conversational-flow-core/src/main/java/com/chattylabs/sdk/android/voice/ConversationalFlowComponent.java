@@ -15,11 +15,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Main contract.
- *
- */
-@dagger.Reusable
 public interface ConversationalFlowComponent extends RequiredPermissions {
     String TAG = Tag.make("ConversationalFlowComponent");
 
@@ -42,27 +37,18 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
     void setup(Context context, OnComponentSetup onComponentSetup);
 
     /**
-     * Overrides a new {@link ComponentConfig}.
-     * <br/>You should not use this method but update the current {@link ComponentConfig} through
-     * {@link #updateConfiguration(ComponentConfig.Update)}
-     * <br/><pre>{@code
-     * setConfiguration(new ComponentConfig.Builder()
-     *      .setRecognizerServiceType(() -> AndroidSpeechRecognizer.class)
-     *      .setSynthesizerServiceType(() -> AndroidSpeechSynthesizer.class)
-     *      .setBluetoothScoRequired(() -> false)
-     *      .setAudioExclusiveRequiredForSynthesizer(() -> false)
-     *      .setAudioExclusiveRequiredForRecognizer(() -> true)
-     *      .build()
-     * );
-     * }</pre>
-     * @see ComponentConfig
-     */
-    void setConfiguration(ComponentConfig configuration);
-
-    /**
      * It reuses the already set {@link ComponentConfig} allowing you to update only specific parts
      * of it through the {@link ComponentConfig.Update} interface.
-     * <br/>code...
+     * <br/><pre>{@code
+     * updateConfiguration(builder ->
+     *          builder.setRecognizerServiceType(() -> AndroidSpeechRecognizer.class)
+     *              .setSynthesizerServiceType(() -> AndroidSpeechSynthesizer.class)
+     *              .setBluetoothScoRequired(() -> false)
+     *              .setAudioExclusiveRequiredForSynthesizer(() -> false)
+     *              .setAudioExclusiveRequiredForRecognizer(() -> true)
+     *      ).build()
+     * );
+     * }</pre>
      * @see ComponentConfig.Update
      */
     void updateConfiguration(ComponentConfig.Update onUpdate);

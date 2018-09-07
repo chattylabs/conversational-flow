@@ -67,7 +67,7 @@ class ConversationImpl extends ConversationFlow.Edge implements Conversation {
     }
 
     @Override
-    public void start(VoiceNode root) {
+    void start(@NonNull VoiceNode root) {
         current = root;
         next(current);
     }
