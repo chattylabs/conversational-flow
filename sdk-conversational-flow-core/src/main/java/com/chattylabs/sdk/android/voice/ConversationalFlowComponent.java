@@ -26,14 +26,15 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
      * <br/><pre>{@code
      * component.setup(context, status -> {
      *      if (status.isAvailable()) {
-     *      // start using the functionality
+     *          // start using the functionality
      *      }
      * });
      * }</pre>
+     * This operation should be handled on a Worker Thread.
+     *
      * @see OnComponentSetup
      */
     @WorkerThread
-    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     void setup(Context context, OnComponentSetup onComponentSetup);
 
     /**
@@ -49,6 +50,7 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
      *      ).build()
      * );
      * }</pre>
+     *
      * @see ComponentConfig.Update
      */
     void updateConfiguration(ComponentConfig.Update onUpdate);

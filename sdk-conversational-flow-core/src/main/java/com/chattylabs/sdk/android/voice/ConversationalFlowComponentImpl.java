@@ -133,20 +133,17 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
                     ComponentConfig.RECOGNIZER_SERVICE_ANDROID) ? androidRecognizerStatus
                     : RecognizerListener.Status.AVAILABLE;
             onComponentSetup.execute(new ComponentStatus() {
-                @SuppressLint("MissingPermission")
                 @Override
                 public boolean isAvailable() {
                     return synthesizerStatus == SynthesizerListener.Status.AVAILABLE &&
                            speechRecognizerStatus == RecognizerListener.Status.AVAILABLE;
                 }
 
-                @SuppressLint("MissingPermission")
                 @Override
                 public int getSynthesizerStatus() {
                     return synthesizerStatus;
                 }
 
-                @SuppressLint("MissingPermission")
                 @Override
                 public int getRecognizerStatus() {
                     return speechRecognizerStatus;
@@ -162,16 +159,14 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
     }
 
     @SuppressLint("MissingPermission")
-    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
-    @Override
+    @Override @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     public SpeechRecognizerComponent getSpeechRecognizer(Context context) {
         init((Application) context.getApplicationContext());
         return speechRecognizer;
     }
 
     @SuppressLint("MissingPermission")
-    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
-    @Override
+    @Override @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     public Conversation create(Context context) {
         return new ConversationImpl(getSpeechSynthesizer(context), getSpeechRecognizer(context), logger);
     }
