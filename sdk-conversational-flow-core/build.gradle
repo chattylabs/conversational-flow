@@ -32,7 +32,7 @@ dependencies {
     kapt 'com.google.dagger:dagger-compiler:2.15'
 
     // Dependencies
-    implementation "com.chattylabs:android-commons:$androidCommons"
+    implementation "com.chattylabs:android-commons:$android_commons"
 
     // Test dependencies
     testImplementation 'junit:junit:4.12'

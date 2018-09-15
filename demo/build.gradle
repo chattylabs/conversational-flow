@@ -66,7 +66,7 @@ dependencies {
 
     // Dependencies
     implementation 'net.hockeyapp.android:HockeySDK:5.1.0'
-    implementation "com.chattylabs:android-commons:$androidCommons"
+    implementation "com.chattylabs:android-commons:$android_commons"
     implementation project(':sdk-conversational-flow-core')
     implementation project(':sdk-addon-android-speech')
     implementation project(':sdk-addon-google-speech')
