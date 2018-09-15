@@ -4,8 +4,8 @@ import android.app.Application;
 import android.content.IntentFilter;
 import android.media.AudioManager;
 
-import com.chattylabs.sdk.android.common.Tag;
-import com.chattylabs.sdk.android.common.internal.ILogger;
+import com.chattylabs.android.commons.Tag;
+import com.chattylabs.android.commons.internal.ILogger;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;

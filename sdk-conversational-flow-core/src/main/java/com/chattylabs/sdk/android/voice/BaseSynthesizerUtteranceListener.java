@@ -3,7 +3,7 @@ package com.chattylabs.sdk.android.voice;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 
-import com.chattylabs.sdk.android.common.internal.ILogger;
+import com.chattylabs.android.commons.internal.ILogger;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

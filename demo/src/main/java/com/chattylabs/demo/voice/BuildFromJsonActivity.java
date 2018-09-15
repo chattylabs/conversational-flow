@@ -8,8 +8,8 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 
-import com.chattylabs.sdk.android.common.HtmlUtils;
-import com.chattylabs.sdk.android.common.Tag;
+import com.chattylabs.android.commons.HtmlUtils;
+import com.chattylabs.android.commons.Tag;
 import com.chattylabs.sdk.android.voice.Conversation;
 import com.chattylabs.sdk.android.voice.ConversationFlow;
 import com.chattylabs.sdk.android.voice.VoiceMatch;

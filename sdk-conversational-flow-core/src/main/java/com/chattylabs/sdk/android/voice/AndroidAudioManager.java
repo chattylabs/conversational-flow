@@ -5,8 +5,8 @@ import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.os.Build;
 
-import com.chattylabs.sdk.android.common.Tag;
-import com.chattylabs.sdk.android.common.internal.ILogger;
+import com.chattylabs.android.commons.Tag;
+import com.chattylabs.android.commons.internal.ILogger;
 
 public class AndroidAudioManager {
     private static final String TAG = Tag.make("AndroidAudioHandler");

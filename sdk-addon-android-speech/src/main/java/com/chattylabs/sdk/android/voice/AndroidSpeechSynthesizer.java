@@ -6,10 +6,10 @@ import android.speech.tts.TextToSpeech;
 import android.support.annotation.NonNull;
 import android.support.annotation.WorkerThread;
 
-import com.chattylabs.sdk.android.common.HtmlUtils;
-import com.chattylabs.sdk.android.common.StringUtils;
-import com.chattylabs.sdk.android.common.Tag;
-import com.chattylabs.sdk.android.common.internal.ILogger;
+import com.chattylabs.android.commons.HtmlUtils;
+import com.chattylabs.android.commons.StringUtils;
+import com.chattylabs.android.commons.Tag;
+import com.chattylabs.android.commons.internal.ILogger;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;

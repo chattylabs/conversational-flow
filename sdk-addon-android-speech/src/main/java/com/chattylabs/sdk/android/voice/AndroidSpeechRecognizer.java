@@ -7,11 +7,11 @@ import android.os.Looper;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 
-import com.chattylabs.sdk.android.common.Tag;
-import com.chattylabs.sdk.android.common.ThreadUtils;
-import com.chattylabs.sdk.android.common.internal.ILogger;
-import com.chattylabs.sdk.android.common.internal.android.AndroidHandler;
-import com.chattylabs.sdk.android.common.internal.android.AndroidHandlerImpl;
+import com.chattylabs.android.commons.Tag;
+import com.chattylabs.android.commons.ThreadUtils;
+import com.chattylabs.android.commons.internal.ILogger;
+import com.chattylabs.android.commons.internal.os.AndroidHandler;
+import com.chattylabs.android.commons.internal.os.AndroidHandlerImpl;
 
 import java.util.List;
 import java.util.Timer;

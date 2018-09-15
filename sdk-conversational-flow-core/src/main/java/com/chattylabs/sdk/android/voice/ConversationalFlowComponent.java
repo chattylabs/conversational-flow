@@ -8,8 +8,8 @@ import android.support.annotation.RequiresPermission;
 import android.support.annotation.WorkerThread;
 import android.text.TextUtils;
 
-import com.chattylabs.sdk.android.common.RequiredPermissions;
-import com.chattylabs.sdk.android.common.Tag;
+import com.chattylabs.android.commons.RequiredPermissions;
+import com.chattylabs.android.commons.Tag;
 
 import java.util.List;
 import java.util.regex.Matcher;

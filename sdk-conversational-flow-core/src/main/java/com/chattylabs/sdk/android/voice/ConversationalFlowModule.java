@@ -1,6 +1,7 @@
 package com.chattylabs.sdk.android.voice;
 
-import com.chattylabs.sdk.android.common.internal.ILogger;
+
+import com.chattylabs.android.commons.internal.ILogger;
 
 public abstract class ConversationalFlowModule {
 

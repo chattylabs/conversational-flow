@@ -9,7 +9,7 @@ import android.media.AudioManager;
 import android.support.annotation.RequiresPermission;
 import android.support.v4.content.ContextCompat;
 
-import com.chattylabs.sdk.android.common.internal.ILogger;
+import com.chattylabs.android.commons.internal.ILogger;
 
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;

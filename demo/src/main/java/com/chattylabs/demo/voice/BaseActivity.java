@@ -15,8 +15,8 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 
-import com.chattylabs.sdk.android.common.PermissionsHelper;
-import com.chattylabs.sdk.android.common.ThreadUtils;
+import com.chattylabs.android.commons.PermissionsHelper;
+import com.chattylabs.android.commons.ThreadUtils;
 import com.chattylabs.sdk.android.voice.AmazonSpeechSynthesizer;
 import com.chattylabs.sdk.android.voice.AndroidSpeechRecognizer;
 import com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer;
@@ -127,8 +127,8 @@ abstract class BaseActivity extends DaggerAppCompatActivity
         PermissionsHelper.check(this,
                 perms,
                 () -> onRequestPermissionsResult(
-                        PermissionsHelper.REQUEST_CODE, perms,
-                        new int[]{PackageManager.PERMISSION_GRANTED}));
+                        202, perms,
+                        new int[]{PackageManager.PERMISSION_GRANTED}), 202);
     }
 
     @SuppressLint("MissingPermission")
@@ -136,8 +136,8 @@ abstract class BaseActivity extends DaggerAppCompatActivity
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
-        if (PermissionsHelper.isPermissionRequest(requestCode) &&
-                PermissionsHelper.isPermissionGranted(grantResults)) {
+        if (requestCode == 202 &&
+                PermissionsHelper.allGranted(grantResults)) {
             serialThread.addTask(() -> component.setup(this, status -> {
                 if (status.isAvailable()) {
                     recognizer = component.getSpeechRecognizer(this);

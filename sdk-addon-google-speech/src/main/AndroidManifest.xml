@@ -1,3 +1,1 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.chattylabs.sdk.android.voice.addon.google" >
-</manifest>
+<manifest package="com.chattylabs.sdk.android.voice.addon.google" />

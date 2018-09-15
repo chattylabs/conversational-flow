@@ -2,7 +2,8 @@ package com.chattylabs.sdk.android.voice;
 
 import android.support.annotation.CallSuper;
 
-import com.chattylabs.sdk.android.common.internal.ILogger;
+import com.chattylabs.android.commons.internal.ILogger;
+
 
 /**
  * When implementing from this class you must create a constructor that receives the following parameters

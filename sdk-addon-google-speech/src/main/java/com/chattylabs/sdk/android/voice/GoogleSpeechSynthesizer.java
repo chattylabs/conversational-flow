@@ -12,10 +12,10 @@ import android.support.annotation.RawRes;
 import android.support.annotation.WorkerThread;
 import android.text.TextUtils;
 
-import com.chattylabs.sdk.android.common.HtmlUtils;
-import com.chattylabs.sdk.android.common.StringUtils;
-import com.chattylabs.sdk.android.common.Tag;
-import com.chattylabs.sdk.android.common.internal.ILogger;
+import com.chattylabs.android.commons.HtmlUtils;
+import com.chattylabs.android.commons.StringUtils;
+import com.chattylabs.android.commons.Tag;
+import com.chattylabs.android.commons.internal.ILogger;
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.api.gax.core.FixedExecutorProvider;
 import com.google.auth.oauth2.GoogleCredentials;

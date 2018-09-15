@@ -4,8 +4,6 @@ import android.os.Bundle;
 import android.speech.RecognitionListener;
 import android.support.annotation.CallSuper;
 
-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.*;
-
 
 abstract class AndroidSpeechRecognitionAdapter
         implements RecognitionListener, RecognizerUtteranceListener {

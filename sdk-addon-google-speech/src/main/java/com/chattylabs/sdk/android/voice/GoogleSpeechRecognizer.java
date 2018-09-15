@@ -8,9 +8,9 @@ import android.speech.SpeechRecognizer;
 import android.support.annotation.RawRes;
 import android.text.TextUtils;
 
-import com.chattylabs.sdk.android.common.Tag;
-import com.chattylabs.sdk.android.common.ThreadUtils;
-import com.chattylabs.sdk.android.common.internal.ILogger;
+import com.chattylabs.android.commons.Tag;
+import com.chattylabs.android.commons.ThreadUtils;
+import com.chattylabs.android.commons.internal.ILogger;
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.api.gax.core.FixedExecutorProvider;
 import com.google.auth.oauth2.GoogleCredentials;

@@ -5,8 +5,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.telephony.TelephonyManager;
 
-import com.chattylabs.sdk.android.common.Tag;
-import com.chattylabs.sdk.android.common.internal.ILogger;
+import com.chattylabs.android.commons.Tag;
+import com.chattylabs.android.commons.internal.ILogger;
 
 public class PhoneStateHandler {
     private static final String TAG = Tag.make("PhoneStateHandler");

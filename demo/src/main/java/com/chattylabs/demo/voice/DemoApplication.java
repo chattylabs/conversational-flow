@@ -1,7 +1,7 @@
 package com.chattylabs.demo.voice;
 
-import com.chattylabs.sdk.android.common.internal.ILogger;
-import com.chattylabs.sdk.android.common.internal.ILoggerImpl;
+import com.chattylabs.android.commons.internal.ILogger;
+import com.chattylabs.android.commons.internal.ILoggerImpl;
 import com.chattylabs.sdk.android.voice.ConversationalFlowComponent;
 import com.chattylabs.sdk.android.voice.ConversationalFlowModule;
 

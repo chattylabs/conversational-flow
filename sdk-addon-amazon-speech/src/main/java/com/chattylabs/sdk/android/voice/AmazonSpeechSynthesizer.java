@@ -14,9 +14,9 @@ import com.amazonaws.services.polly.model.LanguageCode;
 import com.amazonaws.services.polly.model.OutputFormat;
 import com.amazonaws.services.polly.model.SynthesizeSpeechPresignRequest;
 import com.amazonaws.services.polly.model.Voice;
-import com.chattylabs.sdk.android.common.HtmlUtils;
-import com.chattylabs.sdk.android.common.Tag;
-import com.chattylabs.sdk.android.common.internal.ILogger;
+import com.chattylabs.android.commons.HtmlUtils;
+import com.chattylabs.android.commons.Tag;
+import com.chattylabs.android.commons.internal.ILogger;
 import com.chattylabs.sdk.android.voice.addon.amazon.R;
 
 import java.io.IOException;

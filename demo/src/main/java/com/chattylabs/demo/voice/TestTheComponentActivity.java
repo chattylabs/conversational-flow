@@ -15,12 +15,12 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.chattylabs.sdk.android.common.HtmlUtils;
-import com.chattylabs.sdk.android.common.Tag;
-import com.chattylabs.sdk.android.voice.RecognizerListener;
+import com.chattylabs.android.commons.HtmlUtils;
+import com.chattylabs.android.commons.Tag;
 import com.chattylabs.sdk.android.voice.Peripheral;
-
+import com.chattylabs.sdk.android.voice.RecognizerListener;
 import com.chattylabs.sdk.android.voice.SynthesizerListener;
+
 import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.matches;
 
 

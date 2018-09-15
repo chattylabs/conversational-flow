@@ -6,8 +6,8 @@ import android.support.v4.util.Pools;
 import android.support.v4.util.SimpleArrayMap;
 import android.util.Log;
 
-import com.chattylabs.sdk.android.common.Tag;
-import com.chattylabs.sdk.android.common.internal.ILogger;
+import com.chattylabs.android.commons.Tag;
+import com.chattylabs.android.commons.internal.ILogger;
 
 import java.util.ArrayList;
 import java.util.Arrays;

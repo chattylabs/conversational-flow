@@ -5,8 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
 
-import com.chattylabs.sdk.android.common.Tag;
-import com.chattylabs.sdk.android.common.internal.ILogger;
+import com.chattylabs.android.commons.Tag;
+import com.chattylabs.android.commons.internal.ILogger;
 
 public class BluetoothScoReceiver extends BroadcastReceiver {
     private static String TAG = Tag.make("BluetoothScoReceiver");
