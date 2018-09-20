@@ -1,4 +1,4 @@
-# Conversational Flow Component - Android
+# <img src="art/logo.png" width="250px"/>
 
 |                   	     | TYPE  	| VERSION 	            | STATUS 	          | COVERAGE                |
 |--------------------------- |:-------:	|---------------------- |-------------------- |:-----------------------:|
@@ -9,27 +9,21 @@
 | `addon-amazon-speech`      | _addon_	| ![Latest version][v4] | ![Build Status][s4] | ![Coverage Status][c4]  |
 
 
-Part of the [Voice & User Interaction SDK]().
+Check: [VUI SDK](https://github.com/chattylabs/voice-user-interaction)
 
 This library combines both native built-in resources and cloud services into 
-a software component capable to run reliably a Speech Synthesizer and a Voice Recognizer.
+a software component capable to run reliably a **Speech Synthesizer** and a **Voice Recognizer**.
 
-Besides, it provides an [Interface](#how-to-create-a-conversation) based on a 
-[Directed Graph](https://en.wikipedia.org/wiki/Directed_graph) 
-implementation with [Directed Cycles](https://en.wikipedia.org/wiki/Cycle_(graph_theory)) 
-that allows a developer to create connected nodes and build a consistent conversation flow between 
-a device and a user with ease. 
-
-_Consistency_ here stands for the needless to code the flow using conditional statements or 
-any extra state complexity while ensuring the conversation will behave as expected.
-
+<br/>
+<p align="center"><img src="art/poster.png" width="800px" /></p>
+<br/>
 
 It enables currently the following providers:
 
-- [Built-in Android][p1] (@kuassivi)
+- [Built-in Android][p1] (@FranRiadigos)
     - [TextToSpeech][p2]
     - [SpeechRecognizer][p3]
-- [Google Cloud][p4] (@kuassivi)
+- [Google Cloud][p4] (@FranRiadigos)
     - [Text-To-Speech][p5]
     - [Speech-To-Text][p6]
 - [Amazon][p4] (@xvelx)
@@ -38,8 +32,8 @@ It enables currently the following providers:
     
 Other providers you can contribute with are:
 
-- _Bing (Microsoft)_ 
-- _IBM_
+- _Microsoft Azure_ 
+- _Watson (IBM)_
 - _Wit.ai_
 - _Temi_ 
 
@@ -49,8 +43,8 @@ Apart from the above mentioned, it also helps you when:
 - some devices don't have configured the resources you need to run a conversation in your app
 - a developer needs to learn and test quite a lot before even to start coding for voice capabilities
 - noise is impacting considerably the communication
-- android components force you to create a lot of boilerplate
-- some countries don't allow Google Play Services
+- oldest android components force you to create a lot of boilerplate
+- some countries don't allow Google Services
 
     
 ## Prerequisites
@@ -58,7 +52,14 @@ The SDK works on Android version 5.0 (Lollipop) and above. _(for lower versions 
 
 ## Dependencies
 
+    repositories { 
+        
+        // Optional. Access to early versions not yet published.
+        maven { url "https://dl.bintray.com/chattylabs/maven" }
+    }
+
     dependencies {
+
         // Required
         implementation 'com.chattylabs.sdk.android:conversational-flow-core:<latest version>'
          
@@ -68,26 +69,31 @@ The SDK works on Android version 5.0 (Lollipop) and above. _(for lower versions 
         implementation 'com.chattylabs.sdk.android:addon-google-speech:<latest version>'
     }
 
-### How to create a Conversation?
+## How to create a Conversation?
 
 You can use the component at any [Context]() level, both in an [Activity]() and a [Service](). 
 <br/>You will create a set of `VoiceNode` objects, add them into the graph and build a flow.
 
-```java
-component = ConversationalFlowModule.provideComponent(...);
+```kotlin
+val component = ConversationalFlowModule.provideComponent(...);
  
-Conversation conversation = component.create(context);
+val conversation: Conversation = component.create(context);
  
-VoiceMessage question = ...;
-VoiceMatch answers = ...;
+val question: VoiceMessage = ...
+val answers: VoiceMatch = ...
+
+with(conversation) {
+
+    addNode(question)
+    addNode(answers)
  
-conversation.addNode(question);
-conversation.addNode(answers);
+    with(prepare()) {
+
+        from(question).to(answers)
+    }
  
-ConversationFlow flow = conversation.prepare();
-flow.from(question).to(answers);
- 
-conversation.start(question);
+    start(question)
+}
 ```
 
 There are different [Voice Nodes]() and [Configurations](), check the [wiki page]()
