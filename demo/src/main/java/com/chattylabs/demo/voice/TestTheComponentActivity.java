@@ -211,7 +211,7 @@ public class TestTheComponentActivity extends BaseActivity {
         proceed = findViewById(R.id.proceed);
         CheckBox scoCheck = findViewById(R.id.bluetooth_sco);
 
-        // Check if there is a Bluetooth device connected and setup the config for a Sco connection
+        // Check if there is a Bluetooth device connected and checkStatus the config for a Sco connection
         scoCheck.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked && !peripheral.get(Peripheral.Type.BLUETOOTH).isConnected()) {
                 buttonView.setChecked(false);

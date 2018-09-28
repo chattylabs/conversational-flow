@@ -1,7 +1,6 @@
 package com.chattylabs.sdk.android.voice;
 
 import android.support.annotation.Nullable;
-import android.support.annotation.WorkerThread;
 
 import java.util.List;
 import java.util.Set;
@@ -11,8 +10,7 @@ import java.util.Set;
  */
 public interface SpeechSynthesizerComponent {
 
-    @WorkerThread
-    void setup(SynthesizerListener.OnSetup onSynthesizerSetup);
+    void checkStatus(SynthesizerListener.OnStatusChecked listener);
 
     void addFilter(TextFilter filter);
 
@@ -20,21 +18,13 @@ public interface SpeechSynthesizerComponent {
 
     void clearFilters();
 
-    @SuppressWarnings("unchecked")
-    @WorkerThread
-    <T extends SynthesizerListener> void playText(String text, String queueId, T... listeners);
+    void playText(String text, String queueId, SynthesizerListener... listeners);
 
-    @SuppressWarnings("unchecked")
-    @WorkerThread
-    <T extends SynthesizerListener> void playText(String text, T... listeners);
+    void playText(String text, SynthesizerListener... listeners);
 
-    @SuppressWarnings("unchecked")
-    @WorkerThread
-    <T extends SynthesizerListener> void playSilence(long durationInMillis, String queueId, T... listeners);
+    void playSilence(long durationInMillis, String queueId, SynthesizerListener... listeners);
 
-    @SuppressWarnings("unchecked")
-    @WorkerThread
-    <T extends SynthesizerListener> void playSilence(long durationInMillis, T... listeners);
+    void playSilence(long durationInMillis, SynthesizerListener... listeners);
 
     void freeCurrentQueue();
 

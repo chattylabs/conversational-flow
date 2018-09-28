@@ -68,22 +68,22 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     @WorkerThread
     @Override
-    public void setup(SynthesizerListener.OnSetup onSynthesizerSetup) {
-        logger.i(TAG, "GOOGLE TTS - setup and check language");
+    public void checkStatus(SynthesizerListener.OnStatusChecked listener) {
+        logger.i(TAG, "GOOGLE TTS - checkStatus and check language");
         try (TextToSpeechClient ttsClient = generateFromRawFile(
                 application, getConfiguration().getGoogleCredentialsResourceFile())) {
             ListVoicesResponse response = ttsClient.listVoices(getDefaultLanguageCode());
             ttsClient.shutdownNow();
             ttsClient.awaitTermination(2, TimeUnit.SECONDS);
             if (response.getVoicesCount() > 0) {
-                onSynthesizerSetup.execute(SynthesizerListener.Status.AVAILABLE);
+                listener.execute(SynthesizerListener.Status.AVAILABLE);
             } else {
-                onSynthesizerSetup.execute(SynthesizerListener.Status.LANGUAGE_NOT_SUPPORTED_ERROR);
+                listener.execute(SynthesizerListener.Status.LANGUAGE_NOT_SUPPORTED_ERROR);
             }
         } catch (Exception e) {
             logger.logException(e);
             shutdown();
-            onSynthesizerSetup.execute(SynthesizerListener.Status.NOT_AVAILABLE_ERROR);
+            listener.execute(SynthesizerListener.Status.NOT_AVAILABLE_ERROR);
         }
     }
 
@@ -283,7 +283,6 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
         getSynthesizerUtteranceListener().onDone(utteranceId);
     }
 
-    @WorkerThread
     private void play(String utteranceId, String text, HashMap<String, String> params) {
         logger.i(TAG, "GOOGLE TTS[%s] - reading out loud: \"%s\"", utteranceId, text);
         getSynthesizerUtteranceListener().onStart(utteranceId);

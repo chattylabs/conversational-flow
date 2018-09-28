@@ -3,7 +3,6 @@ package com.chattylabs.sdk.android.voice;
 import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.WorkerThread;
 
 import com.chattylabs.android.commons.internal.ILogger;
 
@@ -35,14 +34,14 @@ import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.TAG;
  * }</pre>
  * If the parameters are not in the same order the addon initialization will throw an Exception.
  * <p/>
- * - You will implement {@link #setup(SynthesizerListener.OnSetup)} which is
+ * - You will implement {@link #checkStatus(SynthesizerListener.OnStatusChecked)} which is
  * in charge of testing whether the client provider work and to check whether the required language
  * is available.
  * <p/>
  * - You will implement {@link #prepare(SynthesizerListener.OnPrepared)} which is the entry point
  * for any call to {@link #playText(String, SynthesizerListener[])} or
  * {@link #playSilence(long, SynthesizerListener[])} and its variations.
- * <br/>This method behaves like {@link #setup(SynthesizerListener.OnSetup)} but it stores the current
+ * <br/>This method behaves like {@link #checkStatus(SynthesizerListener.OnStatusChecked)} but it stores the current
  * Text To Speech client, sets up the current required language, and initializes a
  * {@link SynthesizerUtteranceListener}.
  * <br/>This method should check whether the current client instance is available or create a new one.
@@ -197,14 +196,14 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizerComponent {
         return listener;
     }
 
-    @WorkerThread
     @Override
-    public <T extends SynthesizerListener> void playText(String text, String queueId, T... listeners) {
+    public void playText(String text, String queueId, SynthesizerListener... listeners) {
         SynthesizerUtteranceListener listener = generateUtteranceListener(createUtteranceListener(listeners), listeners);
         playText(text, queueId, listener, DEFAULT_UTTERANCE_ID + System.nanoTime());
     }
 
-    void playText(String text, String queueId, @Nullable SynthesizerUtteranceListener listener, String utteranceId) {
+    void playText(String text, String queueId,
+                  @Nullable SynthesizerUtteranceListener listener, String utteranceId) {
         logger.i(TAG, "TTS[%s] - play \"%s\" on queue <%s>", utteranceId, text, queueId);
         if (listenersMap.containsKey(utteranceId)) {
             utteranceId = utteranceId + "_" + listenersMap.size();
@@ -233,9 +232,8 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizerComponent {
         }
     }
 
-    @WorkerThread
     @Override
-    public <T extends SynthesizerListener> void playText(String text, T... listeners) {
+    public void playText(String text, SynthesizerListener... listeners) {
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
         logger.i(TAG, "TTS[%s] - immediately play \"%s\"", utteranceId, text);
         SynthesizerUtteranceListener listener = generateUtteranceListener(createUtteranceListener(listeners), listeners);
@@ -262,9 +260,9 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizerComponent {
         });
     }
 
-    @WorkerThread
     @Override
-    public  <T extends SynthesizerListener> void playSilence(long durationInMillis, String queueId, T... listeners) {
+    public  void playSilence(long durationInMillis, String queueId,
+                             SynthesizerListener... listeners) {
         if (durationInMillis <= 0) throw new IllegalArgumentException("Silence duration must be greater than 0");
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
         logger.i(TAG, "TTS[%s] - play silence on queue <%s>", utteranceId, queueId);
@@ -295,9 +293,8 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizerComponent {
         }
     }
 
-    @WorkerThread
     @Override
-    public  <T extends SynthesizerListener> void playSilence(long durationInMillis, T... listeners) {
+    public void playSilence(long durationInMillis, SynthesizerListener... listeners) {
         if (durationInMillis <= 0) throw new IllegalArgumentException("Silence duration must be greater than 0");
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
         logger.i(TAG, "TTS[%s] - immediately play silence", utteranceId);
@@ -497,14 +494,17 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizerComponent {
         return queue.keySet();
     }
 
-    private void handleListener(@NonNull String utteranceId, @NonNull SynthesizerUtteranceListener listener) {
+    private void handleListener(@NonNull String utteranceId,
+                                @NonNull SynthesizerUtteranceListener listener) {
         logger.v(getTag(), "TTS[%s] - added new utterance listener -> map size: %s", utteranceId, listenersMap.size());
         synchronized (lock) {
             listenersMap.put(utteranceId, listener);
         }
     }
 
-    private void addToQueue(@NonNull String utteranceId, String message, long duration, @Nullable HashMap<String, String> params, @NonNull String queueId) {
+    private void addToQueue(@NonNull String utteranceId, String message,
+                            long duration, @Nullable HashMap<String, String> params,
+                            @NonNull String queueId) {
         Map<String, Object> map = new HashMap<>();
         map.put(MAP_UTTERANCE_ID, utteranceId);
         if (message != null) map.put(MAP_MESSAGE, message);

@@ -6,11 +6,7 @@ import android.support.annotation.RestrictTo;
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public interface SynthesizerListener {
 
-    interface OnError extends SynthesizerListener {
-        void execute(String utteranceId, int errorCode);
-    }
-
-    interface OnSetup extends SynthesizerListener {
+    interface OnStatusChecked extends SynthesizerListener {
         void execute(int synthesizerStatus);
     }
 
@@ -26,8 +22,11 @@ public interface SynthesizerListener {
         void execute(String utteranceId);
     }
 
-    final class Status {
-        private Status() {}
+    interface OnError extends SynthesizerListener {
+        void execute(String utteranceId, int errorCode);
+    }
+
+    abstract class Status {
         public static final int AVAILABLE = 101;
         public static final int AVAILABLE_BUT_INACTIVE = 102;
         public static final int UNKNOWN_ERROR = 103;

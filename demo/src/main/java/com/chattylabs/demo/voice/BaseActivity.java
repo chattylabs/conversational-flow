@@ -23,8 +23,10 @@ import com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer;
 import com.chattylabs.sdk.android.voice.ConversationalFlowComponent;
 import com.chattylabs.sdk.android.voice.GoogleSpeechRecognizer;
 import com.chattylabs.sdk.android.voice.GoogleSpeechSynthesizer;
+import com.chattylabs.sdk.android.voice.RecognizerListener;
 import com.chattylabs.sdk.android.voice.SpeechRecognizerComponent;
 import com.chattylabs.sdk.android.voice.SpeechSynthesizerComponent;
+import com.chattylabs.sdk.android.voice.SynthesizerListener;
 import com.chattylabs.sdk.android.voice.TextFilterForUrl;
 
 import java.util.Arrays;
@@ -138,13 +140,19 @@ abstract class BaseActivity extends DaggerAppCompatActivity
                                            @NonNull int[] grantResults) {
         if (requestCode == 202 &&
                 PermissionsHelper.allGranted(grantResults)) {
-            serialThread.addTask(() -> component.setup(this, status -> {
-                if (status.isAvailable()) {
-                    recognizer = component.getSpeechRecognizer(this);
-                    synthesizer = component.getSpeechSynthesizer(this);
-                    synthesizer.addFilter(new TextFilterForUrl());
-                }
-            }));
+            serialThread.addTask(() -> {
+                component.checkSpeechSynthesizerStatus(this, synthesizerStatus -> {
+                    if (synthesizerStatus == SynthesizerListener.Status.AVAILABLE) {
+                        synthesizer = component.getSpeechSynthesizer(this);
+                        synthesizer.addFilter(new TextFilterForUrl());
+                    }
+                });
+                component.checkSpeechRecognizerStatus(this, recognizerStatus -> {
+                    if (recognizerStatus == RecognizerListener.Status.AVAILABLE) {
+                        recognizer = component.getSpeechRecognizer(this);
+                    }
+                });
+            });
         }
     }
 

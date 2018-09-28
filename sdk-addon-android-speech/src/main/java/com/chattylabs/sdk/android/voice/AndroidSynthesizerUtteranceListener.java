@@ -48,7 +48,7 @@ class AndroidSynthesizerUtteranceListener extends BaseSynthesizerUtteranceListen
     public void onDone(String utteranceId) {
         if (mode != Mode.INITIALIZE && utteranceId.equals(supplier.getCheckingUtteranceId())) {
             clearTimeout(utteranceId);
-            logger.v(getTag(), "ANDROID TTS[%s] - on done <%s> -> go to setup language", utteranceId, getCurrentQueueId());
+            logger.v(getTag(), "ANDROID TTS[%s] - on done <%s> -> go to checkStatus language", utteranceId, getCurrentQueueId());
             supplier.checkLanguage(true);
         } else {
             super.onDone(utteranceId);
@@ -63,9 +63,9 @@ class AndroidSynthesizerUtteranceListener extends BaseSynthesizerUtteranceListen
             clearTimeout(utteranceId);
             shutdown();
             if (errorCode == TextToSpeech.ERROR_NOT_INSTALLED_YET) {
-                supplier.getOnSetupSynthesizer().execute(SynthesizerListener.Status.NOT_AVAILABLE_ERROR);
+                supplier.getOnStatusCheckedListener().execute(SynthesizerListener.Status.NOT_AVAILABLE_ERROR);
             } else {
-                supplier.getOnSetupSynthesizer().execute(SynthesizerListener.Status.UNKNOWN_ERROR);
+                supplier.getOnStatusCheckedListener().execute(SynthesizerListener.Status.UNKNOWN_ERROR);
             }
         } else {
             super.onError(utteranceId, errorCode);
@@ -107,7 +107,7 @@ class AndroidSynthesizerUtteranceListener extends BaseSynthesizerUtteranceListen
 
     interface AndroidSynthesizerUtteranceSupplier {
         @NonNull
-        SynthesizerListener.OnSetup getOnSetupSynthesizer();
+        SynthesizerListener.OnStatusChecked getOnStatusCheckedListener();
 
         void checkLanguage(boolean fromUtterance);
 

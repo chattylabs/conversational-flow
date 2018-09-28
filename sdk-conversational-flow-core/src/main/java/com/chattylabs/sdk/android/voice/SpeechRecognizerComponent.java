@@ -5,8 +5,9 @@ package com.chattylabs.sdk.android.voice;
  */
 public interface SpeechRecognizerComponent {
 
-    @SuppressWarnings("unchecked")
-    <T extends RecognizerListener> void listen(T... listeners);
+    void checkStatus(RecognizerListener.OnStatusChecked listener);
+
+    void listen(RecognizerListener... listeners);
 
     void stop();
 

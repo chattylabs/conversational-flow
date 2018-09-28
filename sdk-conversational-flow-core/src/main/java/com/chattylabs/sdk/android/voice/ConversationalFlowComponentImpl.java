@@ -4,16 +4,15 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.support.annotation.RequiresPermission;
-import android.support.v4.content.ContextCompat;
 
 import com.chattylabs.android.commons.internal.ILogger;
 
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Locale;
 
 final class ConversationalFlowComponentImpl implements ConversationalFlowComponent {
 
@@ -44,6 +43,7 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
 
     ConversationalFlowComponentImpl() {
         this.configuration = new ComponentConfig.Builder()
+                .setSpeechLanguage(Locale::getDefault)
                 .setBluetoothScoRequired(() -> false)
                 .setAudioExclusiveRequiredForSynthesizer(() -> false)
                 .setAudioExclusiveRequiredForRecognizer(() -> true)
@@ -83,29 +83,12 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
         return (T) constructor.newInstance(parameters);
     }
 
-    private void init(Application application) {
-        String[] perms = requiredPermissions();
-        for (String perm : perms)
-            if (ContextCompat.checkSelfPermission(application, perm) != PackageManager.PERMISSION_GRANTED)
-                throw new IllegalAccessError("Permission \"" + perm + "\" is not granted");
+    private void initDependencies(Application application) {
         if (audioManager == null) {
             AudioManager systemAudioManager = (AudioManager) application.getSystemService(Context.AUDIO_SERVICE);
             this.audioManager = new AndroidAudioManager(systemAudioManager, configuration, logger);
         }
         if (bluetoothSco == null) bluetoothSco = new BluetoothSco(application, audioManager, logger);
-        try {
-            if (speechSynthesizer == null) {
-                speechSynthesizer = newInstance(configuration.getSynthesizerServiceType(),
-                        application, configuration, audioManager, bluetoothSco, logger);
-            }
-            if (speechRecognizer == null) {
-                speechRecognizer = newInstance(configuration.getRecognizerServiceType(),
-                        application, configuration, audioManager, bluetoothSco, logger);
-            }
-        } catch (Exception e) {
-            logger.logException(e);
-            throw new RuntimeException("Have you missed configuring the < addon > dependency?");
-        }
         if (phoneStateHandler == null) phoneStateHandler = new PhoneStateHandler(application, logger);
         if (!phoneStateHandler.isPhoneStateReceiverRegistered()) {
             phoneStateHandler.registerReceiver(new PhoneStateListenerAdapter() {
@@ -123,45 +106,57 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
     }
 
     @Override
-    public void setup(Context context, OnComponentSetup onComponentSetup) {
+    public void checkSpeechSynthesizerStatus(Context context, SynthesizerListener.OnStatusChecked listener) {
         final Application application = (Application) context.getApplicationContext();
-        init(application);
-        speechSynthesizer.setup(synthesizerStatus -> {
-            int androidRecognizerStatus = android.speech.SpeechRecognizer.isRecognitionAvailable(application) ?
-                    RecognizerListener.Status.AVAILABLE : RecognizerListener.Status.NOT_AVAILABLE;
-            int speechRecognizerStatus = configuration.getRecognizerServiceType().getSimpleName().equals(
-                    ComponentConfig.RECOGNIZER_SERVICE_ANDROID) ? androidRecognizerStatus
-                    : RecognizerListener.Status.AVAILABLE;
-            onComponentSetup.execute(new ComponentStatus() {
-                @Override
-                public boolean isAvailable() {
-                    return synthesizerStatus == SynthesizerListener.Status.AVAILABLE &&
-                           speechRecognizerStatus == RecognizerListener.Status.AVAILABLE;
-                }
+        initDependencies(application);
+        createSpeechSynthesizerInstance(application);
+        speechSynthesizer.checkStatus(listener);
+    }
 
-                @Override
-                public int getSynthesizerStatus() {
-                    return synthesizerStatus;
-                }
+    private void createSpeechSynthesizerInstance(Context context) {
+        try {
+            if (speechSynthesizer == null) {
+                speechSynthesizer = newInstance(configuration.getSynthesizerServiceType(),
+                        context, configuration, audioManager, bluetoothSco, logger);
+            }
+        } catch (Exception e) {
+            logger.logException(e);
+            throw new RuntimeException("Did you miss configuring the <addon-speech /> dependency?");
+        }
+    }
 
-                @Override
-                public int getRecognizerStatus() {
-                    return speechRecognizerStatus;
-                }
-            });
-        });
+    @Override
+    public void checkSpeechRecognizerStatus(Context context, RecognizerListener.OnStatusChecked listener) {
+        final Application application = (Application) context.getApplicationContext();
+        initDependencies(application);
+        createSpeechRecognizerInstance(application);
+        speechRecognizer.checkStatus(listener);
+    }
+
+    private void createSpeechRecognizerInstance(Context context) {
+        try {
+            if (speechRecognizer == null) {
+                speechRecognizer = newInstance(configuration.getRecognizerServiceType(),
+                        context, configuration, audioManager, bluetoothSco, logger);
+            }
+        } catch (Exception e) {
+            logger.logException(e);
+            throw new RuntimeException("Did you miss configuring the <addon-speech /> dependency?");
+        }
     }
 
     @Override
     public SpeechSynthesizerComponent getSpeechSynthesizer(Context context) {
-        init((Application) context.getApplicationContext());
+        initDependencies((Application) context.getApplicationContext());
+        createSpeechSynthesizerInstance(context);
         return speechSynthesizer;
     }
 
     @SuppressLint("MissingPermission")
     @Override @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     public SpeechRecognizerComponent getSpeechRecognizer(Context context) {
-        init((Application) context.getApplicationContext());
+        initDependencies((Application) context.getApplicationContext());
+        createSpeechRecognizerInstance(context);
         return speechRecognizer;
     }
 

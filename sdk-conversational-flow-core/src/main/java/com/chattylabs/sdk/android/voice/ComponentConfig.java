@@ -5,8 +5,6 @@ import android.support.annotation.RawRes;
 import java.util.Locale;
 
 public class ComponentConfig {
-    static final String RECOGNIZER_SERVICE_ANDROID = "AndroidSpeechRecognizer";
-
     private LazyProvider<Locale> speechLanguage;
     private LazyProvider<Boolean> bluetoothScoRequired;
     private LazyProvider<Boolean> audioExclusiveRequiredForSynthesizer;

@@ -55,6 +55,13 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
         this.recognizerCreator = () -> SpeechRecognizer.createSpeechRecognizer(application);
     }
 
+    @Override
+    public void checkStatus(RecognizerListener.OnStatusChecked listener) {
+        int androidRecognizerStatus = android.speech.SpeechRecognizer.isRecognitionAvailable(application) ?
+                RecognizerListener.Status.AVAILABLE : RecognizerListener.Status.NOT_AVAILABLE;
+        listener.execute(androidRecognizerStatus);
+    }
+
     private final AndroidSpeechRecognitionAdapter listener = new AndroidSpeechRecognitionAdapter() {
         private int intents;
         private long elapsedTime;

@@ -1,0 +1,2419 @@
+Index: app/src/main/res/raw/demo_conversation.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/res/raw/demo_conversation.json	(date 1533679378000)
++++ app/src/main/res/raw/demo_conversation.json	(date 1533679378000)
+@@ -0,0 +1,16 @@
++[
++  {
++    "message": "Hi!"
++  },
++  {
++    "message": "How are you?",
++    "results": ["good", "fine", "not bad"]
++  },
++  {
++    "message": "Good!. Are you ok if we keep talking?",
++    "results": ["yes", "sure", "no", "of course"]
++  },
++  {
++    "message": "Ok. I'm a bit lazy now, let's try next time."
++  }
++]
+\ No newline at end of file
+Index: app/src/main/res/raw/conversation.json
+===================================================================
+--- app/src/main/res/raw/conversation.json	(date 0)
++++ app/src/main/res/raw/conversation.json	(date 0)
+@@ -1,10 +0,0 @@
+-[
+-  {
+-    "message": "Hello, how are you?",
+-    "results": ["good", "fine", "not bad"]
+-  },
+-  {
+-    "message": "Good, are you ok if we keep talking?",
+-    "results": ["yes", "sure", "no"]
+-  }
+-]
+\ No newline at end of file
+Index: app/src/main/res/menu/demos.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/res/menu/demos.xml	(date 1533679378000)
++++ app/src/main/res/menu/demos.xml	(date 1533679378000)
+@@ -0,0 +1,7 @@
++<?xml version="1.0" encoding="utf-8"?>
++<menu xmlns:android="http://schemas.android.com/apk/res/android">
++    <item android:id="@+id/demo_conversation"
++        android:title="Conversation"/>
++    <item android:id="@+id/demo_components"
++        android:title="Components"/>
++</menu>
+\ No newline at end of file
+Index: app/src/main/res/menu/demo.xml
+===================================================================
+--- app/src/main/res/menu/demo.xml	(date 0)
++++ app/src/main/res/menu/demo.xml	(date 0)
+@@ -1,7 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+-    <item android:id="@+id/demo_conversation"
+-        android:title="Conversation"/>
+-    <item android:id="@+id/demo_components"
+-        android:title="Components"/>
+-</menu>
+\ No newline at end of file
+Index: app/src/main/res/layout/item_block.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/res/layout/item_block.xml	(date 1533679378000)
++++ app/src/main/res/layout/item_block.xml	(date 1533679378000)
+@@ -0,0 +1,26 @@
++<?xml version="1.0" encoding="utf-8"?>
++<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:tools="http://schemas.android.com/tools"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    android:background="@null"
++    android:gravity="center">
++
++    <android.support.v7.widget.CardView
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        app:cardCornerRadius="16dp"
++        android:layout_margin="5dp">
++
++        <TextView
++            android:id="@+id/conversation_item_text"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            tools:text="TextView"
++            android:layout_gravity="center"
++            android:layout_margin="10dp"/>
++
++    </android.support.v7.widget.CardView>
++
++</LinearLayout>
+\ No newline at end of file
+Index: app/src/main/res/layout/activity_build_from_json.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/res/layout/activity_build_from_json.xml	(date 1533679378000)
++++ app/src/main/res/layout/activity_build_from_json.xml	(date 1533679378000)
+@@ -0,0 +1,72 @@
++<?xml version="1.0" encoding="utf-8"?>
++<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    xmlns:tools="http://schemas.android.com/tools"
++    android:id="@+id/root"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    android:animateLayoutChanges="true"
++    android:background="#ffffff"
++    tools:context="com.chattylabs.demo.voice.CustomizeTheComponentActivity">
++
++    <android.support.constraint.Guideline
++        android:id="@+id/guideline"
++        android:layout_width="0dp"
++        android:layout_height="wrap_content"
++        android:orientation="horizontal"
++        app:layout_constraintGuide_percent="0.65" />
++
++    <ListView
++        android:id="@+id/conversation"
++        android:layout_width="0dp"
++        android:layout_height="0dp"
++        android:background="#be4a4a"
++        android:divider="@null"
++        android:dividerHeight="3dp"
++        android:padding="10dp"
++        android:stackFromBottom="true"
++        android:transcriptMode="alwaysScroll"
++        app:layout_constraintBottom_toTopOf="@+id/guideline"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent"
++        tools:listitem="@layout/item_block" />
++
++    <View
++        android:layout_width="match_parent"
++        android:layout_height="1dp"
++        android:background="@android:color/black"
++        app:layout_constraintTop_toTopOf="@+id/guideline"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintStart_toStartOf="parent"/>
++
++    <Spinner
++        android:id="@+id/addon"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:layout_marginBottom="8dp"
++        android:layout_marginEnd="8dp"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:minWidth="100dp"
++        app:layout_constraintBottom_toBottomOf="@+id/proceed"
++        app:layout_constraintEnd_toStartOf="@+id/proceed"
++        app:layout_constraintHorizontal_bias="0.5"
++        app:layout_constraintHorizontal_chainStyle="packed"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="@+id/proceed" />
++
++    <Button
++        android:id="@+id/proceed"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:layout_marginBottom="8dp"
++        android:layout_marginTop="8dp"
++        android:text="Proceed"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.5"
++        app:layout_constraintStart_toEndOf="@+id/addon"
++        app:layout_constraintTop_toBottomOf="@+id/guideline" />
++
++</android.support.constraint.ConstraintLayout>
+\ No newline at end of file
+Index: app/src/main/res/layout/activity_customize_the_component.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/res/layout/activity_customize_the_component.xml	(date 1533679378000)
++++ app/src/main/res/layout/activity_customize_the_component.xml	(date 1533679378000)
+@@ -0,0 +1,124 @@
++<?xml version="1.0" encoding="utf-8"?>
++<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto"
++    xmlns:tools="http://schemas.android.com/tools"
++    android:id="@+id/root"
++    android:layout_width="match_parent"
++    android:layout_height="match_parent"
++    android:animateLayoutChanges="true"
++    tools:context="com.chattylabs.demo.voice.CustomizeTheComponentActivity">
++
++    <android.support.constraint.Guideline
++        android:id="@+id/guideline"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:orientation="horizontal"
++        app:layout_constraintGuide_percent="0.35" />
++
++    <TextView
++        android:id="@+id/execution"
++        android:layout_width="0dp"
++        android:layout_height="0dp"
++        android:background="@android:color/background_dark"
++        android:gravity="bottom"
++        android:padding="10dp"
++        android:scrollbars="vertical"
++        android:textColor="@android:color/darker_gray"
++        app:layout_constraintBottom_toTopOf="@+id/guideline"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent" />
++
++    <Spinner
++        android:id="@+id/addon"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:layout_marginEnd="8dp"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:minWidth="100dp"
++        app:layout_constraintEnd_toEndOf="@+id/barrier2"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toBottomOf="@+id/guideline" />
++
++    <CheckBox
++        android:id="@+id/bluetooth_sco"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:layout_marginEnd="8dp"
++        android:layout_marginTop="10dp"
++        android:text="Emulate Audio Call over Bluetooth"
++        app:layout_constraintEnd_toEndOf="@+id/barrier2"
++        app:layout_constraintHorizontal_bias="0.0"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toBottomOf="@+id/addon" />
++
++    <EditText
++        android:id="@+id/text"
++        android:layout_width="0dp"
++        android:layout_height="0dp"
++        android:layout_marginBottom="8dp"
++        android:layout_marginEnd="8dp"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:padding="10dp"
++        android:background="#eee"
++        android:ems="10"
++        android:hint="Select an option first"
++        app:layout_constraintBottom_toBottomOf="parent"
++        app:layout_constraintEnd_toEndOf="@+id/barrier2"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toBottomOf="@+id/spinner"
++        tools:text="Insert text" />
++
++    <Spinner
++        android:id="@+id/spinner"
++        android:layout_width="0dp"
++        android:layout_height="wrap_content"
++        android:layout_marginEnd="8dp"
++        android:layout_marginStart="8dp"
++        android:layout_marginTop="8dp"
++        android:minWidth="100dp"
++        app:layout_constraintEnd_toEndOf="@+id/barrier2"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toBottomOf="@+id/bluetooth_sco" />
++
++    <Button
++        android:id="@+id/add"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:layout_marginBottom="8dp"
++        android:layout_marginEnd="8dp"
++        android:text="Add"
++        app:layout_constraintBottom_toBottomOf="@+id/spinner"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintTop_toTopOf="@+id/spinner" />
++
++    <Button
++        android:id="@+id/clear"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:layout_marginBottom="8dp"
++        android:layout_marginEnd="8dp"
++        android:text="Clear"
++        app:layout_constraintBottom_toTopOf="@+id/proceed"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintTop_toBottomOf="@+id/add" />
++
++    <Button
++        android:id="@+id/proceed"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        android:layout_marginEnd="8dp"
++        android:text="Proceed"
++        app:layout_constraintTop_toBottomOf="@+id/clear"
++        app:layout_constraintEnd_toEndOf="parent" />
++
++    <android.support.constraint.Barrier
++        android:id="@+id/barrier2"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++        app:barrierDirection="left"
++        app:constraint_referenced_ids="add,clear,proceed" />
++
++</android.support.constraint.ConstraintLayout>
+\ No newline at end of file
+Index: app/src/main/res/layout/activity_main.xml
+===================================================================
+--- app/src/main/res/layout/activity_main.xml	(date 0)
++++ app/src/main/res/layout/activity_main.xml	(date 0)
+@@ -1,54 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+-    xmlns:app="http://schemas.android.com/apk/res-auto"
+-    xmlns:tools="http://schemas.android.com/tools"
+-    android:id="@+id/root"
+-    android:layout_width="match_parent"
+-    android:layout_height="match_parent"
+-    android:animateLayoutChanges="true"
+-    tools:context="com.chattylabs.demo.voice.ConversationCreatorActivity">
+-
+-    <android.support.constraint.Guideline
+-        android:id="@+id/guideline"
+-        android:layout_width="wrap_content"
+-        android:layout_height="wrap_content"
+-        android:orientation="horizontal"
+-        app:layout_constraintGuide_percent="0.55" />
+-
+-    <TextView
+-        android:id="@+id/execution"
+-        android:layout_width="0dp"
+-        android:layout_height="0dp"
+-        android:background="@android:color/background_dark"
+-        android:gravity="bottom"
+-        android:padding="10dp"
+-        android:scrollbars="vertical"
+-        android:textColor="@android:color/darker_gray"
+-        app:layout_constraintBottom_toTopOf="@+id/guideline"
+-        app:layout_constraintEnd_toEndOf="parent"
+-        app:layout_constraintStart_toStartOf="parent"
+-        app:layout_constraintTop_toTopOf="parent" />
+-
+-    <Spinner
+-        android:id="@+id/addon"
+-        android:layout_width="wrap_content"
+-        android:layout_height="wrap_content"
+-        android:layout_marginEnd="8dp"
+-        android:layout_marginStart="8dp"
+-        android:layout_marginTop="8dp"
+-        android:minWidth="100dp"
+-        app:layout_constraintEnd_toEndOf="parent"
+-        app:layout_constraintStart_toStartOf="parent"
+-        app:layout_constraintTop_toBottomOf="@+id/guideline" />
+-
+-    <Button
+-        android:id="@+id/proceed"
+-        android:layout_width="wrap_content"
+-        android:layout_height="wrap_content"
+-        android:layout_marginEnd="8dp"
+-        android:text="Proceed"
+-        app:layout_constraintTop_toBottomOf="@+id/addon"
+-        app:layout_constraintStart_toStartOf="parent"
+-        app:layout_constraintEnd_toEndOf="parent" />
+-
+-</android.support.constraint.ConstraintLayout>
+\ No newline at end of file
+Index: app/src/main/res/layout/activity_conversation_creator.xml
+===================================================================
+--- app/src/main/res/layout/activity_conversation_creator.xml	(date 0)
++++ app/src/main/res/layout/activity_conversation_creator.xml	(date 0)
+@@ -1,124 +0,0 @@
+-<?xml version="1.0" encoding="utf-8"?>
+-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+-    xmlns:app="http://schemas.android.com/apk/res-auto"
+-    xmlns:tools="http://schemas.android.com/tools"
+-    android:id="@+id/root"
+-    android:layout_width="match_parent"
+-    android:layout_height="match_parent"
+-    android:animateLayoutChanges="true"
+-    tools:context="com.chattylabs.demo.voice.ConversationCreatorActivity">
+-
+-    <android.support.constraint.Guideline
+-        android:id="@+id/guideline"
+-        android:layout_width="wrap_content"
+-        android:layout_height="wrap_content"
+-        android:orientation="horizontal"
+-        app:layout_constraintGuide_percent="0.35" />
+-
+-    <TextView
+-        android:id="@+id/execution"
+-        android:layout_width="0dp"
+-        android:layout_height="0dp"
+-        android:background="@android:color/background_dark"
+-        android:gravity="bottom"
+-        android:padding="10dp"
+-        android:scrollbars="vertical"
+-        android:textColor="@android:color/darker_gray"
+-        app:layout_constraintBottom_toTopOf="@+id/guideline"
+-        app:layout_constraintEnd_toEndOf="parent"
+-        app:layout_constraintStart_toStartOf="parent"
+-        app:layout_constraintTop_toTopOf="parent" />
+-
+-    <Spinner
+-        android:id="@+id/addon"
+-        android:layout_width="wrap_content"
+-        android:layout_height="wrap_content"
+-        android:layout_marginEnd="8dp"
+-        android:layout_marginStart="8dp"
+-        android:layout_marginTop="8dp"
+-        android:minWidth="100dp"
+-        app:layout_constraintEnd_toEndOf="@+id/barrier2"
+-        app:layout_constraintStart_toStartOf="parent"
+-        app:layout_constraintTop_toBottomOf="@+id/guideline" />
+-
+-    <CheckBox
+-        android:id="@+id/bluetooth_sco"
+-        android:layout_width="wrap_content"
+-        android:layout_height="wrap_content"
+-        android:layout_marginEnd="8dp"
+-        android:layout_marginTop="10dp"
+-        android:text="Emulate Audio Call over Bluetooth"
+-        app:layout_constraintEnd_toEndOf="@+id/barrier2"
+-        app:layout_constraintHorizontal_bias="0.0"
+-        app:layout_constraintStart_toStartOf="parent"
+-        app:layout_constraintTop_toBottomOf="@+id/addon" />
+-
+-    <EditText
+-        android:id="@+id/text"
+-        android:layout_width="0dp"
+-        android:layout_height="0dp"
+-        android:layout_marginBottom="8dp"
+-        android:layout_marginEnd="8dp"
+-        android:layout_marginStart="8dp"
+-        android:layout_marginTop="8dp"
+-        android:padding="10dp"
+-        android:background="#eee"
+-        android:ems="10"
+-        android:hint="Select an option first"
+-        app:layout_constraintBottom_toBottomOf="parent"
+-        app:layout_constraintEnd_toEndOf="@+id/barrier2"
+-        app:layout_constraintStart_toStartOf="parent"
+-        app:layout_constraintTop_toBottomOf="@+id/spinner"
+-        tools:text="Insert text" />
+-
+-    <Spinner
+-        android:id="@+id/spinner"
+-        android:layout_width="0dp"
+-        android:layout_height="wrap_content"
+-        android:layout_marginEnd="8dp"
+-        android:layout_marginStart="8dp"
+-        android:layout_marginTop="8dp"
+-        android:minWidth="100dp"
+-        app:layout_constraintEnd_toEndOf="@+id/barrier2"
+-        app:layout_constraintStart_toStartOf="parent"
+-        app:layout_constraintTop_toBottomOf="@+id/bluetooth_sco" />
+-
+-    <Button
+-        android:id="@+id/add"
+-        android:layout_width="wrap_content"
+-        android:layout_height="wrap_content"
+-        android:layout_marginBottom="8dp"
+-        android:layout_marginEnd="8dp"
+-        android:text="Add"
+-        app:layout_constraintBottom_toBottomOf="@+id/spinner"
+-        app:layout_constraintEnd_toEndOf="parent"
+-        app:layout_constraintTop_toTopOf="@+id/spinner" />
+-
+-    <Button
+-        android:id="@+id/clear"
+-        android:layout_width="wrap_content"
+-        android:layout_height="wrap_content"
+-        android:layout_marginBottom="8dp"
+-        android:layout_marginEnd="8dp"
+-        android:text="Clear"
+-        app:layout_constraintBottom_toTopOf="@+id/proceed"
+-        app:layout_constraintEnd_toEndOf="parent"
+-        app:layout_constraintTop_toBottomOf="@+id/add" />
+-
+-    <Button
+-        android:id="@+id/proceed"
+-        android:layout_width="wrap_content"
+-        android:layout_height="wrap_content"
+-        android:layout_marginEnd="8dp"
+-        android:text="Proceed"
+-        app:layout_constraintTop_toBottomOf="@+id/clear"
+-        app:layout_constraintEnd_toEndOf="parent" />
+-
+-    <android.support.constraint.Barrier
+-        android:id="@+id/barrier2"
+-        android:layout_width="wrap_content"
+-        android:layout_height="wrap_content"
+-        app:barrierDirection="left"
+-        app:constraint_referenced_ids="add,clear,proceed" />
+-
+-</android.support.constraint.ConstraintLayout>
+\ No newline at end of file
+Index: app/src/main/java/com/chattylabs/demo/voice/DemoApplication.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/chattylabs/demo/voice/DemoApplication.java	(date 1533679378000)
++++ app/src/main/java/com/chattylabs/demo/voice/DemoApplication.java	(date 1533679378000)
+@@ -32,10 +32,10 @@
+         abstract ILogger provideLogger(ILoggerImpl logger);
+ 
+         @ContributesAndroidInjector
+-        abstract ConversationCreatorActivity conversationCreatorActivity();
++        abstract CustomizeTheComponentActivity conversationCreatorActivity();
+ 
+         @ContributesAndroidInjector
+-        abstract MainActivity mainActivity();
++        abstract BuildFromJsonActivity mainActivity();
+     }
+ 
+     @Override
+Index: app/src/main/java/com/chattylabs/demo/voice/BuildFromJsonActivity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/chattylabs/demo/voice/BuildFromJsonActivity.java	(date 1533679419000)
++++ app/src/main/java/com/chattylabs/demo/voice/BuildFromJsonActivity.java	(date 1533679419000)
+@@ -0,0 +1,286 @@
++package com.chattylabs.demo.voice;
++
++import android.annotation.SuppressLint;
++import android.content.Intent;
++import android.content.pm.PackageManager;
++import android.os.Bundle;
++import android.support.annotation.NonNull;
++import android.support.v4.app.ActivityCompat;
++import android.support.v4.content.ContextCompat;
++import android.view.Gravity;
++import android.view.Menu;
++import android.view.MenuInflater;
++import android.view.MenuItem;
++import android.view.View;
++import android.widget.AbsListView;
++import android.widget.AdapterView;
++import android.widget.ArrayAdapter;
++import android.widget.Button;
++import android.widget.ListView;
++import android.widget.Spinner;
++import android.widget.TextView;
++
++import com.chattylabs.sdk.android.common.PermissionsHelper;
++import com.chattylabs.sdk.android.common.Tag;
++import com.chattylabs.sdk.android.common.ThreadUtils;
++import com.chattylabs.sdk.android.voice.AndroidSpeechRecognizer;
++import com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer;
++import com.chattylabs.sdk.android.voice.Conversation;
++import com.chattylabs.sdk.android.voice.ConversationalFlowComponent;
++import com.chattylabs.sdk.android.voice.Flow;
++import com.chattylabs.sdk.android.voice.GoogleSpeechRecognizer;
++import com.chattylabs.sdk.android.voice.GoogleSpeechSynthesizer;
++import com.chattylabs.sdk.android.voice.VoiceMatch;
++import com.chattylabs.sdk.android.voice.VoiceMessage;
++import com.chattylabs.sdk.android.voice.VoiceMismatch;
++import com.chattylabs.sdk.android.voice.VoiceNode;
++
++import org.json.JSONArray;
++import org.json.JSONException;
++import org.json.JSONObject;
++
++import java.io.IOException;
++import java.io.InputStream;
++import java.util.ArrayList;
++import java.util.Arrays;
++import java.util.LinkedHashMap;
++import java.util.List;
++
++import javax.inject.Inject;
++
++import dagger.android.support.DaggerAppCompatActivity;
++
++public class BuildFromJsonActivity extends DaggerAppCompatActivity
++        implements ActivityCompat.OnRequestPermissionsResultCallback {
++
++    private static final String TAG = Tag.make(CustomizeTheComponentActivity.class);
++
++    private static final String ANDROID = "Android";
++    private static final String GOOGLE = "Google";
++
++    private static LinkedHashMap<Integer, String> addonMap = new LinkedHashMap<>();
++    static {
++        addonMap.put(0, ANDROID);
++        addonMap.put(1, GOOGLE);
++    }
++
++    private static String ADDON_TYPE = ANDROID;
++
++    @Inject ConversationalFlowComponent component;
++    private ThreadUtils.SerialThread serialThread;
++
++    private Button proceed;
++    private Spinner addonSpinner;
++    private ListView conversationListView;
++    private ArrayAdapter<String> addonAdapter;
++    private ArrayAdapter<String> listViewAdapter;
++
++    @Override
++    public boolean onCreateOptionsMenu(Menu menu) {
++        MenuInflater inflater = getMenuInflater();
++        inflater.inflate(R.menu.demos, menu);
++        return true;
++    }
++
++    @Override
++    public boolean onOptionsItemSelected(MenuItem item) {
++        switch (item.getItemId()) {
++            case R.id.demo_conversation:
++                ContextCompat.startActivity(this,
++                        new Intent(this, CustomizeTheComponentActivity.class), null);
++                return true;
++            case R.id.demo_components:
++                ContextCompat.startActivity(this,
++                        new Intent(this, BuildFromJsonActivity.class), null);
++                return true;
++            default:
++                return super.onOptionsItemSelected(item);
++        }
++    }
++
++    @Override
++    protected void onCreate(Bundle savedInstanceState) {
++        super.onCreate(savedInstanceState);
++        setContentView(R.layout.activity_build_from_json);
++
++        initViews();
++        serialThread = ThreadUtils.newSerialThread();
++        setup();
++    }
++
++    @Override
++    public void onDestroy() {
++        super.onDestroy();
++        //UpdateManager.unregister();
++        serialThread.shutdownNow();
++        component.shutdown();
++    }
++
++    private void initViews() {
++        proceed = findViewById(R.id.proceed);
++        proceed.setOnClickListener(v -> {
++            loadConversation();
++        });
++
++        conversationListView = findViewById(R.id.conversation);
++        listViewAdapter = new ArrayAdapter<>(this, R.layout.item_block,
++                R.id.conversation_item_text,
++                new ArrayList<>());
++        listViewAdapter.setNotifyOnChange(true);
++        TextView emptyView = new TextView(this);
++        emptyView.setText("Choose an addon and press on proceed");
++        emptyView.setLayoutParams(new AbsListView.LayoutParams(
++                AbsListView.LayoutParams.WRAP_CONTENT,
++                AbsListView.LayoutParams.WRAP_CONTENT, Gravity.CENTER));
++        conversationListView.setAdapter(listViewAdapter);
++        conversationListView.setEmptyView(emptyView);
++
++        addonSpinner = findViewById(R.id.addon);
++        // Create an ArrayAdapter of the addons
++        List<String> addonList = Arrays.asList(addonMap.values().toArray(new String[addonMap.size()]));
++        addonAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, addonList);
++        addonAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
++        addonSpinner.setAdapter(addonAdapter);
++        addonSpinner.setSelection(0);
++        addonSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
++            @Override
++            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
++                ADDON_TYPE = addonMap.get(position);
++                setup();
++            }
++
++            @Override
++            public void onNothingSelected(AdapterView<?> parent) {
++            }
++        });
++    }
++
++    private void setup() {
++        String[] perms = component.requiredPermissions();
++        PermissionsHelper.check(this,
++                perms,
++                () -> onRequestPermissionsResult(
++                        PermissionsHelper.REQUEST_CODE, perms,
++                        new int[] {PackageManager.PERMISSION_GRANTED}));
++    }
++
++    @SuppressLint("MissingPermission")
++    private void loadConversation() {
++        listViewAdapter.clear();
++        listViewAdapter.notifyDataSetChanged();
++        Conversation conversation = component.create(this);
++        Flow flow = conversation.prepare();
++        try {
++            String dots = ". . .";
++            VoiceNode firstNode = null;
++            VoiceNode lastNode = null;
++            JSONArray array = new JSONArray(loadJSONFromAsset());
++            for (int a = 0, size = array.length(); a < size; a++) {
++
++                JSONObject object = array.getJSONObject(a);
++
++                String text = object.getString("message");
++                VoiceMessage message = VoiceMessage.newBuilder()
++                        .setText(text)
++                        .setOnReady(() -> {
++                            runOnUiThread(() -> {
++                                listViewAdapter.add(text);
++                            });
++                        }).build();
++
++                VoiceMatch matches = null;
++                VoiceMismatch noMatches = null;
++                if (object.has("results")) {
++                    JSONArray jsonArray = object.getJSONArray("results");
++                    String[] stringArray = new String[jsonArray.length()];
++                    for (int i = 0; i < jsonArray.length(); i++) {
++                        stringArray[i] = jsonArray.getString(i);
++                    }
++                    matches = VoiceMatch.newBuilder()
++                            .setOnReady(() -> {
++                                listViewAdapter.add(dots);
++                            })
++                            .setExpectedResults(stringArray)
++                            .setOnMatched(strings -> {
++                                listViewAdapter.remove(dots);
++                                if (strings != null) {
++                                    listViewAdapter.add(strings.get(0));
++                                    conversation.next();
++                                }
++                            })
++                            .build();
++                    noMatches = VoiceMismatch.newBuilder()
++                            .setOnNotMatched(strings -> {
++                                listViewAdapter.remove(dots);
++                                listViewAdapter.add("You said: " + strings);
++                                listViewAdapter.add("I did not expect that. Please try again!");
++                            }).build();
++                }
++
++                conversation.addNode(message);
++                if (matches != null) {
++                    conversation.addNode(matches);
++                    conversation.addNode(noMatches);
++                }
++                if (lastNode != null) flow.from(lastNode).to(message);
++                if (firstNode == null) firstNode = message;
++                if (matches != null) {
++                    flow.from(message).to(matches, noMatches);
++                }
++                lastNode = matches != null ? matches : message;
++            }
++
++            conversation.start(firstNode);
++
++        } catch (JSONException e) {
++            e.printStackTrace();
++        }
++    }
++
++    public String loadJSONFromAsset() {
++        String json = null;
++        try {
++            InputStream is = getResources().openRawResource(R.raw.demo_conversation);
++            int size = is.available();
++            byte[] buffer = new byte[size];
++            is.read(buffer);
++            is.close();
++            json = new String(buffer, "UTF-8");
++        } catch (IOException ex) {
++            ex.printStackTrace();
++            return null;
++        }
++        return json;
++    }
++
++    @SuppressLint("MissingPermission")
++    @Override
++    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
++        if (PermissionsHelper.isPermissionRequest(requestCode)) {
++            if (PermissionsHelper.isPermissionGranted(grantResults)) {
++                serialThread.addTask(() -> {
++                    component.updateConfiguration(builder ->
++                            builder .setGoogleCredentialsResourceFile(() -> R.raw.credential)
++                                    .setRecognizerServiceType(() -> {
++                                        switch (ADDON_TYPE) {
++                                            case GOOGLE:
++                                                return GoogleSpeechRecognizer.class;
++                                            default:
++                                                return AndroidSpeechRecognizer.class;
++                                        }
++                                    })
++                                    .setSynthesizerServiceType(() -> {
++                                        switch (ADDON_TYPE) {
++                                            case GOOGLE:
++                                                return GoogleSpeechSynthesizer.class;
++                                            default:
++                                                return AndroidSpeechSynthesizer.class;
++                                        }
++                                    })
++                                    .build());
++                    component.setup(this, status -> {});
++                });
++            }
++        }
++    }
++}
+Index: app/src/main/java/com/chattylabs/demo/voice/CustomizeTheComponentActivity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/chattylabs/demo/voice/CustomizeTheComponentActivity.java	(date 1533679378000)
++++ app/src/main/java/com/chattylabs/demo/voice/CustomizeTheComponentActivity.java	(date 1533679378000)
+@@ -0,0 +1,418 @@
++package com.chattylabs.demo.voice;
++
++import android.annotation.SuppressLint;
++import android.content.Intent;
++import android.content.pm.PackageManager;
++import android.media.AudioManager;
++import android.os.Bundle;
++import android.support.annotation.NonNull;
++import android.support.v4.app.ActivityCompat;
++import android.support.v4.content.ContextCompat;
++import android.util.Log;
++import android.util.Pair;
++import android.util.SparseArray;
++import android.view.Menu;
++import android.view.MenuInflater;
++import android.view.MenuItem;
++import android.view.View;
++import android.widget.AdapterView;
++import android.widget.ArrayAdapter;
++import android.widget.Button;
++import android.widget.CheckBox;
++import android.widget.EditText;
++import android.widget.Spinner;
++import android.widget.TextView;
++import android.widget.Toast;
++
++import com.chattylabs.sdk.android.common.HtmlUtils;
++import com.chattylabs.sdk.android.common.PermissionsHelper;
++import com.chattylabs.sdk.android.common.Tag;
++import com.chattylabs.sdk.android.common.ThreadUtils;
++import com.chattylabs.sdk.android.voice.AndroidSpeechRecognizer;
++import com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer;
++import com.chattylabs.sdk.android.voice.ConversationalFlowComponent;
++import com.chattylabs.sdk.android.voice.GoogleSpeechRecognizer;
++import com.chattylabs.sdk.android.voice.GoogleSpeechSynthesizer;
++import com.chattylabs.sdk.android.voice.Peripheral;
++import com.chattylabs.sdk.android.voice.TextFilterForUrl;
++
++import java.util.Arrays;
++import java.util.LinkedHashMap;
++import java.util.List;
++
++import javax.inject.Inject;
++
++import dagger.android.support.DaggerAppCompatActivity;
++
++import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerError;
++import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerMostConfidentResult;
++import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerReady;
++import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerDone;
++import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerError;
++import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerStart;
++import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SpeechRecognizer;
++import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SpeechSynthesizer;
++import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SynthesizerListener;
++import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.matches;
++
++
++public class CustomizeTheComponentActivity extends DaggerAppCompatActivity
++        implements ActivityCompat.OnRequestPermissionsResultCallback {
++
++    private static final String TAG = Tag.make(CustomizeTheComponentActivity.class);
++
++    // Constants
++    private static final int CHECK = 3;
++    private static final int LISTEN = 2;
++    private static final int READ = 1;
++
++    private static final String ANDROID = "Android";
++    private static final String GOOGLE = "Google";
++    // ...
++
++    private static LinkedHashMap<Integer, String> addonMap = new LinkedHashMap<>();
++    static {
++        addonMap.put(0, ANDROID);
++        addonMap.put(1, GOOGLE);
++    }
++
++    private static String ADDON_TYPE = addonMap.get(0);
++
++    // Resources
++    private TextView execution;
++    private Spinner actionSpinner;
++    private Spinner addonSpinner;
++    private EditText text;
++    private Button add;
++    private Button clear;
++    private Button proceed;
++    private SparseArray<Pair<Integer, String>> queue = new SparseArray<>();
++    private ArrayAdapter<CharSequence> actionAdapter;
++    private ArrayAdapter<String> addonAdapter;
++    private CheckBox scoCheck;
++    private ThreadUtils.SerialThread serialThread;
++
++    // Components
++    @Inject ConversationalFlowComponent component;
++    private SpeechSynthesizer synthesizer;
++    private SpeechRecognizer recognizer;
++    private Peripheral peripheral;
++
++    @Override
++    public boolean onCreateOptionsMenu(Menu menu) {
++        MenuInflater inflater = getMenuInflater();
++        inflater.inflate(R.menu.demos, menu);
++        return true;
++    }
++
++    @Override
++    public boolean onOptionsItemSelected(MenuItem item) {
++        switch (item.getItemId()) {
++            case R.id.demo_conversation:
++                ContextCompat.startActivity(this,
++                        new Intent(this, CustomizeTheComponentActivity.class), null);
++                return true;
++            case R.id.demo_components:
++                ContextCompat.startActivity(this,
++                        new Intent(this, BuildFromJsonActivity.class), null);
++                return true;
++            default:
++                return super.onOptionsItemSelected(item);
++        }
++    }
++
++    @Override
++    protected void onCreate(Bundle savedInstanceState) {
++        super.onCreate(savedInstanceState);
++        setContentView(R.layout.activity_customize_the_component);
++        initViews();
++        initActions();
++        peripheral = new Peripheral((AudioManager) getSystemService(AUDIO_SERVICE));
++        serialThread = ThreadUtils.newSerialThread();
++
++        setup();
++
++        //UpdateManager.register(this);
++    }
++
++    private void setup() {
++        String[] perms = component.requiredPermissions();
++        PermissionsHelper.check(this,
++                perms,
++                () -> onRequestPermissionsResult(
++                        PermissionsHelper.REQUEST_CODE, perms,
++                        new int[] {PackageManager.PERMISSION_GRANTED}));
++    }
++
++    @SuppressLint("MissingPermission")
++    @Override
++    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
++        if (PermissionsHelper.isPermissionRequest(requestCode)) {
++            if (PermissionsHelper.isPermissionGranted(grantResults)) {
++                serialThread.addTask(() -> {
++                    component.updateConfiguration(builder ->
++                            builder .setGoogleCredentialsResourceFile(() -> R.raw.credential)
++                                    .setRecognizerServiceType(() -> {
++                                        switch (ADDON_TYPE) {
++                                            case GOOGLE:
++                                                return GoogleSpeechRecognizer.class;
++                                            default:
++                                                return AndroidSpeechRecognizer.class;
++                                        }
++                                    })
++                                    .setSynthesizerServiceType(() -> {
++                                        switch (ADDON_TYPE) {
++                                            case GOOGLE:
++                                                return GoogleSpeechSynthesizer.class;
++                                            default:
++                                                return AndroidSpeechSynthesizer.class;
++                                        }
++                                    })
++                                    .build());
++                    component.setup(this, status -> {
++                        if (status.isAvailable()) {
++                            recognizer = component.getSpeechRecognizer(this);
++                            synthesizer = component.getSpeechSynthesizer(this);
++                            synthesizer.addFilter(new TextFilterForUrl());
++                        }
++                    });
++                });
++            }
++        }
++    }
++
++    private void initActions() {
++        add.setOnClickListener(v -> {
++            String msg = text.getText().toString().trim();
++            int itemPosition = actionSpinner.getSelectedItemPosition();
++            if (msg.length() > 0 || itemPosition == LISTEN) {
++                queue.put(queue.size(), Pair.create(itemPosition, itemPosition == LISTEN ? null : msg));
++                representQueue(-1);
++                proceed.setEnabled(true);
++                text.setText(null);
++            }
++        });
++        clear.setOnClickListener(v -> {
++            queue.clear();
++            text.setText(null);
++            execution.setText(null);
++            component.shutdown();
++        });
++        proceed.setOnClickListener((View v) -> {
++            representQueue(-1);
++            readAll();
++        });
++    }
++
++    private void representQueue(int index) {
++        StringBuilder tx = null;
++        boolean isChecking = false;
++        for (int i = 0; i < queue.size(); i++) {
++            Pair<Integer, String> item = queue.get(i);
++            if (isChecking && item.first == CHECK) {
++                String text = item.second;
++                if (i == index && text != null) {
++                    text = "<font color=\"#FFFFFF\">" + text + "</font>";
++                }
++                tx.append("or \"<i>").append(text).append("</i>\" ");
++            } else {
++                String text = item.second;
++                String label = (String) actionAdapter.getItem(item.first);
++                if (i == index) {
++                    if (text != null) {
++                        text = "<font color=\"#FFFFFF\">" + text + "</font>";
++                    } else {
++                        label = "<font color=\"#FFFFFF\">" + label + "</font>";
++                    }
++                }
++                String action = label + (item.first == LISTEN ? "" : " \"<i>" + text + "</i>\" ");
++                tx = new StringBuilder(tx == null || tx.length() == 0 ?
++                        action :
++                        tx.append((item.first == READ ? "<br/>" : "<br/>...then "))
++                          .append(action));
++                isChecking = item.first == CHECK;
++            }
++        }
++        final StringBuilder copy = tx;
++
++        runOnUiThread(() -> {
++            if (copy != null) execution.setText(HtmlUtils.from(copy.toString()));
++        });
++    }
++
++    private void play(String text, int index) {
++        synthesizer.playText(text, "default",
++                (OnSynthesizerStart) s -> {
++                    representQueue(index);
++                },
++                (OnSynthesizerDone) s -> {
++                    Log.i(TAG, "on Done index: " + index);
++                    Pair<Integer, String> next = queue.get(index + 1);
++                    if (next != null && next.first == LISTEN) {
++                        synthesizer.holdCurrentQueue();
++                        listen(index);
++                    } else {
++                        if (synthesizer.isEmpty()) {
++                            component.shutdown();
++                        } else synthesizer.resume();
++                    }
++                },
++                (OnSynthesizerError) (utteranceId, errorCode) -> {
++                    if (errorCode == SynthesizerListener.UNKNOWN_ERROR) {
++                        if (synthesizer.isEmpty()) {
++                            component.shutdown();
++                        } else synthesizer.resume();
++                    } else {
++                        component.shutdown();
++                    }
++                });
++    }
++
++    private void listen(int index) {
++        recognizer.listen((OnRecognizerReady) bundle -> {
++            representQueue(index + 1);
++        }, (OnRecognizerMostConfidentResult) o -> {
++            representQueue(-1);
++            SparseArray<String> news = getChecks(new SparseArray<>(), index + 1);
++            if (news.size() > 0) {
++                for (int a = 0; a < news.size(); a++) {
++                    if (matches(news.valueAt(a), o)) {
++                        representQueue(news.keyAt(a));
++                        break;
++                    }
++                }
++            }
++            synthesizer.releaseCurrentQueue();
++            if (synthesizer.isEmpty()) {
++                component.shutdown();
++            } else synthesizer.resume();
++        }, (OnRecognizerError) (i, i1) -> {
++            Log.e(TAG, "Error " + i);
++            Log.e(TAG, "Original Error " + getErrorString(i1));
++
++            synthesizer.releaseCurrentQueue();
++            if (synthesizer.isEmpty()) {
++                component.shutdown();
++            } else synthesizer.resume();
++
++//            runOnUiThread(() -> new AlertDialog.Builder(this)
++//                    .setTitle("Error")
++//                    .setMessage(getErrorString(i1))
++//                    .create().show());
++        });
++    }
++
++    @NonNull
++    private String getErrorString(int i1) {
++        switch (ADDON_TYPE) {
++            case GOOGLE:
++                return GoogleSpeechSynthesizer.getErrorType(i1);
++            default:
++                return AndroidSpeechSynthesizer.getErrorType(i1);
++        }
++    }
++
++    private SparseArray<String> getChecks(SparseArray<String> news, int index) {
++        Pair<Integer, String> checks = queue.get(index + 1);
++        if (checks != null && checks.first == CHECK) {
++            news.append(index + 1, checks.second);
++            news = getChecks(news, index + 1);
++        }
++        return news;
++    }
++
++    private void readAll() {
++        serialThread.addTask(() -> {
++            for (int i = 0; i < queue.size(); i++) {
++                Log.i(TAG, "readAll index: " + i);
++                Pair<Integer, String> item = queue.get(i);
++                if (item.first == READ) {
++                    play(item.second, i);
++                } else if (i == 0 && item.first == LISTEN) {
++                    // FIXME: Check why it continues speaking sometimes after listening
++                    listen(-1);
++                }
++            }
++        });
++    }
++
++    @Override
++    public void onDestroy() {
++        super.onDestroy();
++        //UpdateManager.unregister();
++        serialThread.shutdownNow();
++        component.shutdown();
++    }
++
++    @Override
++    public void onResume() {
++        super.onResume();
++        //CrashManager.register(this);
++    }
++
++    private void initViews() {
++        execution = findViewById(R.id.execution);
++        actionSpinner = findViewById(R.id.spinner);
++        addonSpinner = findViewById(R.id.addon);
++        text = findViewById(R.id.text);
++        add = findViewById(R.id.add);
++        clear = findViewById(R.id.clear);
++        proceed = findViewById(R.id.proceed);
++        scoCheck = findViewById(R.id.bluetooth_sco);
++
++        // Check if there is a Bluetooth device connected and setup the config for a Sco connection
++        scoCheck.setOnCheckedChangeListener((buttonView, isChecked) -> {
++            if (isChecked && !peripheral.get(Peripheral.Type.BLUETOOTH).isConnected()) {
++                buttonView.setChecked(false);
++                Toast.makeText(this, "Not connected to a Bluetooth device", Toast.LENGTH_LONG).show();
++                return;
++            }
++            component.updateConfiguration(
++                    builder -> {
++                        builder.setBluetoothScoRequired(() ->
++                                peripheral.get(Peripheral.Type.BLUETOOTH).isConnected() && isChecked);
++                        return builder.build();
++                    });
++        });
++        proceed.setEnabled(false);
++
++        // Create an ArrayAdapter of the actions
++        actionAdapter = ArrayAdapter.createFromResource(this, R.array.actions, android.R.layout.simple_spinner_item);
++        actionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
++        actionSpinner.setAdapter(actionAdapter);
++        actionSpinner.setSelection(0);
++        actionSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
++            @Override
++            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
++                boolean isDefault = position > 0;
++                text.setEnabled(isDefault);
++                add.setEnabled(isDefault);
++                text.setVisibility(View.VISIBLE);
++                if (position == LISTEN) text.setVisibility(View.GONE);
++            }
++
++            @Override
++            public void onNothingSelected(AdapterView<?> parent) {
++            }
++        });
++
++        // Create an ArrayAdapter of the addons
++        List<String> addonList = Arrays.asList(addonMap.values().toArray(new String[addonMap.size()]));
++        addonAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item,
++                addonList);
++        addonAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
++        addonSpinner.setAdapter(addonAdapter);
++        addonSpinner.setSelection(0);
++        addonSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
++            @Override
++            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
++                ADDON_TYPE = addonMap.get(position);
++                setup();
++            }
++
++            @Override
++            public void onNothingSelected(AdapterView<?> parent) {
++            }
++        });
++    }
++}
+Index: app/src/main/java/com/chattylabs/demo/voice/MainActivity.java
+===================================================================
+--- app/src/main/java/com/chattylabs/demo/voice/MainActivity.java	(date 0)
++++ app/src/main/java/com/chattylabs/demo/voice/MainActivity.java	(date 0)
+@@ -1,228 +0,0 @@
+-package com.chattylabs.demo.voice;
+-
+-import android.annotation.SuppressLint;
+-import android.content.Intent;
+-import android.content.pm.PackageManager;
+-import android.os.Bundle;
+-import android.support.annotation.NonNull;
+-import android.support.v4.app.ActivityCompat;
+-import android.support.v4.content.ContextCompat;
+-import android.view.Menu;
+-import android.view.MenuInflater;
+-import android.view.MenuItem;
+-import android.view.View;
+-import android.widget.AdapterView;
+-import android.widget.ArrayAdapter;
+-import android.widget.Button;
+-import android.widget.Spinner;
+-
+-import com.chattylabs.sdk.android.common.PermissionsHelper;
+-import com.chattylabs.sdk.android.common.Tag;
+-import com.chattylabs.sdk.android.common.ThreadUtils;
+-import com.chattylabs.sdk.android.voice.AndroidSpeechRecognizer;
+-import com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer;
+-import com.chattylabs.sdk.android.voice.Conversation;
+-import com.chattylabs.sdk.android.voice.ConversationalFlowComponent;
+-import com.chattylabs.sdk.android.voice.Flow;
+-import com.chattylabs.sdk.android.voice.GoogleSpeechRecognizer;
+-import com.chattylabs.sdk.android.voice.GoogleSpeechSynthesizer;
+-import com.chattylabs.sdk.android.voice.VoiceMatch;
+-import com.chattylabs.sdk.android.voice.VoiceMessage;
+-import com.chattylabs.sdk.android.voice.VoiceNode;
+-
+-import org.json.JSONArray;
+-import org.json.JSONException;
+-import org.json.JSONObject;
+-
+-import java.io.IOException;
+-import java.io.InputStream;
+-import java.util.Arrays;
+-import java.util.LinkedHashMap;
+-import java.util.List;
+-
+-import javax.inject.Inject;
+-
+-import dagger.android.support.DaggerAppCompatActivity;
+-
+-public class MainActivity extends DaggerAppCompatActivity
+-        implements ActivityCompat.OnRequestPermissionsResultCallback {
+-
+-    private static final String TAG = Tag.make(ConversationCreatorActivity.class);
+-
+-    private static final String ANDROID = "Android";
+-    private static final String GOOGLE = "Google";
+-
+-    private static LinkedHashMap<Integer, String> addonMap = new LinkedHashMap<>();
+-    static {
+-        addonMap.put(0, ANDROID);
+-        addonMap.put(1, GOOGLE);
+-    }
+-
+-    private static String ADDON_TYPE = addonMap.get(0);
+-
+-    @Inject ConversationalFlowComponent component;
+-
+-    private Button proceed;
+-    private Spinner addonSpinner;
+-    private ArrayAdapter<String> addonAdapter;
+-    private ThreadUtils.SerialThread serialThread;
+-
+-    @Override
+-    public boolean onCreateOptionsMenu(Menu menu) {
+-        MenuInflater inflater = getMenuInflater();
+-        inflater.inflate(R.menu.demo, menu);
+-        return true;
+-    }
+-
+-    @Override
+-    public boolean onOptionsItemSelected(MenuItem item) {
+-        switch (item.getItemId()) {
+-            case R.id.demo_conversation:
+-                ContextCompat.startActivity(this,
+-                        new Intent(this, ConversationCreatorActivity.class), null);
+-            case R.id.demo_components:
+-                ContextCompat.startActivity(this,
+-                        new Intent(this, MainActivity.class), null);
+-        }
+-        return super.onOptionsItemSelected(item);
+-    }
+-
+-    @Override
+-    protected void onCreate(Bundle savedInstanceState) {
+-        super.onCreate(savedInstanceState);
+-        setContentView(R.layout.activity_main);
+-
+-        initViews();
+-        serialThread = ThreadUtils.newSerialThread();
+-        setup();
+-    }
+-
+-    @Override
+-    public void onDestroy() {
+-        super.onDestroy();
+-        //UpdateManager.unregister();
+-        serialThread.shutdownNow();
+-        component.shutdown();
+-    }
+-
+-    private void initViews() {
+-        addonSpinner = findViewById(R.id.addon);
+-        proceed = findViewById(R.id.proceed);
+-        proceed.setOnClickListener(v -> {
+-            loadConversation();
+-        });
+-
+-        // Create an ArrayAdapter of the addons
+-        List<String> addonList = Arrays.asList(addonMap.values().toArray(new String[addonMap.size()]));
+-        addonAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item,
+-                addonList);
+-        addonAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+-        addonSpinner.setAdapter(addonAdapter);
+-        addonSpinner.setSelection(0);
+-        addonSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+-            @Override
+-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+-                ADDON_TYPE = addonMap.get(position);
+-                setup();
+-            }
+-
+-            @Override
+-            public void onNothingSelected(AdapterView<?> parent) {
+-            }
+-        });
+-    }
+-
+-    private void setup() {
+-        String[] perms = component.requiredPermissions();
+-        PermissionsHelper.check(this,
+-                perms,
+-                () -> onRequestPermissionsResult(
+-                        PermissionsHelper.REQUEST_CODE, perms,
+-                        new int[] {PackageManager.PERMISSION_GRANTED}));
+-    }
+-
+-    @SuppressLint("MissingPermission")
+-    private void loadConversation() {
+-        Conversation conversation = component.create(this);
+-        Flow flow = conversation.prepare();
+-        try {
+-            VoiceNode firstNode = null;
+-            VoiceNode lastNode = null;
+-            JSONArray array = new JSONArray(loadJSONFromAsset());
+-            for (int a = 0, size = array.length(); a < size; a++) {
+-
+-                JSONObject object = array.getJSONObject(a);
+-
+-                JSONArray jsonArray = object.getJSONArray("results");
+-                String[] stringArray = new String[jsonArray.length()];
+-                for (int i = 0; i < jsonArray.length(); i++) {
+-                    stringArray[i]= jsonArray.getString(i);
+-                }
+-
+-                VoiceMessage message = VoiceMessage.newBuilder()
+-                        .setText(object.getString("message")).build();
+-                VoiceMatch match = VoiceMatch.newBuilder()
+-                        .setExpectedResults(stringArray).build();
+-
+-                conversation.addNode(message);
+-                conversation.addNode(match);
+-                if (lastNode != null) flow.from(lastNode).to(message);
+-                if (firstNode == null) firstNode = message;
+-                flow.from(message).to(match);
+-                lastNode = match;
+-            }
+-
+-            conversation.start(firstNode);
+-
+-        } catch (JSONException e) {
+-            e.printStackTrace();
+-        }
+-    }
+-
+-    public String loadJSONFromAsset() {
+-        String json = null;
+-        try {
+-            InputStream is = getAssets().open("conversation.json");
+-            int size = is.available();
+-            byte[] buffer = new byte[size];
+-            is.read(buffer);
+-            is.close();
+-            json = new String(buffer, "UTF-8");
+-        } catch (IOException ex) {
+-            ex.printStackTrace();
+-            return null;
+-        }
+-        return json;
+-    }
+-
+-    @SuppressLint("MissingPermission")
+-    @Override
+-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+-        if (PermissionsHelper.isPermissionRequest(requestCode)) {
+-            if (PermissionsHelper.isPermissionGranted(grantResults)) {
+-                serialThread.addTask(() -> {
+-                    component.updateConfiguration(builder ->
+-                            builder .setGoogleCredentialsResourceFile(() -> R.raw.credential)
+-                                    .setRecognizerServiceType(() -> {
+-                                        switch (ADDON_TYPE) {
+-                                            case GOOGLE:
+-                                                return GoogleSpeechRecognizer.class;
+-                                            default:
+-                                                return AndroidSpeechRecognizer.class;
+-                                        }
+-                                    })
+-                                    .setSynthesizerServiceType(() -> {
+-                                        switch (ADDON_TYPE) {
+-                                            case GOOGLE:
+-                                                return GoogleSpeechSynthesizer.class;
+-                                            default:
+-                                                return AndroidSpeechSynthesizer.class;
+-                                        }
+-                                    })
+-                                    .build());
+-                    component.setup(this, status -> {});
+-                });
+-            }
+-        }
+-    }
+-}
+Index: app/src/main/java/com/chattylabs/demo/voice/ConversationCreatorActivity.java
+===================================================================
+--- app/src/main/java/com/chattylabs/demo/voice/ConversationCreatorActivity.java	(date 0)
++++ app/src/main/java/com/chattylabs/demo/voice/ConversationCreatorActivity.java	(date 0)
+@@ -1,415 +0,0 @@
+-package com.chattylabs.demo.voice;
+-
+-import android.annotation.SuppressLint;
+-import android.content.Intent;
+-import android.content.pm.PackageManager;
+-import android.media.AudioManager;
+-import android.os.Bundle;
+-import android.support.annotation.NonNull;
+-import android.support.v4.app.ActivityCompat;
+-import android.support.v4.content.ContextCompat;
+-import android.util.Log;
+-import android.util.Pair;
+-import android.util.SparseArray;
+-import android.view.Menu;
+-import android.view.MenuInflater;
+-import android.view.MenuItem;
+-import android.view.View;
+-import android.widget.AdapterView;
+-import android.widget.ArrayAdapter;
+-import android.widget.Button;
+-import android.widget.CheckBox;
+-import android.widget.EditText;
+-import android.widget.Spinner;
+-import android.widget.TextView;
+-import android.widget.Toast;
+-
+-import com.chattylabs.sdk.android.common.HtmlUtils;
+-import com.chattylabs.sdk.android.common.PermissionsHelper;
+-import com.chattylabs.sdk.android.common.Tag;
+-import com.chattylabs.sdk.android.common.ThreadUtils;
+-import com.chattylabs.sdk.android.voice.AndroidSpeechRecognizer;
+-import com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer;
+-import com.chattylabs.sdk.android.voice.ConversationalFlowComponent;
+-import com.chattylabs.sdk.android.voice.GoogleSpeechRecognizer;
+-import com.chattylabs.sdk.android.voice.GoogleSpeechSynthesizer;
+-import com.chattylabs.sdk.android.voice.Peripheral;
+-import com.chattylabs.sdk.android.voice.TextFilterForUrl;
+-
+-import java.util.Arrays;
+-import java.util.LinkedHashMap;
+-import java.util.List;
+-
+-import javax.inject.Inject;
+-
+-import dagger.android.support.DaggerAppCompatActivity;
+-
+-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerError;
+-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerMostConfidentResult;
+-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnRecognizerReady;
+-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerDone;
+-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerError;
+-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.OnSynthesizerStart;
+-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SpeechRecognizer;
+-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SpeechSynthesizer;
+-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.SynthesizerListener;
+-import static com.chattylabs.sdk.android.voice.ConversationalFlowComponent.matches;
+-
+-
+-public class ConversationCreatorActivity extends DaggerAppCompatActivity
+-        implements ActivityCompat.OnRequestPermissionsResultCallback {
+-
+-    private static final String TAG = Tag.make(ConversationCreatorActivity.class);
+-
+-    // Constants
+-    private static final int CHECK = 3;
+-    private static final int LISTEN = 2;
+-    private static final int READ = 1;
+-
+-    private static final String ANDROID = "Android";
+-    private static final String GOOGLE = "Google";
+-    // ...
+-
+-    private static LinkedHashMap<Integer, String> addonMap = new LinkedHashMap<>();
+-    static {
+-        addonMap.put(0, ANDROID);
+-        addonMap.put(1, GOOGLE);
+-    }
+-
+-    private static String ADDON_TYPE = addonMap.get(0);
+-
+-    // Resources
+-    private TextView execution;
+-    private Spinner actionSpinner;
+-    private Spinner addonSpinner;
+-    private EditText text;
+-    private Button add;
+-    private Button clear;
+-    private Button proceed;
+-    private SparseArray<Pair<Integer, String>> queue = new SparseArray<>();
+-    private ArrayAdapter<CharSequence> actionAdapter;
+-    private ArrayAdapter<String> addonAdapter;
+-    private CheckBox scoCheck;
+-    private ThreadUtils.SerialThread serialThread;
+-
+-    // Components
+-    @Inject ConversationalFlowComponent component;
+-    private SpeechSynthesizer synthesizer;
+-    private SpeechRecognizer recognizer;
+-    private Peripheral peripheral;
+-
+-    @Override
+-    public boolean onCreateOptionsMenu(Menu menu) {
+-        MenuInflater inflater = getMenuInflater();
+-        inflater.inflate(R.menu.demo, menu);
+-        return true;
+-    }
+-
+-    @Override
+-    public boolean onOptionsItemSelected(MenuItem item) {
+-        switch (item.getItemId()) {
+-            case R.id.demo_conversation:
+-                ContextCompat.startActivity(this,
+-                        new Intent(this, ConversationCreatorActivity.class), null);
+-            case R.id.demo_components:
+-                ContextCompat.startActivity(this,
+-                        new Intent(this, MainActivity.class), null);
+-        }
+-        return super.onOptionsItemSelected(item);
+-    }
+-
+-    @Override
+-    protected void onCreate(Bundle savedInstanceState) {
+-        super.onCreate(savedInstanceState);
+-        setContentView(R.layout.activity_conversation_creator);
+-        initViews();
+-        initActions();
+-        peripheral = new Peripheral((AudioManager) getSystemService(AUDIO_SERVICE));
+-        serialThread = ThreadUtils.newSerialThread();
+-
+-        setup();
+-
+-        //UpdateManager.register(this);
+-    }
+-
+-    private void setup() {
+-        String[] perms = component.requiredPermissions();
+-        PermissionsHelper.check(this,
+-                perms,
+-                () -> onRequestPermissionsResult(
+-                        PermissionsHelper.REQUEST_CODE, perms,
+-                        new int[] {PackageManager.PERMISSION_GRANTED}));
+-    }
+-
+-    @SuppressLint("MissingPermission")
+-    @Override
+-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+-        if (PermissionsHelper.isPermissionRequest(requestCode)) {
+-            if (PermissionsHelper.isPermissionGranted(grantResults)) {
+-                serialThread.addTask(() -> {
+-                    component.updateConfiguration(builder ->
+-                            builder .setGoogleCredentialsResourceFile(() -> R.raw.credential)
+-                                    .setRecognizerServiceType(() -> {
+-                                        switch (ADDON_TYPE) {
+-                                            case GOOGLE:
+-                                                return GoogleSpeechRecognizer.class;
+-                                            default:
+-                                                return AndroidSpeechRecognizer.class;
+-                                        }
+-                                    })
+-                                    .setSynthesizerServiceType(() -> {
+-                                        switch (ADDON_TYPE) {
+-                                            case GOOGLE:
+-                                                return GoogleSpeechSynthesizer.class;
+-                                            default:
+-                                                return AndroidSpeechSynthesizer.class;
+-                                        }
+-                                    })
+-                                    .build());
+-                    component.setup(this, status -> {
+-                        if (status.isAvailable()) {
+-                            recognizer = component.getSpeechRecognizer(this);
+-                            synthesizer = component.getSpeechSynthesizer(this);
+-                            synthesizer.addFilter(new TextFilterForUrl());
+-                        }
+-                    });
+-                });
+-            }
+-        }
+-    }
+-
+-    private void initActions() {
+-        add.setOnClickListener(v -> {
+-            String msg = text.getText().toString().trim();
+-            int itemPosition = actionSpinner.getSelectedItemPosition();
+-            if (msg.length() > 0 || itemPosition == LISTEN) {
+-                queue.put(queue.size(), Pair.create(itemPosition, itemPosition == LISTEN ? null : msg));
+-                representQueue(-1);
+-                proceed.setEnabled(true);
+-                text.setText(null);
+-            }
+-        });
+-        clear.setOnClickListener(v -> {
+-            queue.clear();
+-            text.setText(null);
+-            execution.setText(null);
+-            component.shutdown();
+-        });
+-        proceed.setOnClickListener((View v) -> {
+-            representQueue(-1);
+-            readAll();
+-        });
+-    }
+-
+-    private void representQueue(int index) {
+-        StringBuilder tx = null;
+-        boolean isChecking = false;
+-        for (int i = 0; i < queue.size(); i++) {
+-            Pair<Integer, String> item = queue.get(i);
+-            if (isChecking && item.first == CHECK) {
+-                String text = item.second;
+-                if (i == index && text != null) {
+-                    text = "<font color=\"#FFFFFF\">" + text + "</font>";
+-                }
+-                tx.append("or \"<i>").append(text).append("</i>\" ");
+-            } else {
+-                String text = item.second;
+-                String label = (String) actionAdapter.getItem(item.first);
+-                if (i == index) {
+-                    if (text != null) {
+-                        text = "<font color=\"#FFFFFF\">" + text + "</font>";
+-                    } else {
+-                        label = "<font color=\"#FFFFFF\">" + label + "</font>";
+-                    }
+-                }
+-                String action = label + (item.first == LISTEN ? "" : " \"<i>" + text + "</i>\" ");
+-                tx = new StringBuilder(tx == null || tx.length() == 0 ?
+-                        action :
+-                        tx.append((item.first == READ ? "<br/>" : "<br/>...then "))
+-                          .append(action));
+-                isChecking = item.first == CHECK;
+-            }
+-        }
+-        final StringBuilder copy = tx;
+-
+-        runOnUiThread(() -> {
+-            if (copy != null) execution.setText(HtmlUtils.from(copy.toString()));
+-        });
+-    }
+-
+-    private void play(String text, int index) {
+-        synthesizer.playText(text, "default",
+-                (OnSynthesizerStart) s -> {
+-                    representQueue(index);
+-                },
+-                (OnSynthesizerDone) s -> {
+-                    Log.i(TAG, "on Done index: " + index);
+-                    Pair<Integer, String> next = queue.get(index + 1);
+-                    if (next != null && next.first == LISTEN) {
+-                        synthesizer.holdCurrentQueue();
+-                        listen(index);
+-                    } else {
+-                        if (synthesizer.isEmpty()) {
+-                            component.shutdown();
+-                        } else synthesizer.resume();
+-                    }
+-                },
+-                (OnSynthesizerError) (utteranceId, errorCode) -> {
+-                    if (errorCode == SynthesizerListener.UNKNOWN_ERROR) {
+-                        if (synthesizer.isEmpty()) {
+-                            component.shutdown();
+-                        } else synthesizer.resume();
+-                    } else {
+-                        component.shutdown();
+-                    }
+-                });
+-    }
+-
+-    private void listen(int index) {
+-        recognizer.listen((OnRecognizerReady) bundle -> {
+-            representQueue(index + 1);
+-        }, (OnRecognizerMostConfidentResult) o -> {
+-            representQueue(-1);
+-            SparseArray<String> news = getChecks(new SparseArray<>(), index + 1);
+-            if (news.size() > 0) {
+-                for (int a = 0; a < news.size(); a++) {
+-                    if (matches(news.valueAt(a), o)) {
+-                        representQueue(news.keyAt(a));
+-                        break;
+-                    }
+-                }
+-            }
+-            synthesizer.releaseCurrentQueue();
+-            if (synthesizer.isEmpty()) {
+-                component.shutdown();
+-            } else synthesizer.resume();
+-        }, (OnRecognizerError) (i, i1) -> {
+-            Log.e(TAG, "Error " + i);
+-            Log.e(TAG, "Original Error " + getErrorString(i1));
+-
+-            synthesizer.releaseCurrentQueue();
+-            if (synthesizer.isEmpty()) {
+-                component.shutdown();
+-            } else synthesizer.resume();
+-
+-//            runOnUiThread(() -> new AlertDialog.Builder(this)
+-//                    .setTitle("Error")
+-//                    .setMessage(getErrorString(i1))
+-//                    .create().show());
+-        });
+-    }
+-
+-    @NonNull
+-    private String getErrorString(int i1) {
+-        switch (ADDON_TYPE) {
+-            case GOOGLE:
+-                return GoogleSpeechSynthesizer.getErrorType(i1);
+-            default:
+-                return AndroidSpeechSynthesizer.getErrorType(i1);
+-        }
+-    }
+-
+-    private SparseArray<String> getChecks(SparseArray<String> news, int index) {
+-        Pair<Integer, String> checks = queue.get(index + 1);
+-        if (checks != null && checks.first == CHECK) {
+-            news.append(index + 1, checks.second);
+-            news = getChecks(news, index + 1);
+-        }
+-        return news;
+-    }
+-
+-    private void readAll() {
+-        serialThread.addTask(() -> {
+-            for (int i = 0; i < queue.size(); i++) {
+-                Log.i(TAG, "readAll index: " + i);
+-                Pair<Integer, String> item = queue.get(i);
+-                if (item.first == READ) {
+-                    play(item.second, i);
+-                } else if (i == 0 && item.first == LISTEN) {
+-                    // FIXME: Check why it continues speaking sometimes after listening
+-                    listen(-1);
+-                }
+-            }
+-        });
+-    }
+-
+-    @Override
+-    public void onDestroy() {
+-        super.onDestroy();
+-        //UpdateManager.unregister();
+-        serialThread.shutdownNow();
+-        component.shutdown();
+-    }
+-
+-    @Override
+-    public void onResume() {
+-        super.onResume();
+-        //CrashManager.register(this);
+-    }
+-
+-    private void initViews() {
+-        execution = findViewById(R.id.execution);
+-        actionSpinner = findViewById(R.id.spinner);
+-        addonSpinner = findViewById(R.id.addon);
+-        text = findViewById(R.id.text);
+-        add = findViewById(R.id.add);
+-        clear = findViewById(R.id.clear);
+-        proceed = findViewById(R.id.proceed);
+-        scoCheck = findViewById(R.id.bluetooth_sco);
+-
+-        // Check if there is a Bluetooth device connected and setup the config for a Sco connection
+-        scoCheck.setOnCheckedChangeListener((buttonView, isChecked) -> {
+-            if (isChecked && !peripheral.get(Peripheral.Type.BLUETOOTH).isConnected()) {
+-                buttonView.setChecked(false);
+-                Toast.makeText(this, "Not connected to a Bluetooth device", Toast.LENGTH_LONG).show();
+-                return;
+-            }
+-            component.updateConfiguration(
+-                    builder -> {
+-                        builder.setBluetoothScoRequired(() ->
+-                                peripheral.get(Peripheral.Type.BLUETOOTH).isConnected() && isChecked);
+-                        return builder.build();
+-                    });
+-        });
+-        proceed.setEnabled(false);
+-
+-        // Create an ArrayAdapter of the actions
+-        actionAdapter = ArrayAdapter.createFromResource(this, R.array.actions, android.R.layout.simple_spinner_item);
+-        actionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+-        actionSpinner.setAdapter(actionAdapter);
+-        actionSpinner.setSelection(0);
+-        actionSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+-            @Override
+-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+-                boolean isDefault = position > 0;
+-                text.setEnabled(isDefault);
+-                add.setEnabled(isDefault);
+-                text.setVisibility(View.VISIBLE);
+-                if (position == LISTEN) text.setVisibility(View.GONE);
+-            }
+-
+-            @Override
+-            public void onNothingSelected(AdapterView<?> parent) {
+-            }
+-        });
+-
+-        // Create an ArrayAdapter of the addons
+-        List<String> addonList = Arrays.asList(addonMap.values().toArray(new String[addonMap.size()]));
+-        addonAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item,
+-                addonList);
+-        addonAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+-        addonSpinner.setAdapter(addonAdapter);
+-        addonSpinner.setSelection(0);
+-        addonSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+-            @Override
+-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+-                ADDON_TYPE = addonMap.get(position);
+-                setup();
+-            }
+-
+-            @Override
+-            public void onNothingSelected(AdapterView<?> parent) {
+-            }
+-        });
+-    }
+-}
+Index: app/src/main/AndroidManifest.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/AndroidManifest.xml	(date 1533679378000)
++++ app/src/main/AndroidManifest.xml	(date 1533679378000)
+@@ -11,20 +11,20 @@
+         android:supportsRtl="true"
+         android:theme="@style/AppTheme">
+         <meta-data android:name="net.hockeyapp.android.appIdentifier" android:value="${HOCKEYAPP_APP_ID}" />
+-        <activity android:name="com.chattylabs.demo.voice.MainActivity"
++        <activity android:name="com.chattylabs.demo.voice.BuildFromJsonActivity"
+             android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+             android:screenOrientation="portrait"
+-            android:windowSoftInputMode="stateVisible|adjustResize">
++            android:windowSoftInputMode="adjustResize">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+ 
+                 <category android:name="android.intent.category.LAUNCHER" />
+             </intent-filter>
+         </activity>
+-        <activity android:name="com.chattylabs.demo.voice.ConversationCreatorActivity"
++        <activity android:name="com.chattylabs.demo.voice.CustomizeTheComponentActivity"
+             android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+             android:screenOrientation="portrait"
+-            android:windowSoftInputMode="stateVisible|adjustResize"/>
++            android:windowSoftInputMode="adjustResize"/>
+     </application>
+ 
+ </manifest>
+\ No newline at end of file
+Index: app/build.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/build.gradle	(date 1533679023000)
++++ app/build.gradle	(date 1533679023000)
+@@ -1,12 +1,9 @@
+-plugins {
+-    id 'com.chattylabs.versioning' version '0.19.3'
+-}
+-
+ repositories {
+     maven { url "https://dl.bintray.com/chattylabs/maven" }
+ }
+ 
+ apply plugin: 'com.android.application'
++apply plugin: 'com.chattylabs.versioning'
+ apply from: '../buildsystem/android.gradle'
+ 
+ versioning {
+Index: .gitignore
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .gitignore	(date 1533679023000)
++++ .gitignore	(date 1533679023000)
+@@ -105,4 +105,9 @@
+ *.msp
+ 
+ # Windows shortcuts
+-*.lnk
+\ No newline at end of file
++*.lnk
++
++
++## Custom
++
++version.properties
+\ No newline at end of file
+Index: build.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- build.gradle	(date 1533679023000)
++++ build.gradle	(date 1533679023000)
+@@ -1,6 +1,7 @@
+ buildscript {
+     ext.kotlin_version = '1.2.30'
+     repositories {
++        mavenLocal()
+         google()
+         jcenter()
+         mavenCentral()
+@@ -9,6 +10,7 @@
+         classpath 'com.android.tools.build:gradle:3.1.3'
+         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+         classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.6'
++        classpath 'com.chattylabs:versioning:+'
+     }
+ }
+ 
+Index: sdk-addon-google-speech/build.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- sdk-addon-google-speech/build.gradle	(date 1533679023000)
++++ sdk-addon-google-speech/build.gradle	(date 1533679023000)
+@@ -7,16 +7,13 @@
+     }
+ }
+ 
+-plugins {
+-    id 'com.chattylabs.versioning' version '0.19.3'
+-}
+-
+ repositories {
+     maven { url "https://dl.bintray.com/chattylabs/maven" }
+ }
+ 
+ apply plugin: 'com.android.library'
+ apply plugin: 'com.novoda.bintray-release'
++apply plugin: 'com.chattylabs.versioning'
+ apply from: '../buildsystem/android.gradle'
+ 
+ group = 'com.chattylabs.sdk.android'
+Index: sdk-addon-google-speech/proguard-rules.pro
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- sdk-addon-google-speech/proguard-rules.pro	(date 1533679378000)
++++ sdk-addon-google-speech/proguard-rules.pro	(date 1533679378000)
+@@ -19,3 +19,6 @@
+ # If you keep the line number information, uncomment this to
+ # hide the original source file name.
+ #-renamesourcefileattribute SourceFile
++
++-keepnames class com.chattylabs.sdk.android.voice.GoogleSpeechRecognizer
++-keepnames class com.chattylabs.sdk.android.voice.GoogleSpeechSynthesizer
+Index: sdk-addon-google-speech/version.properties
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- sdk-addon-google-speech/version.properties	(date 1533679023000)
++++ sdk-addon-google-speech/version.properties	(date 1533679023000)
+@@ -1,6 +1,7 @@
+-#Wed Jul 11 11:35:10 UTC 2018
++#Version Update
++#Tue Aug 07 16:44:53 BST 2018
+ screen=0
+ major=00
+-sdk=00
+-minor=13
+-patch=14
++sdk=0
++minor=04
++patch=03
+Index: sdk-addon-android-speech/build.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- sdk-addon-android-speech/build.gradle	(date 1533679023000)
++++ sdk-addon-android-speech/build.gradle	(date 1533679023000)
+@@ -7,16 +7,13 @@
+     }
+ }
+ 
+-plugins {
+-    id 'com.chattylabs.versioning' version '0.19.3'
+-}
+-
+ repositories {
+     maven { url "https://dl.bintray.com/chattylabs/maven" }
+ }
+ 
+ apply plugin: 'com.android.library'
+ apply plugin: 'com.novoda.bintray-release'
++apply plugin: 'com.chattylabs.versioning'
+ apply from: '../buildsystem/android.gradle'
+ 
+ group = 'com.chattylabs.sdk.android'
+Index: sdk-addon-android-speech/proguard-rules.pro
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- sdk-addon-android-speech/proguard-rules.pro	(date 1533679378000)
++++ sdk-addon-android-speech/proguard-rules.pro	(date 1533679378000)
+@@ -19,3 +19,6 @@
+ # If you keep the line number information, uncomment this to
+ # hide the original source file name.
+ #-renamesourcefileattribute SourceFile
++
++-keepnames class com.chattylabs.sdk.android.voice.AndroidSpeechRecognizer
++-keepnames class com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer
+\ No newline at end of file
+Index: sdk-addon-android-speech/version.properties
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- sdk-addon-android-speech/version.properties	(date 1533679023000)
++++ sdk-addon-android-speech/version.properties	(date 1533679023000)
+@@ -1,6 +1,7 @@
+-#Wed Jul 11 11:35:10 UTC 2018
++#Version Update
++#Tue Aug 07 16:44:50 BST 2018
+ screen=0
+ major=00
+-sdk=00
+-minor=13
+-patch=14
++sdk=0
++minor=07
++patch=15
+Index: sdk-conversational-flow-core/src/main/java/com/chattylabs/sdk/android/voice/VoiceMatch.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- sdk-conversational-flow-core/src/main/java/com/chattylabs/sdk/android/voice/VoiceMatch.java	(date 1533679378000)
++++ sdk-conversational-flow-core/src/main/java/com/chattylabs/sdk/android/voice/VoiceMatch.java	(date 1533679378000)
+@@ -6,12 +6,14 @@
+ 
+ public class VoiceMatch implements VoiceAction {
+     public final String id;
++    public final Runnable onReady;
+     public final boolean canMatchOnPartials;
+     public final String[] expectedResults;
+     public final Consumer<List<String>> onMatched;
+ 
+     private VoiceMatch(Builder builder) {
+         id = builder.id;
++        onReady = builder.onReady;
+         canMatchOnPartials = builder.canMatchOnPartials;
+         expectedResults = builder.expectedResults;
+         onMatched = builder.onMatched;
+@@ -23,6 +25,7 @@
+ 
+     public static final class Builder {
+         private String id;
++        private Runnable onReady;
+         private boolean canMatchOnPartials;
+         private String[] expectedResults;
+         private Consumer<List<String>> onMatched;
+@@ -33,6 +36,11 @@
+             this.id = id;
+             return this;
+         }
++
++        public Builder setOnReady(Runnable onReady) {
++            this.onReady = onReady;
++            return this;
++        }
+ 
+         public Builder canMatchOnPartials(boolean canMatchOnPartials) {
+             this.canMatchOnPartials = canMatchOnPartials;
+Index: sdk-conversational-flow-core/src/main/java/com/chattylabs/sdk/android/voice/VoiceMessage.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- sdk-conversational-flow-core/src/main/java/com/chattylabs/sdk/android/voice/VoiceMessage.java	(date 1533679378000)
++++ sdk-conversational-flow-core/src/main/java/com/chattylabs/sdk/android/voice/VoiceMessage.java	(date 1533679378000)
+@@ -3,12 +3,14 @@
+ public class VoiceMessage implements VoiceNode {
+     public final String id;
+     public final String text;
++    public final Runnable onReady;
+     public final Runnable onSuccess;
+     public final Runnable onError;
+ 
+     private VoiceMessage(Builder builder) {
+         id = builder.id;
+         text = builder.text;
++        onReady = builder.onReady;
+         onSuccess = builder.onSuccess;
+         onError = builder.onError;
+     }
+@@ -20,6 +22,7 @@
+     public static final class Builder {
+         private String id;
+         private String text;
++        private Runnable onReady;
+         private Runnable onSuccess;
+         private Runnable onError;
+ 
+@@ -34,6 +37,11 @@
+             this.text = text;
+             return this;
+         }
++
++        public Builder setOnReady(Runnable onReady) {
++            this.onReady = onReady;
++            return this;
++        }
+ 
+         public Builder setOnSuccess(Runnable onSuccess) {
+             this.onSuccess = onSuccess;
+Index: sdk-conversational-flow-core/src/main/java/com/chattylabs/sdk/android/voice/ConversationImpl.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- sdk-conversational-flow-core/src/main/java/com/chattylabs/sdk/android/voice/ConversationImpl.java	(date 1533679378000)
++++ sdk-conversational-flow-core/src/main/java/com/chattylabs/sdk/android/voice/ConversationImpl.java	(date 1533679378000)
+@@ -4,6 +4,7 @@
+ import android.support.annotation.Nullable;
+ import android.support.v4.util.Pools;
+ import android.support.v4.util.SimpleArrayMap;
++import android.util.Log;
+ 
+ import com.chattylabs.sdk.android.common.Tag;
+ import com.chattylabs.sdk.android.common.internal.ILogger;
+@@ -105,6 +106,11 @@
+                 current = message;
+                 speechSynthesizer.playText(
+                         message.text,
++                        (ConversationalFlowComponent.OnSynthesizerStart) utteranceId -> {
++                            if (message.onReady != null) {
++                                message.onReady.run();
++                            }
++                        },
+                         (ConversationalFlowComponent.OnSynthesizerDone) utteranceId -> {
+                             if (message.onSuccess != null) {
+                                 message.onSuccess.run();
+@@ -134,15 +140,23 @@
+                             },
+                             (ConversationalFlowComponent.OnRecognizerError) (error, originalError) -> {
+                                 logger.e(TAG, "Conversation - listening Capture error");
+-                                boolean unexpected = error == RecognizerListener.RECOGNIZER_STOPPED_TOO_EARLY_ERROR;
+-                                boolean isLowSound = error == RecognizerListener.RECOGNIZER_LOW_SOUND_ERROR;
+-                                boolean isNoSound = error == RecognizerListener.RECOGNIZER_NO_SOUND_ERROR;
+                                 if (mismatchAction[0] != null)
+-                                    noMatch(mismatchAction[0], unexpected, isLowSound, isNoSound, null);
++                                    noMatch(mismatchAction[0], error, null);
+                             });
+                 } else {
+                     logger.v(TAG, "Conversation - running Actions");
+                     speechRecognizer.listen(
++                            (ConversationalFlowComponent.OnRecognizerReady) params -> {
++                                for (VoiceNode n : actions) {
++                                    if (VoiceMatch.class.isInstance(n)) {
++                                        VoiceMatch action = (VoiceMatch) n;
++                                        if (action.onReady != null) {
++                                            Log.d("MOMO", "one");
++                                            action.onReady.run();
++                                        }
++                                    }
++                                }
++                            },
+                             (ConversationalFlowComponent.OnRecognizerResults) (results, confidences) -> {
+                                 String result = ConversationalFlowComponent.selectMostConfidentResult(results, confidences);
+                                 processResults(Collections.singletonList(result), actions, false);
+@@ -153,11 +167,8 @@
+                             },
+                             (ConversationalFlowComponent.OnRecognizerError) (error, originalError) -> {
+                                 logger.e(TAG, "Conversation - listening Action error");
+-                                boolean unexpected = error == RecognizerListener.RECOGNIZER_STOPPED_TOO_EARLY_ERROR;
+-                                boolean isLowSound = error == RecognizerListener.RECOGNIZER_LOW_SOUND_ERROR;
+-                                boolean isNoSound = error == RecognizerListener.RECOGNIZER_NO_SOUND_ERROR;
+                                 if (mismatchAction[0] != null)
+-                                    noMatch(mismatchAction[0], unexpected, isLowSound, isNoSound, null);
++                                    noMatch(mismatchAction[0], error, null);
+                             });
+                 }
+             }
+@@ -179,8 +190,10 @@
+                         logger.i(TAG, "Conversation - matched with: " + expected);
+                         speechRecognizer.cancel();
+                         current = action;
+-                        if (action.onMatched != null) action.onMatched.accept(results);
+-                        else next();
++                        if (action.onMatched != null) {
++                            Log.d("MOMO", "two");
++                            action.onMatched.accept(results);
++                        } else next();
+                         return;
+                     }
+                 }
+@@ -189,12 +202,15 @@
+         logger.w(TAG, "Conversation - not matched");
+         if (!isPartial && mismatchAction[0] != null) {
+             if (mismatchAction[0].retries == 0) current = mismatchAction[0];
+-            noMatch(mismatchAction[0], false, false, false, results);
++            noMatch(mismatchAction[0], 0, results);
+         }
+     }
+ 
+-    private void noMatch(VoiceMismatch mismatchAction, boolean isUnexpected, boolean isLowSound, boolean isNoSound,
+-                         @Nullable List<String> results) {
++    private void noMatch(VoiceMismatch mismatchAction, int error, @Nullable List<String> results) {
++        boolean isUnexpected = error == RecognizerListener.RECOGNIZER_STOPPED_TOO_EARLY_ERROR;
++        boolean isLowSound = error == RecognizerListener.RECOGNIZER_LOW_SOUND_ERROR;
++        boolean isNoSound = error == RecognizerListener.RECOGNIZER_NO_SOUND_ERROR;
++
+         if (mismatchAction.retries > 0) {
+             mismatchAction.retries--;
+             logger.v(TAG, "Conversation - pending retry: " + mismatchAction.retries);
+@@ -215,11 +231,16 @@
+                 logger.v(TAG, "Conversation - no sound at all!!");
+                 // No repeat
+                 mismatchAction.retries = 0;
+-                if (mismatchAction.onNotMatched != null) mismatchAction.onNotMatched.accept(results);
++                if (mismatchAction.onNotMatched != null) {
++                    mismatchAction.onNotMatched.accept(results);
++                }
+                 else next(); // TODO: throw new Missing not matched?
+             }
+         } else {
+-            if (mismatchAction.onNotMatched != null) mismatchAction.onNotMatched.accept(results);
++            if (mismatchAction.onNotMatched != null) {
++                Log.d("MOMO", "three");
++                mismatchAction.onNotMatched.accept(results);
++            }
+             else next(); // TODO: throw new Missing not matched?
+         }
+     }
+Index: sdk-conversational-flow-core/src/main/java/com/chattylabs/sdk/android/voice/ConversationalFlowComponentImpl.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- sdk-conversational-flow-core/src/main/java/com/chattylabs/sdk/android/voice/ConversationalFlowComponentImpl.java	(date 1533679378000)
++++ sdk-conversational-flow-core/src/main/java/com/chattylabs/sdk/android/voice/ConversationalFlowComponentImpl.java	(date 1533679378000)
+@@ -115,11 +115,11 @@
+             if (speechRecognizer == null) {
+                 switch (configuration.getRecognizerServiceType().getSimpleName()) {
+                     case ComponentConfig.RECOGNIZER_SERVICE_GOOGLE:
+-                        speechRecognizer = newInstance(configuration.getSynthesizerServiceType(),
++                        speechRecognizer = newInstance(configuration.getRecognizerServiceType(),
+                                 application, configuration, audioManager, bluetoothSco, logger);
+                         break;
+                     default:
+-                        speechRecognizer = newInstance(configuration.getSynthesizerServiceType(),
++                        speechRecognizer = newInstance(configuration.getRecognizerServiceType(),
+                                 application, configuration, audioManager, bluetoothSco,
+                                 (SpeechRecognizerCreator) () ->
+                                         android.speech.SpeechRecognizer.createSpeechRecognizer(application),
+@@ -129,7 +129,7 @@
+             }
+         } catch (Exception e) {
+             logger.logException(e);
+-            throw new RuntimeException("Have you missed to configure the < addon > dependency?");
++            throw new RuntimeException("Have you missed configuring the < addon > dependency?");
+         }
+         if (phoneStateHandler == null) phoneStateHandler = new PhoneStateHandler(application, logger);
+         if (!phoneStateHandler.isPhoneStateReceiverRegistered()) {
+Index: sdk-conversational-flow-core/build.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- sdk-conversational-flow-core/build.gradle	(date 1533679023000)
++++ sdk-conversational-flow-core/build.gradle	(date 1533679023000)
+@@ -7,16 +7,13 @@
+     }
+ }
+ 
+-plugins {
+-    id 'com.chattylabs.versioning' version '0.19.3'
+-}
+-
+ repositories {
+     maven { url "https://dl.bintray.com/chattylabs/maven" }
+ }
+ 
+ apply plugin: 'com.android.library'
+ apply plugin: 'com.novoda.bintray-release'
++apply plugin: 'com.chattylabs.versioning'
+ apply from: '../buildsystem/android.gradle'
+ 
+ group = 'com.chattylabs.sdk.android'
+@@ -25,11 +22,11 @@
+ 
+ versioning {
+ 
+-    tagPrefix "conv-flow-version/"
++    tagPrefix "core-version/"
+ 
+     keywords {
+-        minor "[conv-flow-feature]"
+-        patch "[conv-flow-bug]", "[conv-flow-patch]"
++        minor "[core-feature]"
++        patch "[core-bug]", "[core-patch]"
+     }
+ }
+ 
+Index: sdk-conversational-flow-core/version.properties
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- sdk-conversational-flow-core/version.properties	(date 1533679023000)
++++ sdk-conversational-flow-core/version.properties	(date 1533679023000)
+@@ -1,6 +1,7 @@
+-#Wed Jul 11 11:35:10 UTC 2018
++#Version Update
++#Tue Aug 07 16:44:51 BST 2018
+ screen=0
+ major=00
+-sdk=00
+-minor=13
+-patch=14
++sdk=0
++minor=14
++patch=00
+Index: version.properties
+===================================================================
+--- version.properties	(date 0)
++++ version.properties	(date 0)
+@@ -1,6 +0,0 @@
+-#Thu May 17 14:16:50 UTC 2018
+-screen=0
+-major=00
+-sdk=00
+-minor=01
+-patch=01

@@ -65,6 +65,11 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
         this.serialThread = ThreadUtils.newSerialThread();
     }
 
+    @Override
+    public void checkStatus(RecognizerListener.OnStatusChecked listener) {
+        listener.execute(RecognizerListener.Status.AVAILABLE);
+    }
+
     private final AndroidAudioRecorder.Callback mVoiceCallback = new AndroidAudioRecorder.Callback() {
 
         @Override

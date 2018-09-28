@@ -184,15 +184,15 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
     }
 
     @Override
-    public void setup(SynthesizerListener.OnSetup onSynthesizerSetup) {
+    public void checkStatus(SynthesizerListener.OnStatusChecked listener) {
         prepare(synthesizerStatus -> {
             final DescribeVoicesResult voicesResult = mAmazonSpeechClient.describeVoices(new DescribeVoicesRequest()
                     .withLanguageCode(mLanguageCode));
             if (!voicesResult.getVoices().isEmpty()) {
                 mDefaultVoices = voicesResult.getVoices().get(0);
-                onSynthesizerSetup.execute(SynthesizerListener.Status.SUCCESS);
+                listener.execute(SynthesizerListener.Status.SUCCESS);
             } else {
-                onSynthesizerSetup.execute(SynthesizerListener.Status.LANGUAGE_NOT_SUPPORTED_ERROR);
+                listener.execute(SynthesizerListener.Status.LANGUAGE_NOT_SUPPORTED_ERROR);
             }
         });
     }

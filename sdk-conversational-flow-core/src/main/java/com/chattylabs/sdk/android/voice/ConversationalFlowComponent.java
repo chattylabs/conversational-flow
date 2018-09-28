@@ -5,7 +5,6 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresPermission;
-import android.support.annotation.WorkerThread;
 import android.text.TextUtils;
 
 import com.chattylabs.android.commons.RequiredPermissions;
@@ -19,26 +18,41 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
     String TAG = Tag.make("ConversationalFlowComponent");
 
     /**
-     * It checks if the Synthesizer and Recognizer are available and returns a {@link ComponentStatus}
-     * object as part of the {@link OnComponentSetup} interface.
-     * <br/>Based on the returned {@link ComponentStatus} you can decide either to use only one or
-     * all the functionality.
+     * Checks whether the Synthesizer is available and returns a {@link SynthesizerListener.Status}
+     * object within the {@link SynthesizerListener.OnStatusChecked} interface.
      * <br/><pre>{@code
-     * component.setup(context, status -> {
-     *      if (status.isAvailable()) {
-     *          // start using the functionality
+     * component.checkSpeechSynthesizerStatus(context, status -> {
+     *      if (status == SynthesizerListener.Status.AVAILABLE) {
+     *          // the functionality is available
      *      }
      * });
      * }</pre>
-     * This operation should be handled on a Worker Thread.
+     * This operation should be handled on a working thread.
      *
-     * @see OnComponentSetup
+     * @see SynthesizerListener.OnStatusChecked
+     * @see SynthesizerListener.Status
      */
-    @WorkerThread
-    void setup(Context context, OnComponentSetup onComponentSetup);
+    void checkSpeechSynthesizerStatus(Context context, SynthesizerListener.OnStatusChecked listener);
 
     /**
-     * It reuses the already set {@link ComponentConfig} allowing you to update only specific parts
+     * Checks whether the Recognizer is available and returns a {@link RecognizerListener.Status}
+     * object within the {@link RecognizerListener.OnStatusChecked} interface.
+     * <br/><pre>{@code
+     * component.checkSpeechRecognizerStatus(context, status -> {
+     *      if (status == RecognizerListener.Status.AVAILABLE) {
+     *          // the functionality is available
+     *      }
+     * });
+     * }</pre>
+     * This operation should be handled on a working thread.
+     *
+     * @see RecognizerListener.OnStatusChecked
+     * @see RecognizerListener.Status
+     */
+    void checkSpeechRecognizerStatus(Context context, RecognizerListener.OnStatusChecked listener);
+
+    /**
+     * Reuses the already set {@link ComponentConfig} allowing you to update only specific parts
      * of it through the {@link ComponentConfig.Update} interface.
      * <br/><pre>{@code
      * updateConfiguration(builder ->
@@ -47,10 +61,10 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
      *              .setBluetoothScoRequired(() -> false)
      *              .setAudioExclusiveRequiredForSynthesizer(() -> false)
      *              .setAudioExclusiveRequiredForRecognizer(() -> true)
-     *      ).build()
-     * );
+     *      ).build());
      * }</pre>
      *
+     * @see ComponentConfig
      * @see ComponentConfig.Update
      */
     void updateConfiguration(ComponentConfig.Update onUpdate);
@@ -59,6 +73,7 @@ public interface ConversationalFlowComponent extends RequiredPermissions {
      * Returns the current {@link SpeechSynthesizerComponent} configured.
      * <br/>You can use this component alone.
      * <br/>code...
+     * @see SpeechSynthesizerComponent
      */
     SpeechSynthesizerComponent getSpeechSynthesizer(Context context);
 

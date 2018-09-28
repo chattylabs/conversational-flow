@@ -77,7 +77,7 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizerComponent {
 
     @CallSuper
     @Override
-    public <T extends RecognizerListener> void listen(T... listeners) {
+    public void listen(RecognizerListener... listeners) {
         logger.i(getTag(), "VOICE - start listening");
         handleListeners(listeners);
         checkForBluetoothScoRequired(this::startListening);

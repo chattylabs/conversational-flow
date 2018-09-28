@@ -8,6 +8,10 @@ import java.util.List;
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public interface RecognizerListener {
 
+    interface OnStatusChecked extends SynthesizerListener {
+        void execute(int recognizerStatus);
+    }
+
     interface OnReady extends RecognizerListener {
         void execute(Bundle params);
     }
@@ -28,8 +32,7 @@ public interface RecognizerListener {
         void execute(int error, int originalError);
     }
 
-    final class Status {
-        private Status() {}
+    abstract class Status {
         public static final int AVAILABLE = 201;
         public static final int NOT_AVAILABLE = 202;
         public static final int UNKNOWN_ERROR = 203;
