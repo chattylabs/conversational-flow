@@ -4,8 +4,8 @@ import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.os.Build;
 
-import com.chattylabs.sdk.android.common.UnitTestUtils;
-import com.chattylabs.sdk.android.common.internal.ILogger;
+import com.chattylabs.android.commons.UnitTestUtils;
+import com.chattylabs.android.commons.internal.ILogger;
 
 import org.junit.After;
 import org.junit.Before;

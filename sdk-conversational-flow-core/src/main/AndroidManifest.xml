@@ -10,5 +10,4 @@
 
     <!-- Phone State -->
     <uses-permission android:name="android.permission.READ_PHONE_STATE" /> <!--Dangerous-->
-    <uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS" /> <!--Dangerous-->
 </manifest>

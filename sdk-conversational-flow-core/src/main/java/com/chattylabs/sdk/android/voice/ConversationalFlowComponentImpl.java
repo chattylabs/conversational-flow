@@ -90,19 +90,17 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
         }
         if (bluetoothSco == null) bluetoothSco = new BluetoothSco(application, audioManager, logger);
         if (phoneStateHandler == null) phoneStateHandler = new PhoneStateHandler(application, logger);
-        if (!phoneStateHandler.isPhoneStateReceiverRegistered()) {
-            phoneStateHandler.registerReceiver(new PhoneStateListenerAdapter() {
-                @Override
-                public void onOutgoingCallStarts() {
-                    shutdown();
-                }
+        phoneStateHandler.register(new PhoneStateListenerAdapter() {
+            @Override
+            public void onOutgoingCallStarts() {
+                shutdown();
+            }
 
-                @Override
-                public void onIncomingCallRinging() {
-                    shutdown();
-                }
-            });
-        }
+            @Override
+            public void onIncomingCallRinging() {
+                shutdown();
+            }
+        });
     }
 
     @Override
@@ -170,13 +168,13 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
     public void stop() {
         if (speechSynthesizer != null) speechSynthesizer.stop();
         if (speechRecognizer != null) speechRecognizer.stop();
-        if (phoneStateHandler != null) phoneStateHandler.unregisterReceiver();
+        if (phoneStateHandler != null) phoneStateHandler.unregister();
     }
 
     @Override
     public void shutdown() {
         if (speechSynthesizer != null) speechSynthesizer.shutdown();
         if (speechRecognizer != null) speechRecognizer.shutdown();
-        if (phoneStateHandler != null) phoneStateHandler.unregisterReceiver();
+        if (phoneStateHandler != null) phoneStateHandler.unregister();
     }
 }

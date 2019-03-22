@@ -16,7 +16,7 @@ public class PhoneStateHandler {
 
     // Resources
     private Application application;
-    private PhoneStateReceiver phoneStateReceiver = new PhoneStateReceiver();
+    private PhoneStateManager phoneStateManager = new PhoneStateManager();
 
     // Log stuff
     private ILogger logger;
@@ -26,26 +26,19 @@ public class PhoneStateHandler {
         this.logger = logger;
     }
 
-    public boolean isPhoneStateReceiverRegistered() {
-        return isPhoneStateReceiverRegistered;
-    }
-
-    void registerReceiver(PhoneStateListenerAdapter listener) {
+    void register(PhoneStateListenerAdapter listener) {
         if (!isPhoneStateReceiverRegistered) {
-            logger.v(TAG, "register for phone state receiver");
-            IntentFilter phoneFilter = new IntentFilter();
-            phoneFilter.addAction(TelephonyManager.ACTION_PHONE_STATE_CHANGED);
-            phoneFilter.addAction(Intent.ACTION_NEW_OUTGOING_CALL);
-            phoneStateReceiver.setListener(listener);
-            application.registerReceiver(phoneStateReceiver, phoneFilter);
+            logger.v(TAG, "register for phone state listener");
+            phoneStateManager.setAdapter(listener);
+            phoneStateManager.listen(application);
             isPhoneStateReceiverRegistered = true;
         }
     }
 
-    void unregisterReceiver() {
+    void unregister() {
         if (isPhoneStateReceiverRegistered) {
             logger.v(TAG, "unregister for phone state receiver");
-            application.unregisterReceiver(phoneStateReceiver);
+            phoneStateManager.release(application);
             isPhoneStateReceiverRegistered = false;
         }
     }
