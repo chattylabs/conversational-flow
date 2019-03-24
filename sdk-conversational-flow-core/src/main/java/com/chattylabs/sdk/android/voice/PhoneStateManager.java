@@ -11,33 +11,7 @@ public class PhoneStateManager {
 
     private PhoneStateListenerAdapter adapter;
 
-    private PhoneStateListener listener = new PhoneStateListener() {
-        @Override public void onCallStateChanged(int state, String incomingNumber) {
-            super.onCallStateChanged(state, incomingNumber);
-            switch(state) {
-                case TelephonyManager.CALL_STATE_IDLE:
-                    break;
-                case TelephonyManager.CALL_STATE_OFFHOOK:
-                    if(incomingNumber==null) {
-                        //outgoing call
-                        getAdapter().onOutgoingCallEnds();
-                    } else {
-                        //incoming call
-                        getAdapter().onIncomingCallEnds();
-                    }
-                    break;
-                case TelephonyManager.CALL_STATE_RINGING:
-                    if(incomingNumber==null) {
-                        //outgoing call
-                        getAdapter().onOutgoingCallStarts();
-                    } else {
-                        //incoming call
-                        getAdapter().onIncomingCallRinging();
-                    }
-                    break;
-            }
-        }
-    };
+    private PhoneStateListener listener;
 
     public PhoneStateManager() {}
 
@@ -50,12 +24,41 @@ public class PhoneStateManager {
     }
 
     public void listen(Context context) {
+        listener = new PhoneStateListener() {
+            @Override public void onCallStateChanged(int state, String incomingNumber) {
+                super.onCallStateChanged(state, incomingNumber);
+                switch(state) {
+                    case TelephonyManager.CALL_STATE_IDLE:
+                        break;
+                    case TelephonyManager.CALL_STATE_OFFHOOK:
+                        if(incomingNumber==null) {
+                            //outgoing call
+                            getAdapter().onOutgoingCallEnds();
+                        } else {
+                            //incoming call
+                            getAdapter().onIncomingCallEnds();
+                        }
+                        break;
+                    case TelephonyManager.CALL_STATE_RINGING:
+                        if(incomingNumber==null) {
+                            //outgoing call
+                            getAdapter().onOutgoingCallStarts();
+                        } else {
+                            //incoming call
+                            getAdapter().onIncomingCallRinging();
+                        }
+                        break;
+                }
+            }
+        };
         TelephonyManager tm = (TelephonyManager) context.getSystemService(Service.TELEPHONY_SERVICE);
         tm.listen(listener, PhoneStateListener.LISTEN_CALL_STATE);
     }
 
     public void release(Context context) {
-        TelephonyManager tm = (TelephonyManager) context.getSystemService(Service.TELEPHONY_SERVICE);
-        tm.listen(listener, PhoneStateListener.LISTEN_NONE);
+        if (listener != null) {
+            TelephonyManager tm = (TelephonyManager) context.getSystemService(Service.TELEPHONY_SERVICE);
+            tm.listen(listener, PhoneStateListener.LISTEN_NONE);
+        }
     }
 }
