@@ -37,7 +37,7 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     private final ConditionVariable mCondVar = new ConditionVariable();
 
-    AmazonSpeechSynthesizer(Application application,
+    public AmazonSpeechSynthesizer(Application application,
                             ComponentConfig configuration,
                             AndroidAudioManager audioManager,
                             BluetoothSco bluetoothSco,

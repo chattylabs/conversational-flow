@@ -54,7 +54,7 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
     private SpeechClient speech;
     private Bundle lastResult;
 
-    GoogleSpeechRecognizer(Application application,
+    public GoogleSpeechRecognizer(Application application,
                            ComponentConfig configuration,
                            AndroidAudioManager audioManager,
                            BluetoothSco bluetoothSco,

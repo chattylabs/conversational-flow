@@ -38,7 +38,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
     private ThreadUtils.SerialThread serialThread;
     private SpeechRecognizer speechRecognizer;
 
-    AndroidSpeechRecognizer(Application application,
+    public AndroidSpeechRecognizer(Application application,
                             ComponentConfig configuration,
                             AndroidAudioManager audioManager,
                             BluetoothSco bluetoothSco,
@@ -87,14 +87,16 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                 @Override
                 public void run() {
                     logger.w(TAG, "ANDROID VOICE - reached timeout");
-                    serialThread.addTask(() -> {
-                        printLock();
-                        lock.lock();
-                        mainHandler.post(() -> {
-                            speechRecognizer.stopListening();
-                            serialThread.addTask(lock::unlock);
+                    if (serialThread != null)
+                        serialThread.addTask(() -> {
+                            printLock();
+                            lock.lock();
+                            mainHandler.post(() -> {
+                                speechRecognizer.stopListening();
+                                serialThread.addTask(lock::unlock);
+                            });
                         });
-                    });
+                    else lock.unlock();
                 }
             };
             timeout.schedule(task, MIN_VOICE_RECOGNITION_TIME_LISTENING * 3);
@@ -323,8 +325,8 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
         logger.w(TAG, "ANDROID VOICE - shutting down");
         super.shutdown();
         if (speechRecognizer != null) {
-            speechRecognizer.setRecognitionListener(null);
             mainHandler.post(() -> {
+                speechRecognizer.setRecognitionListener(null);
                 try {
                     if (speechRecognizer != null) {
                         speechRecognizer.destroy();

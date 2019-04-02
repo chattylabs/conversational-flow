@@ -30,7 +30,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer
     private TextToSpeech tts; // released
     private SynthesizerListener.OnStatusChecked onStatusChecked;
 
-    AndroidSpeechSynthesizer(Application application,
+    public AndroidSpeechSynthesizer(Application application,
                              ComponentConfig configuration,
                              AndroidAudioManager audioManager,
                              BluetoothSco bluetoothSco,
@@ -189,7 +189,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer
                 super.playText(TESTING_STRING, DEFAULT_QUEUE_ID, null, CHECKING_UTTERANCE_ID);
             } catch (Exception e) {
                 logger.e(TAG, "error when downloading audio data: " + e.getMessage());
-                // Otherwise it reports the TextToSpeechStatus to the Callback
+                // Otherwise it reports the TextToSpeechStatus to the OnReadyCallback
                 checkLanguage(false);
             }
         } else {
