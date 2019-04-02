@@ -2,7 +2,7 @@ package com.chattylabs.sdk.android.voice;
 
 public class VoiceCapture implements VoiceAction {
     public final String id;
-    public final ComponentConsumer<String> onCaptured;
+    public final ComponentConsumer<VoiceCapture, String> onCaptured;
 
     private VoiceCapture(Builder builder) {
         id = builder.id;
@@ -15,7 +15,7 @@ public class VoiceCapture implements VoiceAction {
 
     public static final class Builder {
         private String id;
-        private ComponentConsumer<String> onCaptured;
+        private ComponentConsumer<VoiceCapture, String> onCaptured;
 
         private Builder() {}
 
@@ -24,7 +24,7 @@ public class VoiceCapture implements VoiceAction {
             return this;
         }
 
-        public Builder setOnCaptured(ComponentConsumer<String> onCaptured) {
+        public Builder setOnCaptured(ComponentConsumer<VoiceCapture, String> onCaptured) {
             this.onCaptured = onCaptured;
             return this;
         }

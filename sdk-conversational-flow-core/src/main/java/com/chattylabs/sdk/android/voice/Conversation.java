@@ -16,4 +16,6 @@ public interface Conversation {
     ConversationFlow prepare();
 
     void next();
+
+    void next(VoiceNode node);
 }

@@ -8,7 +8,7 @@ public class VoiceMismatch implements VoiceAction {
     public final String lowSoundErrorMessage;
     public final String listeningErrorMessage;
     public final String unexpectedErrorMessage;
-    public final ComponentConsumer<List<String>> onNotMatched;
+    public final ComponentConsumer<VoiceMismatch, List<String>> onNotMatched;
 
     private VoiceMismatch(Builder builder) {
         id = builder.id;
@@ -29,7 +29,7 @@ public class VoiceMismatch implements VoiceAction {
         private String lowSoundErrorMessage;
         private String listeningErrorMessage;
         private String unexpectedErrorMessage;
-        private ComponentConsumer<List<String>> onNotMatched;
+        private ComponentConsumer<VoiceMismatch, List<String>> onNotMatched;
 
         private Builder() {}
 
@@ -58,7 +58,7 @@ public class VoiceMismatch implements VoiceAction {
             return this;
         }
 
-        public Builder setOnNotMatched(ComponentConsumer<List<String>> onNotMatched) {
+        public Builder setOnNotMatched(ComponentConsumer<VoiceMismatch, List<String>> onNotMatched) {
             this.onNotMatched = onNotMatched;
             return this;
         }

@@ -119,7 +119,8 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
             }
         } catch (Exception e) {
             logger.logException(e);
-            throw new RuntimeException("Did you miss configuring the <addon-speech /> dependency?");
+            throw new RuntimeException("Did you miss configuring the <addon-speech /> dependency?" +
+                    " (" + configuration.getSynthesizerServiceType() + ")");
         }
     }
 
@@ -139,7 +140,8 @@ final class ConversationalFlowComponentImpl implements ConversationalFlowCompone
             }
         } catch (Exception e) {
             logger.logException(e);
-            throw new RuntimeException("Did you miss configuring the <addon-speech /> dependency?");
+            throw new RuntimeException("Did you miss configuring the <addon-speech /> dependency?" +
+                    " (" + configuration.getRecognizerServiceType() + ")");
         }
     }
 

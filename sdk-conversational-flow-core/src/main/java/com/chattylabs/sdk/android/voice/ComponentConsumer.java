@@ -1,18 +1,19 @@
 package com.chattylabs.sdk.android.voice;
 
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.util.Objects;
 
 @FunctionalInterface
-public interface ComponentConsumer<T> {
+public interface ComponentConsumer<N extends VoiceNode, T> {
 
     /**
      * Performs this operation on the given argument.
      *
      * @param t the input argument
      */
-    void accept(@Nullable T t);
+    void accept(@NonNull N node, @Nullable T t);
 
     /**
      * Returns a composed {@code Consumer} that performs, in sequence, this
@@ -26,8 +27,9 @@ public interface ComponentConsumer<T> {
      * operation followed by the {@code after} operation
      * @throws NullPointerException if {@code after} is null
      */
-    default ComponentConsumer<T> andThen(ComponentConsumer<? super T> after) {
+    default ComponentConsumer<N, T> andThen(ComponentConsumer<N, ? super T> after) {
         Objects.requireNonNull(after);
-        return (@Nullable T t) -> { accept(t); after.accept(t); };
+        return (@NonNull N node, @Nullable T t) -> {
+            accept(node, t); after.accept(node, t); };
     }
 }

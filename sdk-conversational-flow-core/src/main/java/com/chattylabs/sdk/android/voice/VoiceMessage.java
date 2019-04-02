@@ -2,10 +2,14 @@ package com.chattylabs.sdk.android.voice;
 
 public class VoiceMessage implements VoiceNode {
     public final String id;
-    public final String text;
-    public final Runnable onReady;
+    public String text;
+    public final OnReadyCallback onReady;
     public final Runnable onSuccess;
     public final Runnable onError;
+
+    public interface OnReadyCallback {
+        void run(VoiceMessage node);
+    }
 
     private VoiceMessage(Builder builder) {
         id = builder.id;
@@ -22,7 +26,7 @@ public class VoiceMessage implements VoiceNode {
     public static final class Builder {
         private String id;
         private String text;
-        private Runnable onReady;
+        private OnReadyCallback onReady;
         private Runnable onSuccess;
         private Runnable onError;
 
@@ -38,7 +42,7 @@ public class VoiceMessage implements VoiceNode {
             return this;
         }
 
-        public Builder setOnReady(Runnable onReady) {
+        public Builder setOnReady(OnReadyCallback onReady) {
             this.onReady = onReady;
             return this;
         }

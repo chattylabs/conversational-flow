@@ -36,8 +36,8 @@ public class ConversationFlow implements ConversationFlowSource, ConversationFlo
         for (String s : optIds) edge.addEdge(edge.getNode(s), from);
     };
 
-    abstract static class Edge {
-        abstract VoiceNode getNode(@NonNull String id);
+    public abstract static class Edge {
+        public abstract VoiceNode getNode(@NonNull String id);
         abstract void addEdge(@NonNull VoiceNode node, @NonNull VoiceNode incomingEdge);
         abstract void start(@NonNull VoiceNode root);
     }

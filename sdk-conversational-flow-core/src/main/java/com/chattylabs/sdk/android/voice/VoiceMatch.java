@@ -4,10 +4,14 @@ import java.util.List;
 
 public class VoiceMatch implements VoiceAction {
     public final String id;
-    public final Runnable onReady;
+    public final OnReadyCallback onReady;
     public final boolean canMatchOnPartials;
     public final String[] expectedResults;
-    public final ComponentConsumer<List<String>> onMatched;
+    public final ComponentConsumer<VoiceMatch, List<String>> onMatched;
+
+    public interface OnReadyCallback {
+        void run(VoiceMatch node);
+    }
 
     private VoiceMatch(Builder builder) {
         id = builder.id;
@@ -23,10 +27,10 @@ public class VoiceMatch implements VoiceAction {
 
     public static final class Builder {
         private String id;
-        private Runnable onReady;
+        private OnReadyCallback onReady;
         private boolean canMatchOnPartials;
         private String[] expectedResults;
-        private ComponentConsumer<List<String>> onMatched;
+        private ComponentConsumer<VoiceMatch, List<String>> onMatched;
 
         private Builder() {}
 
@@ -35,7 +39,7 @@ public class VoiceMatch implements VoiceAction {
             return this;
         }
 
-        public Builder setOnReady(Runnable onReady) {
+        public Builder setOnReady(OnReadyCallback onReady) {
             this.onReady = onReady;
             return this;
         }
@@ -50,7 +54,7 @@ public class VoiceMatch implements VoiceAction {
             return this;
         }
 
-        public Builder setOnMatched(ComponentConsumer<List<String>> onMatched) {
+        public Builder setOnMatched(ComponentConsumer<VoiceMatch, List<String>> onMatched) {
             this.onMatched = onMatched;
             return this;
         }

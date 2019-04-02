@@ -78,19 +78,25 @@ class ConversationImpl extends ConversationFlow.Edge implements Conversation {
         next(getNext());
     }
 
-    private void next(VoiceNode node) {
+    @Override
+    public void next(VoiceNode node) {
         if (current == null)
             throw new NullPointerException("You must start(Node) the conversation");
         if (node != null) {
+            if (node instanceof VoiceAction) {
+                ArrayList<VoiceNode> nodes = new ArrayList<>(1);
+                nodes.add(node);
+                node = getActionSet(nodes);
+            }
             if (node instanceof VoiceMessage) {
                 VoiceMessage message = (VoiceMessage) node;
-                logger.v(TAG, "Conversation - running Message: " + message.text);
+                logger.v(TAG, "Conversation - running Message: %s", message.text);
                 current = message;
                 speechSynthesizer.playText(
                         message.text,
                         (SynthesizerListener.OnStart) utteranceId -> {
                             if (message.onReady != null) {
-                                message.onReady.run();
+                                message.onReady.run(message);
                             }
                         },
                         (SynthesizerListener.OnDone) utteranceId -> {
@@ -104,9 +110,9 @@ class ConversationImpl extends ConversationFlow.Edge implements Conversation {
                 VoiceCapture captureAction[] = new VoiceCapture[1];
                 VoiceMismatch mismatchAction[] = new VoiceMismatch[1];
                 for (VoiceNode n : actions) {
-                    if (VoiceCapture.class.isInstance(n)) {
+                    if (n instanceof VoiceCapture) {
                         captureAction[0] = (VoiceCapture) n;
-                    } else if (VoiceMismatch.class.isInstance(n)) {
+                    } else if (n instanceof VoiceMismatch) {
                         mismatchAction[0] = (VoiceMismatch) n;
                     }
                 }
@@ -116,8 +122,9 @@ class ConversationImpl extends ConversationFlow.Edge implements Conversation {
                     speechRecognizer.listen(
                             (RecognizerListener.OnMostConfidentResult) result -> {
                                 current = captureAction[0];
-                                ComponentConsumer<String> consumer = captureAction[0].onCaptured;
-                                if (consumer != null) consumer.accept(result);
+                                ComponentConsumer<VoiceCapture, String> consumer =
+                                        captureAction[0].onCaptured;
+                                if (consumer != null) consumer.accept(captureAction[0], result);
                                 else next();
                             },
                             (RecognizerListener.OnError) (error, originalError) -> {
@@ -130,11 +137,10 @@ class ConversationImpl extends ConversationFlow.Edge implements Conversation {
                     speechRecognizer.listen(
                             (RecognizerListener.OnReady) params -> {
                                 for (VoiceNode n : actions) {
-                                    if (VoiceMatch.class.isInstance(n)) {
+                                    if (n instanceof VoiceMatch) {
                                         VoiceMatch action = (VoiceMatch) n;
                                         if (action.onReady != null) {
-                                            Log.d("MOMO", "one");
-                                            action.onReady.run();
+                                            action.onReady.run(action);
                                         }
                                     }
                                 }
@@ -161,9 +167,9 @@ class ConversationImpl extends ConversationFlow.Edge implements Conversation {
     private void processResults(List<String> results, VoiceActionList actions, boolean isPartial) {
         final VoiceMismatch[] mismatchAction = new VoiceMismatch[1];
         for (VoiceNode n : actions) {
-            if (VoiceMismatch.class.isInstance(n)) {
+            if (n instanceof VoiceMismatch) {
                 mismatchAction[0] = (VoiceMismatch) n;
-            } else if (VoiceMatch.class.isInstance(n)) {
+            } else if (n instanceof VoiceMatch) {
                 VoiceMatch action = (VoiceMatch) n;
                 if (results != null && !results.isEmpty() && results.get(0).length() > 0) {
                     List<String> expected = Arrays.asList(action.expectedResults);
@@ -173,8 +179,7 @@ class ConversationImpl extends ConversationFlow.Edge implements Conversation {
                         speechRecognizer.cancel();
                         current = action;
                         if (action.onMatched != null) {
-                            Log.d("MOMO", "two");
-                            action.onMatched.accept(results);
+                            action.onMatched.accept(action, results);
                         } else next();
                         return;
                     }
@@ -214,14 +219,13 @@ class ConversationImpl extends ConversationFlow.Edge implements Conversation {
                 // No repeat
                 mismatchAction.retries = 0;
                 if (mismatchAction.onNotMatched != null) {
-                    mismatchAction.onNotMatched.accept(results);
+                    mismatchAction.onNotMatched.accept(mismatchAction, results);
                 }
                 else next(); // TODO: throw new Missing not matched?
             }
         } else {
             if (mismatchAction.onNotMatched != null) {
-                Log.d("MOMO", "three");
-                mismatchAction.onNotMatched.accept(results);
+                mismatchAction.onNotMatched.accept(mismatchAction, results);
             }
             else next(); // TODO: throw new Missing not matched?
         }
@@ -310,7 +314,7 @@ class ConversationImpl extends ConversationFlow.Edge implements Conversation {
     }
 
     @Override
-    VoiceNode getNode(@NonNull String id) {
+    public VoiceNode getNode(@NonNull String id) {
         for (int i = 0, size = graph.size(); i < size; i++) {
             VoiceNode node = graph.keyAt(i);
             if (node.getId().equals(id)) {
