@@ -19,6 +19,14 @@ android {
         versionCode versioning.code()
         versionName versioning.name()
     }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            useProguard false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
 }
 
 dependencies {

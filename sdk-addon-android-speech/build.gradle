@@ -20,6 +20,14 @@ android {
         versionName versioning.name()
     }
     //compileSdkVersion 21
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            useProguard false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
 }
 
 dependencies {
