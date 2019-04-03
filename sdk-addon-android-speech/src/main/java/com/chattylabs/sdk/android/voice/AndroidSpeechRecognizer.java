@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.os.Looper;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
+import android.support.annotation.Nullable;
 
 import com.chattylabs.android.commons.Tag;
 import com.chattylabs.android.commons.ThreadUtils;
@@ -35,7 +36,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
     private final AndroidHandler mainHandler;
     private final Intent speechRecognizerIntent;
     private final Creator<SpeechRecognizer> recognizerCreator;
-    private ThreadUtils.SerialThread serialThread;
+    private @Nullable ThreadUtils.SerialThread serialThread;
     private SpeechRecognizer speechRecognizer;
 
     public AndroidSpeechRecognizer(Application application,
@@ -93,10 +94,12 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                             lock.lock();
                             mainHandler.post(() -> {
                                 speechRecognizer.stopListening();
-                                serialThread.addTask(lock::unlock);
+                                if (serialThread != null)
+                                    serialThread.addTask(lock::unlock);
+                                else if (lock.isLocked()) lock.unlock();
                             });
                         });
-                    else lock.unlock();
+                    else if (lock.isLocked()) lock.unlock();
                 }
             };
             timeout.schedule(task, MIN_VOICE_RECOGNITION_TIME_LISTENING * 3);
@@ -261,7 +264,9 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                 speechRecognizer.setRecognitionListener(getRecognitionListener());
                 //adjustVolumeForBeep();
                 speechRecognizer.startListening(speechRecognizerIntent);
-                serialThread.addTask(lock::unlock);
+                if (serialThread != null)
+                    serialThread.addTask(lock::unlock);
+                else if (lock.isLocked()) lock.unlock();
             });
         });
     }
@@ -284,16 +289,18 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
         super.stop();
         if (serialThread != null)
             serialThread.addTask(() -> {
-            printLock();
-            lock.lock();
-            mainHandler.post(() -> {
-                if (speechRecognizer != null) {
-                    speechRecognizer.stopListening();
-                    logger.v(TAG, "ANDROID VOICE - speechRecognizer stopped");
-                }
-                serialThread.addTask(lock::unlock);
+                printLock();
+                lock.lock();
+                mainHandler.post(() -> {
+                    if (speechRecognizer != null) {
+                        speechRecognizer.stopListening();
+                        logger.v(TAG, "ANDROID VOICE - speechRecognizer stopped");
+                    }
+                    if (serialThread != null)
+                        serialThread.addTask(lock::unlock);
+                });
             });
-        });
+        else if (lock.isLocked()) lock.unlock();
     }
 
     @Override
@@ -304,19 +311,22 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
             speechRecognizer.setRecognitionListener(null);
             if (serialThread != null)
                 serialThread.addTask(() -> {
-                printLock();
-                lock.lock();
-                mainHandler.post(() -> {
-                    try {
-                        if (speechRecognizer != null) {
-                            speechRecognizer.cancel();
-                            logger.v(TAG, "ANDROID VOICE - speechRecognizer canceled");
+                    printLock();
+                    lock.lock();
+                    mainHandler.post(() -> {
+                        try {
+                            if (speechRecognizer != null) {
+                                speechRecognizer.cancel();
+                                logger.v(TAG, "ANDROID VOICE - speechRecognizer canceled");
+                            }
                         }
-                    }
-                    catch (Exception ignore) {}
-                    serialThread.addTask(lock::unlock);
+                        catch (Exception ignore) {}
+                        if (serialThread != null)
+                            serialThread.addTask(lock::unlock);
+                        else if (lock.isLocked()) lock.unlock();
+                    });
                 });
-            });
+            else if (lock.isLocked()) lock.unlock();
         }
     }
 
@@ -354,7 +364,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
             serialThread.addTask(lock::unlock);
             serialThread.shutdown();
             serialThread = null;
-        }
+        } else if (lock.isLocked()) lock.unlock();
         setRmsDebug(false);
         setNoSoundThreshold(0);
         setLowSoundThreshold(0);
