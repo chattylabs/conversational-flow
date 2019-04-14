@@ -12,7 +12,7 @@ versioning {
     }
 }
 
-description = 'Google voice addon'
+description = 'Google Speech Addon'
 
 android {
     defaultConfig {

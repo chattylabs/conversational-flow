@@ -12,7 +12,7 @@ versioning {
     }
 }
 
-description = 'Amazon voice addon'
+description = 'Amazon Speech Addon'
 
 android {
     defaultConfig {

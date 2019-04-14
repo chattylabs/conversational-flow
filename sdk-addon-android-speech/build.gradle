@@ -12,7 +12,7 @@ versioning {
     }
 }
 
-description = 'Android Speech addon (VUI SDK)'
+description = 'Android Speech Addon'
 
 android {
     defaultConfig {
