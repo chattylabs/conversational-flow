@@ -15,7 +15,7 @@ public class MyApplication extends DaggerApplication {
     @dagger.Component(
             modules = {
                     AndroidSupportInjectionModule.class,
-                    DemoModule.class
+                    MyApplicationModule.class
             }
     )
     /* @ApplicationScoped and/or @Singleton */
@@ -25,7 +25,7 @@ public class MyApplication extends DaggerApplication {
     }
 
     @dagger.Module
-    static abstract class DemoModule {
+    static abstract class MyApplicationModule {
 
         @dagger.Provides
         @dagger.Reusable
