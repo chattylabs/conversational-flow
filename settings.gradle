@@ -1,4 +1,5 @@
-include ':demo', ':sdk-conversational-flow-core',
+include ':demo',
+        ':sdk-conversations-core',
         ':sdk-addon-android-speech',
         ':sdk-addon-google-speech',
         ':sdk-addon-amazon-speech'

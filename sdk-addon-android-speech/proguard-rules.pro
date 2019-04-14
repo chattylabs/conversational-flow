@@ -20,5 +20,5 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
--keepnames class com.chattylabs.sdk.android.voice.AndroidSpeechRecognizer
--keepnames class com.chattylabs.sdk.android.voice.AndroidSpeechSynthesizer
+-keepnames class chattylabs.conversations.AndroidSpeechRecognizer
+-keepnames class chattylabs.conversations.AndroidSpeechSynthesizer

@@ -120,7 +120,7 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 +    android:layout_height="match_parent"
 +    android:animateLayoutChanges="true"
 +    android:background="#ffffff"
-+    tools:context="com.chattylabs.demo.voice.CustomizeTheComponentActivity">
++    tools:context="CustomizeTheComponentActivity">
 +
 +    <android.support.constraint.Guideline
 +        android:id="@+id/guideline"
@@ -200,7 +200,7 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 +    android:layout_width="match_parent"
 +    android:layout_height="match_parent"
 +    android:animateLayoutChanges="true"
-+    tools:context="com.chattylabs.demo.voice.CustomizeTheComponentActivity">
++    tools:context="CustomizeTheComponentActivity">
 +
 +    <android.support.constraint.Guideline
 +        android:id="@+id/guideline"
@@ -330,7 +330,7 @@ Index: app/src/main/res/layout/activity_main.xml
 -    android:layout_width="match_parent"
 -    android:layout_height="match_parent"
 -    android:animateLayoutChanges="true"
--    tools:context="com.chattylabs.demo.voice.ConversationCreatorActivity">
+-    tools:context="ConversationCreatorActivity">
 -
 -    <android.support.constraint.Guideline
 -        android:id="@+id/guideline"
@@ -390,7 +390,7 @@ Index: app/src/main/res/layout/activity_conversation_creator.xml
 -    android:layout_width="match_parent"
 -    android:layout_height="match_parent"
 -    android:animateLayoutChanges="true"
--    tools:context="com.chattylabs.demo.voice.ConversationCreatorActivity">
+-    tools:context="ConversationCreatorActivity">
 -
 -    <android.support.constraint.Guideline
 -        android:id="@+id/guideline"
@@ -1911,8 +1911,8 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
          android:supportsRtl="true"
          android:theme="@style/AppTheme">
          <meta-data android:name="net.hockeyapp.android.appIdentifier" android:value="${HOCKEYAPP_APP_ID}" />
--        <activity android:name="com.chattylabs.demo.voice.MainActivity"
-+        <activity android:name="com.chattylabs.demo.voice.BuildFromJsonActivity"
+-        <activity android:name="MainActivity"
++        <activity android:name="BuildFromJsonActivity"
              android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
              android:screenOrientation="portrait"
 -            android:windowSoftInputMode="stateVisible|adjustResize">
@@ -1923,8 +1923,8 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
                  <category android:name="android.intent.category.LAUNCHER" />
              </intent-filter>
          </activity>
--        <activity android:name="com.chattylabs.demo.voice.ConversationCreatorActivity"
-+        <activity android:name="com.chattylabs.demo.voice.CustomizeTheComponentActivity"
+-        <activity android:name="ConversationCreatorActivity"
++        <activity android:name="CustomizeTheComponentActivity"
              android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
              android:screenOrientation="portrait"
 -            android:windowSoftInputMode="stateVisible|adjustResize"/>

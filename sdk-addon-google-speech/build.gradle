@@ -12,7 +12,7 @@ versioning {
     }
 }
 
-description = 'Google Speech addon (VUI SDK)'
+description = 'Google voice addon'
 
 android {
     defaultConfig {
@@ -39,7 +39,7 @@ dependencies {
 
     // Dependencies
     implementation "com.chattylabs:android-commons:$android_commons"
-    compileOnly project(':sdk-conversational-flow-core')
+    compileOnly project(':sdk-conversations-core')
 
     // Google Cloud
     implementation "io.grpc:grpc-okhttp:$grpcVersion"
