@@ -60,11 +60,6 @@ dependencies {
     implementation project(':sdk-addon-android-speech')
     implementation project(':sdk-addon-google-speech')
     implementation project(':sdk-addon-amazon-speech')
-
-    // Test dependencies
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'androidx.test:runner:1.1.0-alpha4'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.0-alpha4'
 }
 
 task copySecretKey(type: Copy) {
