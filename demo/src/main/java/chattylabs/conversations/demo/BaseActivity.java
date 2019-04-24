@@ -13,6 +13,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.Spinner;
 
 import com.chattylabs.android.commons.PermissionsHelper;
@@ -60,6 +61,8 @@ abstract class BaseActivity extends DaggerAppCompatActivity
     SpeechSynthesizer synthesizer;
     SpeechRecognizer recognizer;
 
+    View proceed;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -83,6 +86,7 @@ abstract class BaseActivity extends DaggerAppCompatActivity
     }
 
     void initCommonViews() {
+        proceed = findViewById(R.id.proceed);
         Spinner addonSpinner = findViewById(R.id.addon);
         if (addonSpinner != null) {
             // Create an ArrayAdapter of the addons
@@ -90,7 +94,7 @@ abstract class BaseActivity extends DaggerAppCompatActivity
             ArrayAdapter<String> addonAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, addonList);
             addonAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
             addonSpinner.setAdapter(addonAdapter);
-            addonSpinner.setSelection(0);
+            addonSpinner.setSelection(0, false);
             addonSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override
                 public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -106,6 +110,10 @@ abstract class BaseActivity extends DaggerAppCompatActivity
     }
 
     private void setup() {
+        runOnUiThread(() -> {
+            if (proceed != null) proceed.setEnabled(false);
+        });
+
         component.updateConfiguration(builder ->
                 builder.setGoogleCredentialsResourceFile(() -> R.raw.credential)
                         .setRecognizerServiceType(() -> {
@@ -146,11 +154,14 @@ abstract class BaseActivity extends DaggerAppCompatActivity
                     if (synthesizerStatus == SynthesizerListener.Status.AVAILABLE) {
                         synthesizer = component.getSpeechSynthesizer(this);
                         synthesizer.addFilter(new TextFilterForUrl());
-                    }
-                });
-                component.checkSpeechRecognizerStatus(this, recognizerStatus -> {
-                    if (recognizerStatus == RecognizerListener.Status.AVAILABLE) {
-                        recognizer = component.getSpeechRecognizer(this);
+                        component.checkSpeechRecognizerStatus(this, recognizerStatus -> {
+                            if (recognizerStatus == RecognizerListener.Status.AVAILABLE) {
+                                recognizer = component.getSpeechRecognizer(this);
+                                runOnUiThread(() -> {
+                                    if (proceed != null) proceed.setEnabled(true);
+                                });
+                            }
+                        });
                     }
                 });
             });
@@ -169,11 +180,11 @@ abstract class BaseActivity extends DaggerAppCompatActivity
         switch (item.getItemId()) {
             case R.id.demo_custom_conversation:
                 ContextCompat.startActivity(this,
-                        new Intent(this, TestingAddons.class), null);
+                        new Intent(this, TestingAddonsActivity.class), null);
                 return true;
             case R.id.demo_build_from_json:
                 ContextCompat.startActivity(this,
-                        new Intent(this, BuildFromJson.class), null);
+                        new Intent(this, BuildFromJsonActivity.class), null);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);

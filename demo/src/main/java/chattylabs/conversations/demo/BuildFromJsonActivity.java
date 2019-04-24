@@ -26,9 +26,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 
-public class BuildFromJson extends BaseActivity {
+public class BuildFromJsonActivity extends BaseActivity {
 
-    private static final String TAG = Tag.make(BuildFromJson.class);
+    private static final String TAG = Tag.make(BuildFromJsonActivity.class);
 
     private ArrayAdapter<Spanned> listViewAdapter;
 
@@ -41,11 +41,7 @@ public class BuildFromJson extends BaseActivity {
     }
 
     private void initViews() {
-        ViewGroup root = findViewById(R.id.root);
-        Button proceed = findViewById(R.id.proceed);
-        proceed.setOnClickListener(v -> {
-            loadConversation();
-        });
+        proceed.setOnClickListener(v -> loadConversation());
 
         ListView conversationListView = findViewById(R.id.conversation);
         listViewAdapter = new ArrayAdapter<>(this, R.layout.item_block,
@@ -74,7 +70,7 @@ public class BuildFromJson extends BaseActivity {
                 VoiceMessage message = VoiceMessage.newBuilder()
                         .setText(text)
                         .setOnReady(node -> {
-                            addIntoAdapter(text);
+                            addIntoAdapter(node.text);
                         }).build();
 
                 VoiceMatch matches = null;
@@ -102,7 +98,7 @@ public class BuildFromJson extends BaseActivity {
                             .setOnNotMatched((node, strings) -> {
                                 removeLastFromAdapter();
                                 addIntoAdapter("<b>You said:</b> " + strings);
-                                addIntoAdapter("I was not expecting that. Please try again!");
+                                addIntoAdapter("I did not expect that. Please try again!");
                             }).build();
                 }
 

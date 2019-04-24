@@ -2,9 +2,9 @@ package chattylabs.conversations;
 
 import com.chattylabs.android.commons.internal.ILogger;
 import com.chattylabs.android.commons.internal.ILoggerImpl;
-import chattylabs.conversations.demo.BuildFromJson;
+import chattylabs.conversations.demo.BuildFromJsonActivity;
 
-import chattylabs.conversations.demo.TestingAddons;
+import chattylabs.conversations.demo.TestingAddonsActivity;
 import dagger.android.AndroidInjector;
 import dagger.android.ContributesAndroidInjector;
 import dagger.android.support.AndroidSupportInjectionModule;
@@ -38,10 +38,10 @@ public class MyApplication extends DaggerApplication {
         abstract ILogger provideLogger(ILoggerImpl logger);
 
         @ContributesAndroidInjector
-        abstract TestingAddons injectorActivity_1();
+        abstract TestingAddonsActivity injectorActivity_1();
 
         @ContributesAndroidInjector
-        abstract BuildFromJson injectorActivity_2();
+        abstract BuildFromJsonActivity injectorActivity_2();
     }
 
     @Override

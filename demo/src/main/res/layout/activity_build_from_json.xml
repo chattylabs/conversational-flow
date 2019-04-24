@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:animateLayoutChanges="true"
     android:background="#ffffff"
-    tools:context="chattylabs.conversations.demo.BuildFromJson">
+    tools:context="chattylabs.conversations.demo.BuildFromJsonActivity">
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline"

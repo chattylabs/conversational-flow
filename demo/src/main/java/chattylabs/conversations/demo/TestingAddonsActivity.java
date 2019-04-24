@@ -26,9 +26,9 @@ import chattylabs.conversations.SynthesizerListener;
 import static chattylabs.conversations.ConversationalFlow.matches;
 
 
-public class TestingAddons extends BaseActivity {
+public class TestingAddonsActivity extends BaseActivity {
 
-    private static final String TAG = Tag.make(TestingAddons.class);
+    private static final String TAG = Tag.make(TestingAddonsActivity.class);
 
     // Constants
     private static final int CHECK = 3;
@@ -233,7 +233,7 @@ public class TestingAddons extends BaseActivity {
         actionAdapter = ArrayAdapter.createFromResource(this, R.array.actions, android.R.layout.simple_spinner_item);
         actionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         actionSpinner.setAdapter(actionAdapter);
-        actionSpinner.setSelection(0);
+        actionSpinner.setSelection(0, false);
         actionSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
