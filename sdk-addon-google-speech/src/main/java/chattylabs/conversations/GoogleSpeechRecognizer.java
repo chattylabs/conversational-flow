@@ -2,26 +2,32 @@ package chattylabs.conversations;
 
 import android.app.Application;
 import android.content.Context;
+import android.media.MediaPlayer;
 import android.os.Bundle;
-import android.os.ConditionVariable;
 import android.speech.SpeechRecognizer;
+
 import androidx.annotation.RawRes;
+import chattylabs.conversations.RecognizerListener.Status;
+import chattylabs.conversations.addon.google.R;
+import kotlin.Unit;
+
 import android.text.TextUtils;
 
 import com.chattylabs.android.commons.Tag;
-import com.chattylabs.android.commons.ThreadUtils;
 import com.chattylabs.android.commons.internal.ILogger;
-import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.api.gax.core.FixedExecutorProvider;
+import com.google.api.gax.rpc.ClientStream;
+import com.google.api.gax.rpc.ResponseObserver;
+import com.google.api.gax.rpc.StreamController;
 import com.google.auth.oauth2.GoogleCredentials;
-import com.google.auth.oauth2.ServiceAccountCredentials;
-import com.google.cloud.speech.v1p1beta1.RecognitionAudio;
-import com.google.cloud.speech.v1p1beta1.RecognitionConfig;
-import com.google.cloud.speech.v1p1beta1.RecognizeResponse;
-import com.google.cloud.speech.v1p1beta1.SpeechClient;
-import com.google.cloud.speech.v1p1beta1.SpeechRecognitionResult;
-import com.google.cloud.speech.v1p1beta1.SpeechSettings;
-import com.google.cloud.speech.v1p1beta1.stub.SpeechStubSettings;
+import com.google.cloud.speech.v1.SpeechRecognitionAlternative;
+import com.google.cloud.speech.v1.SpeechSettings;
+import com.google.cloud.speech.v1.RecognitionConfig;
+import com.google.cloud.speech.v1.SpeechClient;
+import com.google.cloud.speech.v1.StreamingRecognitionConfig;
+import com.google.cloud.speech.v1.StreamingRecognitionResult;
+import com.google.cloud.speech.v1.StreamingRecognizeRequest;
+import com.google.cloud.speech.v1.StreamingRecognizeResponse;
 import com.google.protobuf.ByteString;
 
 import java.io.IOException;
@@ -33,264 +39,370 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static chattylabs.conversations.ConversationalFlow.selectMostConfidentResult;
+import static chattylabs.conversations.RecognizerListener.*;
 
 public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
     private static final String TAG = Tag.make("GoogleSpeechRecognizer");
 
-    private static final int TERMINATION_TIMEOUT = 2000;
-
-    private final ReentrantLock lock = new ReentrantLock();
-
-    private final ConditionVariable mCondVar = new ConditionVariable();
     // States
+    private boolean rmsDebug; // released
+    private float noSoundThreshold; // released
+    private float lowSoundThreshold; // released
 
     // Resources
     private final Application application;
-    private ThreadUtils.SerialThread serialThread;
-    private AndroidAudioRecorder mAudioRecorder;
-    private SpeechClient speech;
-    private Bundle lastResult;
+    private final AudioEmitter audioEmitter;
+    private GoogleSpeechRecognitionAdapter listener;
+    private SpeechClient stt;
+    private RecognitionConfig config;
+    private ClientStream<StreamingRecognizeRequest> requestClientStream;
+    private boolean hasResults;
+    private Timer timer;
+    private long currentTime;
 
     public GoogleSpeechRecognizer(Application application,
-                           ComponentConfig configuration,
-                           AndroidAudioManager audioManager,
-                           BluetoothSco bluetoothSco,
-                           ILogger logger) {
-        super(configuration, audioManager, bluetoothSco, logger);
-        this.application = application;
+                                  ComponentConfig configuration,
+                                  AndroidAudioManager audioManager,
+                                  BluetoothSco bluetoothSco,
+                                  ILogger logger) {
+        super(configuration, audioManager, bluetoothSco, logger, TAG);
         this.release();
-        this.serialThread = ThreadUtils.newSerialThread();
+        this.application = application;
+        this.audioEmitter = new AudioEmitter();
+    }
+
+    private boolean isSttNull() {
+        return stt == null;
+    }
+
+    private void prepare(OnPrepared onPrepared) {
+        if (isSttNull() || stt.isShutdown() || stt.isTerminated()) {
+            RecognitionConfig.AudioEncoding encoding =
+                    RecognitionConfig.AudioEncoding.LINEAR16;
+            config = RecognitionConfig.newBuilder()
+                    //.setMaxAlternatives(1)
+                    //.setProfanityFilter(true)
+                    .setEnableAutomaticPunctuation(true)
+                    .setEncoding(encoding)
+                    .setSampleRateHertz(audioEmitter.getSampleRate())
+                    .setLanguageCode(getDefaultLanguageCode())
+                    .build();
+            try {
+                this.stt = generateFromRawFile(
+                        application, getConfiguration().getGoogleCredentialsResourceFile());
+                onPrepared.execute(Status.AVAILABLE);
+            } catch (Exception e) {
+                logger.logException(e);
+                shutdown();
+                onPrepared.execute(Status.UNAVAILABLE_ERROR);
+            }
+        } else if (!stt.isShutdown()) {
+            onPrepared.execute(Status.AVAILABLE);
+        }
     }
 
     @Override
-    public void checkStatus(RecognizerListener.OnStatusChecked listener) {
-        listener.execute(RecognizerListener.Status.AVAILABLE);
+    public void checkStatus(OnStatusChecked onStatusChecked) {
+        onStatusChecked.execute(Status.AVAILABLE);
     }
 
-    private final AndroidAudioRecorder.Callback mVoiceCallback = new AndroidAudioRecorder.Callback() {
+    private final ResponseObserver<StreamingRecognizeResponse> observer =
+            new ResponseObserver<StreamingRecognizeResponse>() {
 
-        @Override
-        public void onVoiceStart() {
-            getRecognitionListener().onReadyForSpeech(null);
-        }
+                @Override
+                public void onStart(StreamController controller) {
+                }
 
-        @Override
-        public void onVoice(byte[] data, int size) {
-            RecognitionConfig.AudioEncoding encoding =
-                    RecognitionConfig.AudioEncoding.LINEAR16;
-            RecognitionConfig config = RecognitionConfig.newBuilder()
-                    //.setMaxAlternatives(1)
-                    //.setProfanityFilter(true)
-                    .setEncoding(encoding)
-                    .setSampleRateHertz(mAudioRecorder.getSampleRate())
-                    .setLanguageCode(getDefaultLanguageCode())
-                    .build();
-
-            RecognitionAudio audio = RecognitionAudio.newBuilder()
-                    .setContent(ByteString.copyFrom(data))
-                    .build();
-
-            try (SpeechClient speech = generateFromRawFile(
-                    application, getConfiguration().getGoogleCredentialsResourceFile())) {
-                RecognizeResponse response = speech.recognize(config, audio);
-                if (response.getResultsCount() > 0 || response.getResultsList().size() > 0) {
-                    SpeechRecognitionResult result = response.getResults(0);
-                    if (result.getAlternativesCount() > 0) {
-                        String text = result.getAlternatives(0).getTranscript();
-                        if (!TextUtils.isEmpty(text)) {
-                            Bundle bundle = new Bundle();
-                            ArrayList<String> textList = new ArrayList<>();
-                            textList.add(text);
-                            bundle.putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION, textList);
-                            bundle.putFloatArray(SpeechRecognizer.CONFIDENCE_SCORES, new float[]{1});
+                @Override
+                public void onResponse(StreamingRecognizeResponse response) {
+                    logger.d(TAG, "response [%d]", response.getResultsCount());
+                    if (response.getResultsCount() > 0 && requestClientStream != null) {
+                        currentTime = System.currentTimeMillis();
+                        hasResults = true;
+                        StreamingRecognitionResult result = response.getResults(0);
+                        SpeechRecognitionAlternative alternative = result.getAlternatives(0);
+                        Bundle bundle = new Bundle();
+                        ArrayList<String> textList = new ArrayList<>();
+                        textList.add(alternative.getTranscript());
+                        bundle.putStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION, textList);
+                        bundle.putFloatArray(SpeechRecognizer.CONFIDENCE_SCORES, new float[]{
+                                alternative.getConfidence()
+                        });
+                        if (result.getIsFinal()) {
+                            getRecognitionListener().onResults(bundle);
+                        } else {
                             getRecognitionListener().onPartialResults(bundle);
                         }
                     }
                 }
-            } catch (Exception e) {}
-        }
 
-        @Override
-        public void onVoiceError(int error) {
-            getRecognitionListener().onError(error);
-        }
-
-        @Override
-        public void onVoiceEnd() {
-            stop();
-            if (lastResult != null) getRecognitionListener().onResults(lastResult);
-            getRecognitionListener().onEndOfSpeech();
-        }
-
-    };
-
-    private final GoogleSpeechRecognitionAdapter listener = new GoogleSpeechRecognitionAdapter() {
-        private int intents;
-        private long elapsedTime;
-        private Timer timeout;
-        private TimerTask task;
-
-        private void releaseTimeout() {
-            if (timeout != null) {
-                logger.w(TAG, "GOOGLE VOICE - releasing previous timeout");
-                task.cancel();
-                timeout.cancel();
-                timeout = null;
-                task = null;
-            }
-        }
-
-        @Override
-        public void startTimeout() {
-            releaseTimeout();
-            logger.w(TAG, "GOOGLE VOICE - started timeout");
-            timeout = new Timer();
-            task = new TimerTask() {
                 @Override
-                public void run() {
-                    logger.w(TAG, "GOOGLE VOICE - reached timeout");
-                    serialThread.addTask(() -> {
-                        printLock();
-                        lock.lock();
-                        try {
-                            //mVoiceCallback.onVoiceEnd();
-                        } catch (Exception e) {
-                            logger.logException(e);
-                        } finally {
-                            lock.unlock();
-                        }
-                    });
+                public void onError(Throwable t) {
+                    logger.logException(t);
+                    getRecognitionListener().onError(Status.UNKNOWN_ERROR);
+                }
+
+                @Override
+                public void onComplete() {
                 }
             };
-            timeout.schedule(task, MIN_VOICE_RECOGNITION_TIME_LISTENING * 3);
-        }
-
-        private void cleanup() {
-            elapsedTime = System.currentTimeMillis();
-            intents = 0;
-            logger.v(TAG, "GOOGLE VOICE - cleanup elapsedTime & partial intents");
-        }
-
-        @Override
-        public void reset() {
-            releaseTimeout();
-            abandonAudioFocus();
-            cleanup();
-            _setOnError(null);
-            _setOnPartialResults(null);
-            _setOnResults(null);
-            _setOnMostConfidentResult(null);
-            _setOnReady(null);
-        }
-
-        @Override
-        public void onReadyForSpeech(Bundle params) {
-            requestAudioFocus();
-            startBeep();
-            super.onReadyForSpeech(params);
-        }
-
-        @Override
-        public void onError(int error) {
-            logger.e(TAG, "ANDROID VOICE - error: " + GoogleSpeechRecognizer.getErrorType(error));
-            // We consider 2 sec as the minimum to record audio
-            // If it last less than that, there was an audio issue
-            // So potentially we retry listening again
-            boolean stoppedTooEarly = (System.currentTimeMillis() - elapsedTime) < MIN_VOICE_RECOGNITION_TIME_LISTENING;
-            RecognizerListener.OnError errorListener = _getOnError();
-            cancel();
-            if (errorListener != null) {
-                if (needRetry(error)) {
-                    errorListener.execute(RecognizerListener.Status.UNAVAILABLE_ERROR, error);
-                }
-                else if (stoppedTooEarly) {
-                    errorListener.execute(RecognizerListener.Status.STOPPED_TOO_EARLY_ERROR, error);
-                }
-//                else if (soundLevel == NO_SOUND) {
-//                    errorListener.execute(NO_SOUND_ERROR, error);
-//                }
-//                else if (soundLevel == LOW_SOUND) {
-//                    errorListener.execute(LOW_SOUND_ERROR, error);
-//                }
-                else if (intents > 0) {
-                    errorListener.execute(RecognizerListener.Status.AFTER_PARTIALS_ERROR, error);
-                }
-                else if (isTryAgain()) {
-                    errorListener.execute(error == SpeechRecognizer.ERROR_NO_MATCH ?
-                            RecognizerListener.Status.UNKNOWN_ERROR :
-                            RecognizerListener.Status.RETRY_ERROR, error);
-                }
-                else { // Restore ANDROID VOICE
-                    errorListener.execute(RecognizerListener.Status.UNKNOWN_ERROR, error);
-                }
-            }
-        }
-
-        @Override
-        public void onResults(Bundle results) {
-            releaseTimeout();
-            RecognizerListener.OnResults resultsListener = _getOnResults();
-            RecognizerListener.OnMostConfidentResult mostConfidentResult = _getOnMostConfidentResult();
-            if (resultsListener == null && mostConfidentResult == null) return;
-            List<String> textResults = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-            float[] confidences = results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
-            if (textResults != null && (textResults.size() > 1 ||
-                    (!textResults.isEmpty() && textResults.get(0).length() > 0))) {
-                reset();
-                if (resultsListener != null) {
-                    logger.v(TAG, "GOOGLE VOICE - results: " + textResults);
-                    resultsListener.execute(textResults, confidences);
-                }
-                if (mostConfidentResult != null) {
-                    String result = selectMostConfidentResult(textResults, confidences);
-                    logger.v(TAG, "GOOGLE VOICE - confident result: " + result);
-                    mostConfidentResult.execute(result);
-                }
-            }
-            else {
-                logger.e(TAG, "GOOGLE VOICE - NO results");
-                RecognizerListener.OnError listener = _getOnError();
-                reset();
-                if (listener != null) listener.execute(RecognizerListener.Status.EMPTY_RESULTS_ERROR, -1);
-            }
-        }
-
-        @Override
-        public void onPartialResults(Bundle partialResults) {
-            logger.v(TAG, "GOOGLE VOICE - onPartialResults");
-            releaseTimeout();
-            intents++;
-            startTimeout(); lastResult = partialResults;
-            RecognizerListener.OnPartialResults listener = _getOnPartialResults();
-            if (listener == null) return;
-            List<String> textResults = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-            float[] confidences = partialResults.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
-            if (textResults != null && (textResults.size() > 1 ||
-                    (!textResults.isEmpty() && textResults.get(0).length() > 0))) {
-                logger.v(TAG, "GOOGLE VOICE - partial results: " + textResults);
-                listener.execute(textResults, confidences);
-            }
-        }
-
-        private boolean needRetry(int error) {
-            switch (error) {
-                default:
-                    return false;
-            }
-        }
-    };
 
     @Override
     GoogleSpeechRecognitionAdapter getRecognitionListener() {
+        if (listener == null) {
+            listener = new GoogleSpeechRecognitionAdapter() {
+                private int intents;
+                private long elapsedTime;
+
+                private void cleanup() {
+                    logger.v(TAG, "reset elapsedTime and intents");
+                    elapsedTime = System.currentTimeMillis();
+                    intents = 0;
+                }
+
+                @Override
+                public void reset() {
+                    cleanup();
+                    super.setTryAgain(false);
+                    _setOnError(null);
+                    _setOnPartialResults(null);
+                    _setOnResults(null);
+                    _setOnMostConfidentResult(null);
+                    _setOnReady(null);
+                }
+
+                @Override
+                public void onReadyForSpeech(Bundle params) {
+                    requestAudioFocus();
+                    startBeep(true);
+                    super.onReadyForSpeech(params);
+                }
+
+                @Override
+                public void onEndOfSpeech() {
+                    startBeep(false);
+                    super.onEndOfSpeech();
+                }
+
+                @Override
+                public void onError(int error) {
+                    logger.e(TAG, "error: %s", GoogleSpeechRecognizer.getErrorType(error));
+                    OnError errorListener = _getOnError();
+                    onEndOfSpeech();
+                    // We consider 2 sec as the minimum to record audio
+                    // If it last less than that, there was an audio issue
+                    // So potentially we retry listening again
+                    boolean stoppedTooEarly = (System.currentTimeMillis() - elapsedTime)
+                            < MIN_VOICE_RECOGNITION_TIME_LISTENING;
+                    cancel();
+                    if (errorListener != null) {
+                        if (needRetry(error)) {
+                            errorListener.execute(Status.UNAVAILABLE_ERROR, error);
+                        } else if (stoppedTooEarly) {
+                            errorListener.execute(Status.STOPPED_TOO_EARLY_ERROR, error);
+                        } else if (intents > 0) {
+                            errorListener.execute(Status.AFTER_PARTIALS_ERROR, error);
+                        } else if (tryAgainRequired()) {
+                            errorListener.execute(error == SpeechRecognizer.ERROR_NO_MATCH ?
+                                    Status.UNKNOWN_ERROR :
+                                    Status.RETRY_ERROR, error);
+                        } else { // Restore ANDROID VOICE
+                            errorListener.execute(Status.UNKNOWN_ERROR, error);
+                        }
+                    }
+                }
+
+                @Override
+                public void onResults(Bundle results) {
+                    logger.v(TAG, "onResults");
+                    onEndOfSpeech();
+                    List<String> list;
+                    OnResults onResults = _getOnResults();
+                    OnMostConfidentResult onMostConfidentResult = _getOnMostConfidentResult();
+                    // if none of both are setup, we can't continue
+                    if (onResults == null && onMostConfidentResult == null) return;
+                    list = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                    float[] confidences = results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
+                    if (list != null && !list.isEmpty()) {
+                        stop();
+                        if (onResults != null) {
+                            logger.v(TAG, "results: %s", list);
+                            onResults.execute(list, confidences);
+                        }
+                        if (onMostConfidentResult != null) {
+                            String result = selectMostConfidentResult(list, confidences);
+                            logger.v(TAG, "confident result: %s", result);
+                            onMostConfidentResult.execute(result);
+                        }
+                    } else {
+                        logger.e(TAG, "No results");
+                        OnError onError = _getOnError();
+                        stop();
+                        if (onError != null) {
+                            onError.execute(Status.EMPTY_RESULTS_ERROR, -1);
+                        }
+                    }
+                }
+
+                @Override
+                public void onPartialResults(Bundle results) {
+                    logger.v(TAG, "onPartialResults");
+                    List<String> list;
+                    intents++;
+                    OnPartialResults onPartialResults = _getOnPartialResults();
+                    // if this is not setup, we can't continue
+                    if (onPartialResults == null) return;
+                    list = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                    float[] confidences = results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
+                    if (list != null && !list.isEmpty()) {
+                        logger.v(TAG, "partial results: %s", list);
+                        onPartialResults.execute(list, confidences);
+                    }
+                }
+
+                private boolean needRetry(int error) {
+                    switch (error) {
+                        default:
+                            return false;
+                    }
+                }
+            };
+        }
+
         return listener;
     }
 
     @Override
-    String getTag() {
-        return TAG;
+    void startListening() {
+        logger.i(TAG, "started listening");
+
+        AtomicBoolean isFirstRequest = new AtomicBoolean(true);
+
+        prepare(recognizerStatus -> {
+            if (recognizerStatus == Status.AVAILABLE) {
+
+                getRecognitionListener().onReadyForSpeech(null);
+                startElapsedTime();
+
+                audioEmitter.start((buffer, size) -> {
+                    StreamingRecognizeRequest.Builder builder = StreamingRecognizeRequest.newBuilder()
+                            .setAudioContent(ByteString.copyFrom(buffer, 0, size));
+
+                    if (requestClientStream == null)
+                        requestClientStream = stt.streamingRecognizeCallable().splitCall(observer);
+
+                    // if first time, include the config
+                    if (isFirstRequest.getAndSet(false)) {
+                        StreamingRecognitionConfig configBuilder = StreamingRecognitionConfig.newBuilder()
+                                .setConfig(config)
+                                .setInterimResults(true)
+                                .setSingleUtterance(false)
+                                .build();
+                        builder.setStreamingConfig(configBuilder);
+                    }
+
+                    requestClientStream.send(builder.build());
+
+                    return Unit.INSTANCE;
+                });
+
+            } else {
+                logger.e(TAG, "internal ERROR");
+                getRecognitionListener().onError(recognizerStatus);
+            }
+        });
+    }
+
+    private void startElapsedTime() {
+        currentTime = System.currentTimeMillis();
+        timer = new Timer();
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override public void run() {
+                if (System.currentTimeMillis() - currentTime >
+                        TimeUnit.SECONDS.toMillis(hasResults ?
+                                (getConfiguration().isSpeechDictation() ? 5 : 2) : 3)) {
+                    if (hasResults) {
+                        getRecognitionListener().onEndOfSpeech();
+                        stop();
+                    } else
+                        getRecognitionListener().onError(Status.EMPTY_RESULTS_ERROR);
+                }
+            }
+        }, 0, TimeUnit.SECONDS.toMillis(1));
+    }
+
+    private void stopElapsedTime() {
+        if (timer != null) timer.cancel();
+    }
+
+    private void startBeep(boolean opening) {
+        MediaPlayer mp = MediaPlayer.create(application, opening ? R.raw.open_beep : R.raw.close_beep);
+        mp.setOnCompletionListener(MediaPlayer::release);
+        mp.start();
+    }
+
+    private SpeechClient generateFromRawFile(Context context,
+                                             @RawRes int rawResourceId) throws IOException {
+        final InputStream stream = context.getResources().openRawResource(rawResourceId);
+        return SpeechClient.create(SpeechSettings.newBuilder()
+                .setExecutorProvider(FixedExecutorProvider.create(Executors.newScheduledThreadPool(
+                        Math.max(2, Math.min(Runtime.getRuntime().availableProcessors() - 1, 4))
+                )))
+                .setCredentialsProvider(() -> GoogleCredentials.fromStream(stream)).build());
+    }
+
+    @Override
+    public void setRmsDebug(boolean rmsDebug) {
+        this.rmsDebug = rmsDebug;
+    }
+
+    @Override
+    public void setNoSoundThreshold(float maxValue) {
+        this.noSoundThreshold = maxValue;
+    }
+
+    @Override
+    public void setLowSoundThreshold(float maxValue) {
+        this.lowSoundThreshold = maxValue;
+    }
+
+    @Override
+    public void stop() {
+        logger.w(TAG, "stop");
+        // Cancel timeout
+        stopElapsedTime();
+        // Stop recording
+        if (audioEmitter != null) audioEmitter.stop();
+        // Close Streaming
+        if (requestClientStream != null && requestClientStream.isSendReady()) {
+            requestClientStream.closeSend();
+        }
+        // Stop Cloud Speech API
+        if (stt != null && !stt.isShutdown()) {
+            stt.close();
+            stt.shutdown();
+        }
+        hasResults = false;
+        stt = null;
+        requestClientStream = null;
+        super.stop();
+    }
+
+    @Override
+    public void cancel() {
+        logger.w(TAG, "cancel");
+        stop();
+        super.cancel();
+    }
+
+    @Override
+    public void shutdown() {
+        logger.w(TAG, "shutdown");
+        cancel();
+        super.shutdown();
     }
 
     private String getDefaultLanguageCode() {
@@ -303,139 +415,6 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
             language.append(country);
         }
         return language.toString();
-    }
-
-    private void printLock() {
-        logger.d(TAG, "isHeldByCurrentThread: %s, isLocked: %s, getHoldCount: %s",
-                lock.isHeldByCurrentThread(), lock.isLocked(), lock.getHoldCount());
-    }
-
-    @Override
-    void startListening() {
-        logger.i(TAG, "GOOGLE VOICE - started listening");
-        if (serialThread == null) {
-            serialThread = ThreadUtils.newSerialThread();
-        }
-        serialThread.addTask(() -> {
-            printLock();
-            lock.lock();
-            getRecognitionListener().startTimeout();
-            try {
-//                if (this.speech == null) {
-//                    this.speech = generateFromRawFile(
-//                            application, getConfiguration().getGoogleCredentialsResourceFile());
-//                }
-                startVoiceRecorder();
-            } catch (Exception e) {
-                logger.logException(e);
-                listener.onError(-1);
-            } finally {
-                lock.unlock();
-            }
-        });
-    }
-
-    private void startBeep() {
-
-    }
-
-    private SpeechClient generateFromRawFile(Context context, @RawRes int rawResourceId) throws IOException {
-        final InputStream stream = context.getResources().openRawResource(rawResourceId);
-        final GoogleCredentials credentials = ServiceAccountCredentials.fromStream(stream)
-                .createScoped(SpeechStubSettings.getDefaultServiceScopes());
-        return SpeechClient.create(SpeechSettings.newBuilder()
-                .setExecutorProvider(
-                        FixedExecutorProvider.create(
-                                Executors.newScheduledThreadPool(
-                                        Math.max(2, Math.min(Runtime.getRuntime().availableProcessors() - 1, 4))
-                                )
-                        )
-                )
-                .setCredentialsProvider(
-                        FixedCredentialsProvider.create(credentials)
-                ).build());
-    }
-
-    private void startVoiceRecorder() {
-        stopVoiceRecorder();
-        mAudioRecorder = new AndroidAudioRecorder(mVoiceCallback);
-        mAudioRecorder.start();
-    }
-
-    private void stopVoiceRecorder() {
-        if (mAudioRecorder != null) {
-            mAudioRecorder.stop();
-            mAudioRecorder = null;
-        }
-    }
-
-    @Override
-    public void stop() {
-        super.stop();
-        // Stop recording
-        stopVoiceRecorder();
-        if (serialThread != null) serialThread.addTask(lock::unlock);
-    }
-
-    @Override
-    public void cancel() {
-        super.cancel();
-        // Stop recording
-        stopVoiceRecorder();
-        // Stop Cloud Speech API
-        if (speech != null) {
-            speech.shutdownNow();
-            try {
-                speech.awaitTermination(TERMINATION_TIMEOUT, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) {
-                logger.logException(e);
-            }
-        }
-        release();
-    }
-
-    @Override
-    public void shutdown() {
-        logger.w(TAG, "GOOGLE VOICE - shutting down");
-        super.shutdown();
-        // Stop recording
-        stopVoiceRecorder();
-        // Stop Cloud Speech API
-        if (speech != null) {
-            speech.shutdown();
-            try {
-                speech.awaitTermination(TERMINATION_TIMEOUT, TimeUnit.MILLISECONDS);
-                logger.v(TAG, "GOOGLE VOICE - speechRecognizer destroyed");
-            } catch (InterruptedException e) {
-                logger.logException(e);
-            }
-        }
-        release();
-    }
-
-    @Override
-    public void release() {
-        super.release();
-        if (serialThread != null) serialThread.addTask(lock::unlock);
-        if (speech != null) {
-            speech.close();
-            speech = null;
-        }
-    }
-
-    @Override
-    public void setRmsDebug(boolean debug) {
-
-    }
-
-    @Override
-    public void setNoSoundThreshold(float maxValue) {
-
-    }
-
-    @Override
-    public void setLowSoundThreshold(float maxValue) {
-
     }
 
     public static String getErrorType(int error) {

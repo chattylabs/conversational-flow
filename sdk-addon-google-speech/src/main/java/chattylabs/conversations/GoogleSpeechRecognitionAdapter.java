@@ -69,7 +69,7 @@ abstract class GoogleSpeechRecognitionAdapter implements RecognizerUtteranceList
     }
 
     @Override
-    public boolean isTryAgain() {
+    public boolean tryAgainRequired() {
         return tryAgain;
     }
 

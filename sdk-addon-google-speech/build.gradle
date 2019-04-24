@@ -31,7 +31,7 @@ android {
 }
 
 ext {
-    grpcVersion = '1.13.1'
+    grpcVersion = '1.19.0'
 }
 
 dependencies {
@@ -43,8 +43,8 @@ dependencies {
 
     // Google Cloud
     implementation "io.grpc:grpc-okhttp:$grpcVersion"
-    implementation "com.google.cloud:google-cloud-texttospeech:0.55.0-beta"
-    implementation "com.google.cloud:google-cloud-speech:0.55.0-beta"
+    implementation "com.google.cloud:google-cloud-texttospeech:0.88.0-beta"
+    implementation "com.google.cloud:google-cloud-speech:1.0.0"
 }
 
 apply from: '../publish.gradle'
