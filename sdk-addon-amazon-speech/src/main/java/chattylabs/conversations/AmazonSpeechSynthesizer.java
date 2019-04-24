@@ -24,7 +24,6 @@ import java.util.Map;
 public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     private static final String TAG = Tag.make("AmazonSpeechSynthesizer");
-    private static final String LOG_LABEL = "AMAZON TTS";
 
     private final Application mApplication;
     private final LanguageCode mLanguageCode;
@@ -39,14 +38,9 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
                             AndroidAudioManager audioManager,
                             BluetoothSco bluetoothSco,
                             ILogger logger) {
-        super(configuration, audioManager, bluetoothSco, logger);
+        super(configuration, audioManager, bluetoothSco, logger, TAG);
         mApplication = application;
         mLanguageCode = LanguageUtil.getDeviceLanguageCode(configuration.getSpeechLanguage());
-    }
-
-    @Override
-    String getTag() {
-        return TAG;
     }
 
     @Override
@@ -71,16 +65,11 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     private SynthesizerUtteranceListener createUtterancesListener() {
         return new BaseSynthesizerUtteranceListener(this,
-                BaseSynthesizerUtteranceListener.Mode.DELEGATE) {
-            @Override
-            String getTtsLogLabel() {
-                return LOG_LABEL;
-            }
-        };
+                BaseSynthesizerUtteranceListener.Mode.DELEGATE, TAG);
     }
 
     @Override
-    void executeOnTtsReady(String utteranceId, String text, HashMap<String, String> params) {
+    void executeOnEngineReady(String utteranceId, String text) {
         prepare(synthesizerStatus -> {
 
             if (synthesizerStatus != SynthesizerListener.Status.SUCCESS) {
@@ -156,11 +145,6 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
     }
 
     @Override
-    HashMap<String, String> buildParams(String uId, String s) {
-        return null;
-    }
-
-    @Override
     boolean isTtsNull() {
         return mAmazonSpeechClient == null;
     }
@@ -171,13 +155,9 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
     }
 
     @Override
-    SynthesizerUtteranceListener createUtteranceListener(SynthesizerListener[] listeners) {
-        return new BaseSynthesizerUtteranceListener(this) {
-            @Override
-            String getTtsLogLabel() {
-                return LOG_LABEL;
-            }
-        };
+    SynthesizerUtteranceListener createDelegateUtteranceListener() {
+        return new BaseSynthesizerUtteranceListener(this,
+                BaseSynthesizerUtteranceListener.Mode.DELEGATE, TAG);
     }
 
     @Override
