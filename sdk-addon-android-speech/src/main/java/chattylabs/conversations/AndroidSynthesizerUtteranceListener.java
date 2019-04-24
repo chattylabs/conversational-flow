@@ -1,30 +1,44 @@
 package chattylabs.conversations;
 
+import android.content.Context;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
+
+import com.chattylabs.android.commons.Tag;
+
 import androidx.annotation.NonNull;
 
 class AndroidSynthesizerUtteranceListener extends BaseSynthesizerUtteranceListener {
-
-    private static final String LOG_LABEL = "ANDROID TTS";
+    private static final String TAG = Tag.make("AndroidSynthesizerUtteranceListener");
 
     private final AndroidSynthesizerUtteranceSupplier supplier;
     private final UtteranceProgressListener utteranceProgressListener;
 
-    AndroidSynthesizerUtteranceListener(@NonNull BaseSpeechSynthesizer speechSynthesizer,
+    AndroidSynthesizerUtteranceListener(@NonNull Context context,
+                                        @NonNull BaseSpeechSynthesizer speechSynthesizer,
                                         @NonNull AndroidSynthesizerUtteranceSupplier supplier,
                                         @Mode int mode) {
-        super(speechSynthesizer, mode);
+        super(speechSynthesizer, mode, TAG);
         this.supplier = supplier;
         utteranceProgressListener = new UtteranceProgressListener() {
+            private String onStarted;
+
             @Override
             public void onStart(String s) {
-                AndroidSynthesizerUtteranceListener.this.onStart(s);
+                // https://android.googlesource.com/platform/cts/+/master/tests/tests/speech/src/android/speech/tts/cts/TextToSpeechWrapper.java#232
+                //
+                // Due to a bug in the framework onStart() is called twice for
+                // synthesizeToFile requests.
+                if (onStarted == null || !onStarted.equals(s)) {
+                    onStarted = s;
+                    AndroidSynthesizerUtteranceListener.this.onStart(s);
+                }
             }
 
             @Override
             public void onDone(String s) {
-                AndroidSynthesizerUtteranceListener.this.onDone(s);
+                speechSynthesizer.handleSynthesizedFile(context,
+                        AndroidSynthesizerUtteranceListener.this, s);
             }
 
             @Override
@@ -39,16 +53,17 @@ class AndroidSynthesizerUtteranceListener extends BaseSynthesizerUtteranceListen
         };
     }
 
-    AndroidSynthesizerUtteranceListener(@NonNull BaseSpeechSynthesizer speechSynthesizer,
+    AndroidSynthesizerUtteranceListener(@NonNull Context context,
+                                        @NonNull BaseSpeechSynthesizer speechSynthesizer,
                                         @NonNull AndroidSynthesizerUtteranceSupplier supplier) {
-        this(speechSynthesizer, supplier, Mode.INITIALIZE);
+        this(context, speechSynthesizer, supplier, Mode.CHECKING);
     }
 
     @Override
     public void onDone(String utteranceId) {
-        if (mode != Mode.INITIALIZE && utteranceId.equals(supplier.getCheckingUtteranceId())) {
-            clearTimeout(utteranceId);
-            logger.v(getTag(), "ANDROID TTS[%s] - on done <%s> -> go to checkStatus language", utteranceId, getCurrentQueueId());
+        if (mode == Mode.CHECKING && utteranceId.equals(supplier.getCheckingUtteranceId())) {
+            //clearTimeout(utteranceId);
+            logger.v(TAG, "[%s] - on done <%s> -> go to checkStatus language", utteranceId, getCurrentQueueId());
             supplier.checkLanguage(true);
         } else {
             super.onDone(utteranceId);
@@ -57,10 +72,10 @@ class AndroidSynthesizerUtteranceListener extends BaseSynthesizerUtteranceListen
 
     @Override
     public void onError(String utteranceId, int errorCode) {
-        logger.e(getTag(), "ANDROID TTS[%s] - on error <%s> -> stop timeout", utteranceId, getCurrentQueueId());
-        logger.e(getTag(), "ANDROID TTS[%s] - error code: %s", utteranceId, getErrorType(errorCode));
-        if (mode != Mode.INITIALIZE && utteranceId.equals(supplier.getCheckingUtteranceId())) {
-            clearTimeout(utteranceId);
+        logger.e(TAG, "[%s] - on error <%s> -> stop timeout", utteranceId, getCurrentQueueId());
+        logger.e(TAG, "[%s] - error code: %s", utteranceId, getErrorType(errorCode));
+        if (mode == Mode.CHECKING && utteranceId.equals(supplier.getCheckingUtteranceId())) {
+            //clearTimeout(utteranceId);
             shutdown();
             if (errorCode == TextToSpeech.ERROR_NOT_INSTALLED_YET) {
                 supplier.getOnStatusCheckedListener().execute(SynthesizerListener.Status.NOT_AVAILABLE_ERROR);
@@ -98,11 +113,6 @@ class AndroidSynthesizerUtteranceListener extends BaseSynthesizerUtteranceListen
             default:
                 return "ERROR_UNKNOWN";
         }
-    }
-
-    @Override
-    String getTtsLogLabel() {
-        return LOG_LABEL;
     }
 
     interface AndroidSynthesizerUtteranceSupplier {

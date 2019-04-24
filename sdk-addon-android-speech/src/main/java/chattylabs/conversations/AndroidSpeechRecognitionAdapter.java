@@ -90,7 +90,7 @@ abstract class AndroidSpeechRecognitionAdapter
     }
 
     @Override
-    public boolean isTryAgain() {
+    public boolean tryAgainRequired() {
         return tryAgain;
     }
 
