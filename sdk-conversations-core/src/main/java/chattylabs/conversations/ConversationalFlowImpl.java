@@ -42,19 +42,21 @@ final class ConversationalFlowImpl implements ConversationalFlow {
     private ILogger logger;
 
     private ConversationalFlowImpl() {
+        //noinspection NullableProblems
         this.configuration = new ComponentConfig.Builder()
                 .setSpeechLanguage(Locale::getDefault)
                 .setBluetoothScoRequired(() -> false)
                 .setAudioExclusiveRequiredForSynthesizer(() -> false)
                 .setAudioExclusiveRequiredForRecognizer(() -> true)
+                .setSpeechDictation(() -> false)
                 .build();
         reset();
         Instance.instanceOf = new SoftReference<>(this);
     }
 
     @Override
-    public void updateConfiguration(ComponentConfig.Update onUpdate) {
-        configuration = onUpdate.run(new ComponentConfig.Builder(configuration));
+    public void updateConfiguration(ComponentConfig.OnUpdate listener) {
+        configuration = listener.run(new ComponentConfig.Builder(configuration));
         reset();
     }
 

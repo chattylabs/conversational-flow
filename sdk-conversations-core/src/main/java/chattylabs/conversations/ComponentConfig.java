@@ -1,5 +1,6 @@
 package chattylabs.conversations;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RawRes;
 
 import java.util.Locale;
@@ -12,6 +13,7 @@ public class ComponentConfig {
     private LazyProvider<Class<? extends SpeechRecognizer>> recognizerServiceType;
     private LazyProvider<Class<? extends SpeechSynthesizer>> synthesizerServiceType;
     private RawResourceLazyProvider googleCredentialsResourceFile;
+    private LazyProvider<Boolean> speechDictation;
 
     private ComponentConfig(Builder builder) {
         speechLanguage = builder.speechLanguage;
@@ -21,6 +23,7 @@ public class ComponentConfig {
         recognizerServiceType = builder.recognizerServiceType;
         synthesizerServiceType = builder.synthesizerServiceType;
         googleCredentialsResourceFile = builder.googleCredentialsResourceFile;
+        speechDictation = builder.speechDictation;
     }
 
     public Locale getSpeechLanguage() {
@@ -52,6 +55,10 @@ public class ComponentConfig {
         return googleCredentialsResourceFile.get();
     }
 
+    public boolean isSpeechDictation() {
+        return speechDictation.get();
+    }
+
     public static final class Builder {
         private LazyProvider<Locale> speechLanguage;
         private LazyProvider<Boolean> bluetoothScoRequired;
@@ -60,6 +67,7 @@ public class ComponentConfig {
         private LazyProvider<Class<? extends SpeechRecognizer>> recognizerServiceType;
         private LazyProvider<Class<? extends SpeechSynthesizer>> synthesizerServiceType;
         private RawResourceLazyProvider googleCredentialsResourceFile;
+        private LazyProvider<Boolean> speechDictation;
 
         public Builder() {
         }
@@ -72,6 +80,7 @@ public class ComponentConfig {
             recognizerServiceType = copy.recognizerServiceType;
             synthesizerServiceType = copy.synthesizerServiceType;
             googleCredentialsResourceFile = copy.googleCredentialsResourceFile;
+            speechDictation = copy.speechDictation;
         }
 
         public Builder setSpeechLanguage(LazyProvider<Locale> speechLanguage) {
@@ -111,17 +120,22 @@ public class ComponentConfig {
             return this;
         }
 
+        public Builder setSpeechDictation(LazyProvider<Boolean> lazyProvider) {
+            this.speechDictation = lazyProvider;
+            return this;
+        }
+
         public ComponentConfig build() {
             return new ComponentConfig(this);
         }
     }
 
-    public interface Update {
+    public interface OnUpdate {
         ComponentConfig run(ComponentConfig.Builder builder);
     }
 
     public interface LazyProvider<T> {
-        T get();
+        @NonNull T get();
     }
 
     public interface RawResourceLazyProvider {

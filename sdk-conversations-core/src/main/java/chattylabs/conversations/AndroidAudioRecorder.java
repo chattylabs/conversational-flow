@@ -19,6 +19,7 @@ package chattylabs.conversations;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.os.Build;
 import android.speech.SpeechRecognizer;
 import androidx.annotation.NonNull;
 
@@ -33,7 +34,7 @@ import androidx.annotation.NonNull;
  */
 public class AndroidAudioRecorder {
 
-    private static final int[] SAMPLE_RATE_CANDIDATES = new int[]{16000, 11025, 22050, 44100};
+    private static final int[] SAMPLE_RATE_CANDIDATES = new int[]{/*44100, 22050, */16000/*, 11025*/};
 
     private static final int CHANNEL = AudioFormat.CHANNEL_IN_MONO;
     private static final int ENCODING = AudioFormat.ENCODING_PCM_16BIT;
@@ -188,10 +189,22 @@ public class AndroidAudioRecorder {
             if (sizeInBytes == AudioRecord.ERROR_BAD_VALUE) {
                 continue;
             }
-            final AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.DEFAULT,
-                    sampleRate, CHANNEL, ENCODING, sizeInBytes);
+            final AudioRecord audioRecord;
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
+                audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
+                        sampleRate, CHANNEL, ENCODING, sizeInBytes);
+            } else {
+                audioRecord = new AudioRecord.Builder().setAudioSource(MediaRecorder.AudioSource.MIC)
+                        .setAudioFormat(new AudioFormat.Builder()
+                                .setEncoding(ENCODING)
+                                .setSampleRate(sampleRate)
+                                .setChannelMask(CHANNEL)
+                                .build())
+                        .setBufferSizeInBytes(sizeInBytes)
+                        .build();
+            }
             if (audioRecord.getState() == AudioRecord.STATE_INITIALIZED) {
-                mBuffer = new byte[sizeInBytes];
+                mBuffer = new byte[2 * sizeInBytes];
                 return audioRecord;
             } else {
                 audioRecord.release();
@@ -240,8 +253,7 @@ public class AndroidAudioRecorder {
                         if (now - mLastVoiceHeardMillis > speechTimeout) {
                             end();
                         }
-                    } else if (mLastVoiceHeardMillis == Long.MAX_VALUE &&
-                            mCurrentVoiceHearingMillis != Long.MAX_VALUE) {
+                    } else if (mCurrentVoiceHearingMillis != Long.MAX_VALUE) {
                         if (now - mCurrentVoiceHearingMillis > noSpeechTimeout) {
                             mCallback.onVoiceError(SpeechRecognizer.ERROR_SPEECH_TIMEOUT);
                             end();

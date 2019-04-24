@@ -25,9 +25,7 @@ interface RecognizerUtteranceListener {
 
     RecognizerUtteranceListener setTryAgain(boolean tryAgain);
 
-    boolean isTryAgain();
-
-    void startTimeout();
+    boolean tryAgainRequired();
 
     void reset();
 

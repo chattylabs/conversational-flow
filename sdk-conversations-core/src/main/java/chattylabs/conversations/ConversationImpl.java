@@ -170,12 +170,12 @@ class ConversationImpl extends Flow.Edge implements Conversation {
                 mismatchAction[0] = (VoiceMismatch) n;
             } else if (n instanceof VoiceMatch) {
                 VoiceMatch action = (VoiceMatch) n;
-                if (results != null && !results.isEmpty() && results.get(0).length() > 0) {
+                if (results != null && !results.isEmpty()) {
                     List<String> expected = Arrays.asList(action.expectedResults);
                     boolean matches = ConversationalFlow.anyMatch(results, expected);
                     if (matches) {
                         logger.i(TAG, "Conversation - matched with: " + expected);
-                        speechRecognizer.cancel();
+                        speechRecognizer.stop();
                         current = action;
                         if (action.onMatched != null) {
                             action.onMatched.accept(action, results);
@@ -272,7 +272,7 @@ class ConversationImpl extends Flow.Edge implements Conversation {
 
         if (outgoingEdges.size() == 1) {
             VoiceNode node = outgoingEdges.get(0);
-            if (VoiceAction.class.isInstance(node)) {
+            if (node instanceof VoiceAction) {
                 ArrayList<VoiceNode> nodes = new ArrayList<>(1);
                 nodes.add(node);
                 return getActionSet(nodes);
@@ -299,7 +299,8 @@ class ConversationImpl extends Flow.Edge implements Conversation {
     @Override
     void addEdge(@NonNull VoiceNode node, @NonNull VoiceNode incomingEdge) {
         if (!graph.containsKey(node) || !graph.containsKey(incomingEdge)) {
-            throw new IllegalArgumentException("All nodes must be present in the graph before being added as an edge");
+            throw new IllegalArgumentException("All nodes must be present in the graph " +
+                    "before being added as an edge");
         }
 
         ArrayList<VoiceNode> edges = graph.get(node);

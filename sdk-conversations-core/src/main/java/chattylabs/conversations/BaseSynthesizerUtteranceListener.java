@@ -12,13 +12,15 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
-abstract class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceListener {
+class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceListener {
+    private final String TAG;
 
     private static final int MAX_SPEECH_TIME_SEC = 60;
 
     protected final ILogger logger;
-    @Mode
-    final int mode;
+
+    @Mode final int mode;
+
     private final BaseSpeechSynthesizer speechSynthesizer;
 
     private SynthesizerListener.OnStart onStartedListener;
@@ -29,17 +31,17 @@ abstract class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceL
     private Timer timer;
 
     BaseSynthesizerUtteranceListener(@NonNull final BaseSpeechSynthesizer speechSynthesizer,
-                                     @Mode int mode) {
+                                     @Mode int mode, @NonNull String tag) {
         this.speechSynthesizer = speechSynthesizer;
         this.logger = speechSynthesizer.logger;
         this.mode = mode;
+        this.TAG = tag;
     }
 
-    BaseSynthesizerUtteranceListener(@NonNull final BaseSpeechSynthesizer speechSynthesizer) {
-        this(speechSynthesizer, Mode.INITIALIZE);
+    BaseSynthesizerUtteranceListener(@NonNull final BaseSpeechSynthesizer speechSynthesizer,
+                                     @NonNull String logLabel) {
+        this(speechSynthesizer, Mode.CHECKING, logLabel);
     }
-
-    abstract String getTtsLogLabel();
 
     @Override
     public SynthesizerListener.OnStart _getOnStartedListener() {
@@ -79,43 +81,43 @@ abstract class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceL
 
     @Override
     public void onStart(String utteranceId) {
-        if (this.mode == Mode.INITIALIZE) {
+        if (this.mode == Mode.DELEGATE) {
             _getOnStartedListener().execute(utteranceId);
             return;
         }
 
-        logger.v(getTag(), "%s[%s] - on start", getTtsLogLabel(), utteranceId);
+        logger.v(TAG, "[%s] - on start", utteranceId);
 
-        startTimeout(utteranceId);
         timestamp = System.currentTimeMillis();
+        //startTimeout(utteranceId);
 
+        // On Mode CHECKING there shouldn't be any onStart event
         if (getListenersMap().size() > 0) {
             SynthesizerUtteranceListener listener = getListenersMap().get(utteranceId);
             if (listener != null) {
                 listener.onStart(utteranceId);
             }
         }
-
     }
 
     @Override
     public void onDone(String utteranceId) {
-        if (this.mode == Mode.INITIALIZE) {
+        if (this.mode == Mode.DELEGATE) {
             _getOnDoneListener().execute(utteranceId);
             return;
         }
 
-        clearTimeout(utteranceId);
-        logger.v(getTag(), "%s[%s] - on done <%s> - check for Empty Queue", getTtsLogLabel(), utteranceId, getCurrentQueueId());
+        //clearTimeout(utteranceId);
+        logger.v(TAG, "[%s] - on done <%s> - check for Empty Queue", utteranceId, getCurrentQueueId());
         moveToNextQueueIfNeeded();
-        if (isEmpty()) {
-            stop();
-            logger.i(getTag(), "%s[%s] - on done <%s> - Stream Finished", getTtsLogLabel(), utteranceId, getCurrentQueueId());
-        }
+//        if (isEmpty()) {
+//            stop();
+//            logger.i(TAG, "%s[%s] - on done <%s> - Stream Finished", utteranceId, getCurrentQueueId());
+//        }
         setSpeaking(false);
         if (getListenersMap().size() > 0) {
             SynthesizerUtteranceListener listener = removeListener(utteranceId);
-            logger.v(getTag(), "%s[%s] - on done <%s> - execute listener.onDone", getTtsLogLabel(), utteranceId, getCurrentQueueId());
+            logger.v(TAG, "[%s] - on done <%s> - execute listener.onDone", utteranceId, getCurrentQueueId());
             if (listener != null) {
                 listener.onDone(utteranceId);
             }
@@ -124,19 +126,19 @@ abstract class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceL
 
     @Override
     public void onError(String utteranceId, int errorCode) {
-        if (this.mode == Mode.INITIALIZE) {
+        if (this.mode == Mode.DELEGATE) {
             _getOnErrorListener().execute(utteranceId, errorCode);
             return;
         }
 
-        clearTimeout(utteranceId);
-        logger.e(getTag(), "%s[%s] - on error <%s> -> stop timeout", getTtsLogLabel(), utteranceId, getCurrentQueueId());
-        logger.e(getTag(), "%s[%s] - error code: %s", getTtsLogLabel(), utteranceId, getErrorType(errorCode));
+        //clearTimeout(utteranceId);
+        logger.e(TAG, "[%s] - on error <%s> -> stop timeout", utteranceId, getCurrentQueueId());
+        logger.e(TAG, "[%s] - error code: %s", utteranceId, getErrorType(errorCode));
         moveToNextQueueIfNeeded();
-        if (isEmpty()) {
-            stop();
-            logger.i(getTag(), "%s[%s] - ERROR <%s> - Stream Finished", getTtsLogLabel(), utteranceId, getCurrentQueueId());
-        }
+//        if (isEmpty()) {
+//            stop();
+//            logger.i(TAG, "[%s] - ERROR <%s> - Stream Finished", utteranceId, getCurrentQueueId());
+//        }
         setSpeaking(false);
         if (getListenersMap().size() > 0 && getListenersMap().containsKey(utteranceId)) {
             SynthesizerUtteranceListener listener = removeListener(utteranceId);
@@ -151,25 +153,25 @@ abstract class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceL
 
     @Override
     public void clearTimeout(String utteranceId) {
-        logger.v(getTag(), "%s[%s] - utterance timeout cleared", getTtsLogLabel(), utteranceId);
+        logger.v(TAG, "[%s] - utterance timeout cleared", utteranceId);
         if (task != null) task.cancel();
         if (timer != null) timer.cancel();
     }
 
     @Override
     public void startTimeout(String utteranceId) {
-        logger.i(getTag(), "%s[%s] - started timeout", getTtsLogLabel(), utteranceId);
+        logger.i(TAG, "[%s] - started timeout", utteranceId);
         timer = new Timer();
         task = new TimerTask() {
             @Override
             public void run() {
                 if (!isTtsSpeaking()) {
-                    logger.e(getTag(), "%s[%s] - is null or not speaking && reached timeout", getTtsLogLabel(), utteranceId);
+                    logger.e(TAG, "[%s] - is null or not speaking && reached timeout", utteranceId);
                     speechSynthesizer.stop();
                     onError(utteranceId, SynthesizerListener.Status.TIMEOUT);
                 } else {
                     if ((System.currentTimeMillis() - timestamp) > TimeUnit.SECONDS.toMillis(MAX_SPEECH_TIME_SEC)) {
-                        logger.e(getTag(), "%s[%s] - exceeded %s seconds", getTtsLogLabel(), utteranceId, MAX_SPEECH_TIME_SEC);
+                        logger.e(TAG, "[%s] - exceeded %s seconds", utteranceId, MAX_SPEECH_TIME_SEC);
                         speechSynthesizer.stop();
                         onError(utteranceId, SynthesizerListener.Status.TIMEOUT);
                     } else {
@@ -189,10 +191,6 @@ abstract class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceL
     /**
      * Util Methods For Speech Synthesizer
      **/
-
-    protected String getTag() {
-        return speechSynthesizer.getTag();
-    }
 
     private boolean isTtsSpeaking() {
         return speechSynthesizer.isTtsSpeaking();
@@ -230,10 +228,10 @@ abstract class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceL
         speechSynthesizer.shutdown();
     }
 
-    @IntDef({Mode.INITIALIZE, Mode.DELEGATE})
+    @IntDef({Mode.CHECKING, Mode.DELEGATE})
     @Retention(RetentionPolicy.SOURCE)
     @interface Mode {
-        int INITIALIZE = 0;
+        int CHECKING = 0;
         int DELEGATE = 1;
     }
 }

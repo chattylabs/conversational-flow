@@ -34,7 +34,7 @@ public class PhoneStateHandler {
 
     void unregister() {
         if (isPhoneStateReceiverRegistered) {
-            logger.v(TAG, "unregister for phone state receiver");
+            logger.v(TAG, "unregister for phone state listener");
             phoneStateManager.release(application);
             isPhoneStateReceiverRegistered = false;
         }

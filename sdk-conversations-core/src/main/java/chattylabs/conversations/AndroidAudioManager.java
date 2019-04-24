@@ -42,11 +42,6 @@ public class AndroidAudioManager {
         this.audioManager = audioManager;
         this.configuration = configuration;
         this.audioAttributes = new AudioAttributes.Builder();
-        audioAttributes.setContentType(AudioAttributes.CONTENT_TYPE_SPEECH);
-        audioAttributes.setUsage(configuration.isBluetoothScoRequired() ?
-                        // We put this mode because when over Sco we're never going to gain focus!
-                        AudioAttributes.USAGE_VOICE_COMMUNICATION :
-                        AudioAttributes.USAGE_MEDIA);
         audioAttributes.setLegacyStreamType(getMainStreamType());
     }
 
@@ -134,9 +129,9 @@ public class AndroidAudioManager {
 
     public void setAudioMode() {
         audioMode = audioManager.getMode();
-        audioManager.setMode(configuration.isBluetoothScoRequired() ?
-                AudioManager.MODE_IN_CALL :
-                AudioManager.MODE_NORMAL);
+        if (configuration.isBluetoothScoRequired()) {
+            audioManager.setMode(AudioManager.MODE_IN_CALL);
+        }
 
         // By enabling this option, the audio is not rooted to the speakers if the sco is activated
         // meaning that we can force bluetooth sco even with speakers connected
@@ -148,7 +143,9 @@ public class AndroidAudioManager {
     }
 
     public void unsetAudioMode() {
-        audioManager.setMode(audioMode);
+        if (audioMode != audioManager.getMode()) {
+            audioManager.setMode(audioMode);
+        }
 
         // By enabling this option, the audio is not rooted to the speakers if the sco is activated
         // meaning that we can force bluetooth sco even with speakers connected
@@ -183,6 +180,10 @@ public class AndroidAudioManager {
         audioManager.setStreamVolume(AudioManager.STREAM_NOTIFICATION, notifVolume, 0);
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, musicVolume, 0);
         audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL, callVolume, 0);
+    }
+
+    public AudioAttributes.Builder getAudioAttributes() {
+        return audioAttributes;
     }
 
     public boolean isBluetoothScoAvailableOffCall() {

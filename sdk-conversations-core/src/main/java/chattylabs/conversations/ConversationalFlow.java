@@ -54,7 +54,7 @@ public interface ConversationalFlow extends RequiredPermissions {
 
     /**
      * Reuses the already set {@link ComponentConfig} allowing you to update only specific parts
-     * of it through the {@link ComponentConfig.Update} interface.
+     * of it through the {@link ComponentConfig.OnUpdate} interface.
      * <br/><pre>{@code
      * updateConfiguration(builder ->
      *          builder.setRecognizerServiceType(() -> AndroidSpeechRecognizer.class)
@@ -66,9 +66,9 @@ public interface ConversationalFlow extends RequiredPermissions {
      * }</pre>
      *
      * @see ComponentConfig
-     * @see ComponentConfig.Update
+     * @see ComponentConfig.OnUpdate
      */
-    void updateConfiguration(ComponentConfig.Update onUpdate);
+    void updateConfiguration(ComponentConfig.OnUpdate listener);
 
     /**
      * Returns the current {@link SpeechSynthesizer} configured.
@@ -146,7 +146,7 @@ public interface ConversationalFlow extends RequiredPermissions {
     @Nullable
     static String selectMostConfidentResult(List<String> results, float[] confidences) {
         String message = null;
-        if (results != null && !results.isEmpty() && results.get(0).length() > 0) {
+        if (results != null && !results.isEmpty()) {
             float last = 0;
             if (confidences != null && confidences.length > 0) {
                 for (int a = 0; a < confidences.length; a++) {

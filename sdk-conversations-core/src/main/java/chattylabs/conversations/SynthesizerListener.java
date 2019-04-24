@@ -2,7 +2,6 @@ package chattylabs.conversations;
 
 import androidx.annotation.RestrictTo;
 
-
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public interface SynthesizerListener {
 

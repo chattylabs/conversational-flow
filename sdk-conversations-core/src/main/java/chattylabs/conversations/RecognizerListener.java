@@ -12,6 +12,10 @@ public interface RecognizerListener {
         void execute(int recognizerStatus);
     }
 
+    interface OnPrepared extends RecognizerListener {
+        void execute(int recognizerStatus);
+    }
+
     interface OnReady extends RecognizerListener {
         void execute(Bundle params);
     }
