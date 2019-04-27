@@ -228,7 +228,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
                 }
                 else {
                     logger.e(TAG, "[%s] - status ERROR with queue <%s>", uId, queueId);
-                    getSynthesizerUtteranceListener().onError(uId, SynthesizerListener.Status.ERROR);
+                    removeListener(uId).onError(uId, SynthesizerListener.Status.ERROR);
                 }
             });
         }
@@ -259,7 +259,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             }
             else {
                 logger.e(TAG, "[%s] - no queue status ERROR", uId);
-                getSynthesizerUtteranceListener().onError(uId, SynthesizerListener.Status.ERROR);
+                removeListener(uId).onError(uId, SynthesizerListener.Status.ERROR);
             }
         });
     }
@@ -287,7 +287,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
                 }
                 else {
                     logger.e(TAG, "[%s] - silence status ERROR with queue <%s>", uId, queueId);
-                    getSynthesizerUtteranceListener().onError(uId, SynthesizerListener.Status.ERROR);
+                    removeListener(uId).onError(uId, SynthesizerListener.Status.ERROR);
                 }
             });
         }
@@ -319,7 +319,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             }
             else {
                 logger.e(TAG, "[%s] - no queue silence status ERROR", uId);
-                getSynthesizerUtteranceListener().onError(uId, SynthesizerListener.Status.ERROR);
+                removeListener(uId).onError(uId, SynthesizerListener.Status.ERROR);
             }
         });
     }
@@ -358,6 +358,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             queue.clear();
             queue.put(DEFAULT_QUEUE_ID, new ConcurrentLinkedQueue<>());
         }
+        tempFile = null;
         queueId = DEFAULT_QUEUE_ID;
         freeCurrentQueue();
         setReady(false);
@@ -384,7 +385,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             else {
                 logger.e(TAG, "status ERROR");
                 if (uId != null)
-                    getSynthesizerUtteranceListener().onError(uId, SynthesizerListener.Status.ERROR);
+                    removeListener(uId).onError(uId, SynthesizerListener.Status.ERROR);
             }
         });
     }
@@ -541,7 +542,6 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         try {
             if (mediaPlayer.isPlaying())
                 mediaPlayer.stop();
-            mediaPlayer.reset();
             mediaPlayer.release();
         } catch (Exception ignored) {}
         mediaPlayer = null;
@@ -550,29 +550,38 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     void handleSynthesizedFile(Context context, SynthesizerUtteranceListener listener, String utterance) {
         finishPlayer();
         logger.v(TAG, "start media player");
-        try {
-            mediaPlayer = MediaPlayer.create(context, Uri.fromFile(tempFile), null,
-                    audioManager.getAudioAttributes().build(), AudioManager.AUDIO_SESSION_ID_GENERATE);
-            if (mediaPlayer == null) {
-                listener.onError(utterance, SynthesizerListener.Status.UNKNOWN_ERROR);
-                return;
-            }
+        if (tempFile != null) {
+            try {
+                mediaPlayer = MediaPlayer.create(context, Uri.fromFile(tempFile), null,
+                        audioManager.getAudioAttributes().build(), AudioManager.AUDIO_SESSION_ID_GENERATE);
+                if (mediaPlayer == null) {
+                    listener.onError(utterance, SynthesizerListener.Status.UNKNOWN_ERROR);
+                    return;
+                }
 
-            mediaPlayer.setOnCompletionListener(mediaPlayer -> {
-                logger.v(TAG, "media player complete");
-                finishPlayer();
-                listener.onDone(utterance);
-            });
-            mediaPlayer.setOnErrorListener((mp, what, extra) -> {
-                finishPlayer();
-                // TODO: When I release the timeout, since I already run onError, it might be called twice
-                listener.onError(utterance, extra);
-                return true;
-            });
-            //mediaPlayer.setAudioStreamType(audioManager.getMainStreamType());
-            mediaPlayer.start();
-        } catch (Exception ex) {
-            logger.logException(ex);
+                mediaPlayer.setOnCompletionListener(mediaPlayer -> {
+                    logger.v(TAG, "media player complete");
+                    finishPlayer();
+                    tempFile = null;
+                    listener.onDone(utterance);
+                });
+                mediaPlayer.setOnErrorListener((mp, what, extra) -> {
+                    finishPlayer();
+                    tempFile = null;
+                    // TODO: When I release the timeout, since I already run onError, it might be called twice
+                    listener.onError(utterance, extra);
+                    return true;
+                });
+                //mediaPlayer.setAudioStreamType(audioManager.getMainStreamType());
+                mediaPlayer.start();
+            } catch (Exception ex) {
+                logger.logException(ex);
+                tempFile = null;
+                listener.onError(utterance, SynthesizerListener.Status.UNKNOWN_ERROR);
+            }
+        } else {
+            logger.w(TAG, "no media file to play, maybe silence?");
+            listener.onDone(utterance);
         }
     }
 }
