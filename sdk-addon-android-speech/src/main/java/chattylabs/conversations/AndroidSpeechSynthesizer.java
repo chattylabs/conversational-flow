@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 
+import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 
 import com.chattylabs.android.commons.HtmlUtils;
@@ -36,6 +37,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer
     private TextToSpeech tts; // released
     private SynthesizerListener.OnStatusChecked onStatusChecked;
 
+    @Keep
     public AndroidSpeechSynthesizer(Application application,
                              ComponentConfig configuration,
                              AndroidAudioManager audioManager,

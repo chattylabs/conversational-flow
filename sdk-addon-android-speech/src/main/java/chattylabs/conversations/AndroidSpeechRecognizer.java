@@ -8,6 +8,7 @@ import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 
 import androidx.annotation.CallSuper;
+import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
 
 import com.chattylabs.android.commons.Tag;
@@ -40,6 +41,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
     private AndroidSpeechRecognitionAdapter listener;
     private SpeechRecognizer speechRecognizer;
 
+    @Keep
     public AndroidSpeechRecognizer(Application application,
                             ComponentConfig configuration,
                             AndroidAudioManager audioManager,
