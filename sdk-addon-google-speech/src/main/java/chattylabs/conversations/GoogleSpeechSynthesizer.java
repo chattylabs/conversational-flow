@@ -5,6 +5,8 @@ import android.content.Context;
 import android.media.MediaPlayer;
 import android.os.ConditionVariable;
 import android.speech.tts.TextToSpeech;
+
+import androidx.annotation.Keep;
 import androidx.annotation.RawRes;
 import androidx.annotation.WorkerThread;
 
@@ -46,6 +48,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
     private AudioConfig audioConfig;
     private final ConditionVariable mCondVar = new ConditionVariable();
 
+    @Keep
     public GoogleSpeechSynthesizer(Application application,
                             ComponentConfig configuration,
                             AndroidAudioManager audioManager,

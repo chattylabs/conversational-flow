@@ -6,6 +6,7 @@ import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.speech.SpeechRecognizer;
 
+import androidx.annotation.Keep;
 import androidx.annotation.RawRes;
 import chattylabs.conversations.RecognizerListener.Status;
 import chattylabs.conversations.addon.google.R;
@@ -63,6 +64,7 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
     private Timer timer;
     private long currentTime;
 
+    @Keep
     public GoogleSpeechRecognizer(Application application,
                                   ComponentConfig configuration,
                                   AndroidAudioManager audioManager,
