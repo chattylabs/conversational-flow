@@ -115,7 +115,7 @@ abstract class BaseActivity extends DaggerAppCompatActivity
         });
 
         component.updateConfiguration(builder ->
-                builder.setGoogleCredentialsResourceFile(() -> R.raw.credential)
+                builder.setGoogleCredentialsResourceFile(() -> R.raw.google_credentials)
                         .setRecognizerServiceType(() -> {
                             if (GOOGLE.equals(addonType)) {
                                 return GoogleSpeechRecognizer.class;

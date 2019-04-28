@@ -72,6 +72,6 @@ task copySecretKey(type: Copy) {
     from secretKey.getParent()
     include secretKey.getName()
     into 'src/main/res/raw'
-    rename secretKey.getName(), "credential.json"
+    rename secretKey.getName(), "google_credentials.json"
 }
 preBuild.dependsOn(copySecretKey)
