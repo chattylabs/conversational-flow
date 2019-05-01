@@ -527,7 +527,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     File createTempFile(Context context) {
         try {
             tempFile = File.createTempFile(
-                    "speech_"+System.currentTimeMillis(), ".mp3",
+                    "speech_" + System.currentTimeMillis(), ".wav",
                     context.getCacheDir());
             tempFile.deleteOnExit();
             tempFile.setReadable(true);
