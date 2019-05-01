@@ -39,7 +39,7 @@ private val SAMPLE_RATE_CANDIDATES = intArrayOf(44100, 22050, 16000, 11025)
 class AudioEmitter {
 
     private val isLowerThan25 = Build.VERSION.SDK_INT <= Build.VERSION_CODES.M
-    private val audioSource = MediaRecorder.AudioSource.CAMCORDER
+    private val audioSource = MediaRecorder.AudioSource.VOICE_RECOGNITION
     private val encoding = AudioFormat.ENCODING_PCM_16BIT
     private val channel = AudioFormat.CHANNEL_IN_MONO
     private var mAudioRecorder: AudioRecord? = null
