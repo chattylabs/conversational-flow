@@ -37,7 +37,7 @@ dependencies {
     compileOnly project(':sdk-conversations-core')
 
     // AmazonSpeechSynthesizerAdapter mobile client and polly
-    implementation('com.amazonaws:aws-android-sdk-mobile-client:2.6.+@aar') { transitive = true }
+    implementation('com.amazonaws:aws-android-sdk-mobile-client:2.6.31@aar') { transitive = true }
     implementation group: 'com.amazonaws', name: 'aws-android-sdk-polly', version: '2.6.27'
 
     // https://mvnrepository.com/artifact/com.google.code.gson/gson
