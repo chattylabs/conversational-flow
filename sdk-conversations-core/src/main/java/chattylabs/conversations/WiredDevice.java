@@ -5,11 +5,11 @@ import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.os.Build;
 
-public final class PeripheralHeadsetDevice implements Peripheral.Device {
+public final class WiredDevice implements Peripheral.Device {
 
     private AudioManager audioManager;
 
-    PeripheralHeadsetDevice(AudioManager audioManager) {
+    WiredDevice(AudioManager audioManager) {
         this.audioManager = audioManager;
     }
 

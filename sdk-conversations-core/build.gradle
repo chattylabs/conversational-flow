@@ -35,10 +35,6 @@ android {
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 
-    // Dagger
-    api 'com.google.dagger:dagger:2.15'
-    kapt 'com.google.dagger:dagger-compiler:2.15'
-
     // Dependencies
     implementation "com.chattylabs:android-commons:$android_commons"
 

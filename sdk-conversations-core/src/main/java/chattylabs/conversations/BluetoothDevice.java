@@ -5,11 +5,11 @@ import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.os.Build;
 
-public final class PeripheralBluetoothDevice implements Peripheral.Device {
+public final class BluetoothDevice implements Peripheral.Device {
 
     private AudioManager audioManager;
 
-    PeripheralBluetoothDevice(AudioManager audioManager) {
+    BluetoothDevice(AudioManager audioManager) {
         this.audioManager = audioManager;
     }
 

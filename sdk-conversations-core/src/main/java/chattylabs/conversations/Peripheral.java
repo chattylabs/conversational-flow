@@ -6,7 +6,7 @@ public final class Peripheral {
     private AudioManager audioManager;
 
     public enum Type {
-        WIRED_HEADSET, BLUETOOTH
+        WIRED, BLUETOOTH
     }
 
     public interface Device {
@@ -19,12 +19,12 @@ public final class Peripheral {
 
     public Device get(Type type) {
         switch (type) {
-            case WIRED_HEADSET:
-                return new PeripheralHeadsetDevice(audioManager);
+            case WIRED:
+                return new WiredDevice(audioManager);
             case BLUETOOTH:
-                return new PeripheralBluetoothDevice(audioManager);
+                return new BluetoothDevice(audioManager);
             default:
-                throw new RuntimeException("Device type \"" + type + "\" does not exists");
+                throw new RuntimeException("Device type \"" + type + "\" not supported");
         }
     }
 }

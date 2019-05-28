@@ -1,5 +1,7 @@
 package chattylabs.conversations;
 
+import androidx.annotation.NonNull;
+
 public class VoiceMessage implements VoiceNode {
     public final String id;
     public String text;
@@ -62,7 +64,7 @@ public class VoiceMessage implements VoiceNode {
         }
     }
 
-    @Override
+    @NonNull @Override
     public String getId() {
         return id;
     }

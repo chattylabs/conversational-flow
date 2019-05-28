@@ -1,5 +1,7 @@
 package chattylabs.conversations;
 
+import androidx.annotation.NonNull;
+
 public class VoiceCapture implements VoiceAction {
     public final String id;
     public final ComponentConsumer<VoiceCapture, String> onCaptured;
@@ -34,7 +36,7 @@ public class VoiceCapture implements VoiceAction {
         }
     }
 
-    @Override
+    @NonNull @Override
     public String getId() {
         return id;
     }

@@ -2,6 +2,8 @@ package chattylabs.conversations;
 
 import java.util.List;
 
+import androidx.annotation.NonNull;
+
 public class VoiceMismatch implements VoiceAction {
     public final String id;
     public int retries;
@@ -68,7 +70,7 @@ public class VoiceMismatch implements VoiceAction {
         }
     }
 
-    @Override
+    @NonNull @Override
     public String getId() {
         return id;
     }

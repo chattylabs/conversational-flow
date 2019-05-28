@@ -2,6 +2,8 @@ package chattylabs.conversations;
 
 import java.util.List;
 
+import androidx.annotation.NonNull;
+
 public class VoiceMatch implements VoiceAction {
     public final String id;
     public final OnReadyCallback onReady;
@@ -64,7 +66,7 @@ public class VoiceMatch implements VoiceAction {
         }
     }
 
-    @Override
+    @NonNull @Override
     public String getId() {
         return id;
     }
