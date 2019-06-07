@@ -35,7 +35,6 @@ public class BluetoothSco {
         this.application = application;
         this.audioManager = audioManager;
         this.logger = logger;
-        bluetoothScoReceiver = new BluetoothScoReceiver(logger);
     }
 
     private void registerReceiver(BluetoothScoListener bluetoothScoListener) {
@@ -59,6 +58,7 @@ public class BluetoothSco {
                 }
             }
         };
+        bluetoothScoReceiver = new BluetoothScoReceiver(logger);
         bluetoothScoReceiver.setListener(helper);
         if (!isScoReceiverRegistered) {
             logger.v(TAG, "register sco receiver");
@@ -88,9 +88,11 @@ public class BluetoothSco {
     }
 
     public void stopSco() {
+        unregisterReceiver();
         if (audioManager.isBluetoothScoAvailableOffCall() && isBluetoothScoOn) {
             isBluetoothScoOn = false;
             audioManager.setBluetoothScoOn(false);
+            audioManager.stopBluetoothSco();
             audioManager.stopBluetoothSco();
             lock.lock();
             try {
@@ -100,7 +102,6 @@ public class BluetoothSco {
             } finally {
                 lock.unlock();
             }
-            unregisterReceiver();
             logger.v(TAG, "stop bluetooth sco");
         }
     }
