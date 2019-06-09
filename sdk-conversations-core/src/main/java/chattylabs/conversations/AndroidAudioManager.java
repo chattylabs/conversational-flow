@@ -30,7 +30,6 @@ public class AndroidAudioManager {
     private AudioFocusRequest focusRequestExclusive;
     private final AudioManager audioManager;
     private final ComponentConfig configuration;
-    private final AudioAttributes.Builder audioAttributes;
 
     // Log stuff
     private ILogger logger;
@@ -41,8 +40,6 @@ public class AndroidAudioManager {
         this.logger = logger;
         this.audioManager = audioManager;
         this.configuration = configuration;
-        this.audioAttributes = new AudioAttributes.Builder();
-        audioAttributes.setLegacyStreamType(getMainStreamType());
     }
 
     public int getMainStreamType() {
@@ -76,7 +73,7 @@ public class AndroidAudioManager {
             } else {
                 focusRequestMayDuck = new AudioFocusRequest
                         .Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
-                        .setAudioAttributes(audioAttributes.build()).build();
+                        .setAudioAttributes(getAudioAttributes().build()).build();
                 requestAudioFocusMayDuck = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(focusRequestMayDuck);
             }
         }
@@ -107,7 +104,7 @@ public class AndroidAudioManager {
             } else {
                 focusRequestExclusive = new AudioFocusRequest
                         .Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
-                        .setAudioAttributes(audioAttributes.build()).build();
+                        .setAudioAttributes(getAudioAttributes().build()).build();
                 requestAudioFocusExclusive = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(focusRequestExclusive);
             }
         }
@@ -183,7 +180,7 @@ public class AndroidAudioManager {
     }
 
     public AudioAttributes.Builder getAudioAttributes() {
-        return audioAttributes;
+        return new AudioAttributes.Builder().setLegacyStreamType(getMainStreamType());
     }
 
     public boolean isBluetoothScoAvailableOffCall() {

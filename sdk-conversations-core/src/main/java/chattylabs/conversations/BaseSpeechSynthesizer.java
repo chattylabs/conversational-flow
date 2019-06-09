@@ -542,6 +542,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         try {
             if (mediaPlayer.isPlaying())
                 mediaPlayer.stop();
+            mediaPlayer.reset();
             mediaPlayer.release();
         } catch (Exception ignored) {}
         mediaPlayer = null;
