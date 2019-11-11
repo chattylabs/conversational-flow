@@ -33,7 +33,7 @@ final class ConversationalFlowImpl implements ConversationalFlow {
     // Resources
     private ComponentConfig configuration;
     private AndroidAudioManager audioManager;
-    private BluetoothSco bluetoothSco;
+    private AndroidBluetooth bluetooth;
     private SpeechSynthesizer speechSynthesizer;
     private SpeechRecognizer speechRecognizer;
     private PhoneStateHandler phoneStateHandler;
@@ -63,7 +63,7 @@ final class ConversationalFlowImpl implements ConversationalFlow {
     private void reset() {
         shutdown();
         audioManager = null;
-        bluetoothSco = null;
+        bluetooth = null;
         speechSynthesizer = null;
         speechRecognizer = null;
     }
@@ -90,7 +90,7 @@ final class ConversationalFlowImpl implements ConversationalFlow {
             AudioManager systemAudioManager = (AudioManager) application.getSystemService(Context.AUDIO_SERVICE);
             this.audioManager = new AndroidAudioManager(systemAudioManager, configuration, logger);
         }
-        if (bluetoothSco == null) bluetoothSco = new BluetoothSco(application, audioManager, logger);
+        if (bluetooth == null) bluetooth = new AndroidBluetooth(application, audioManager, logger);
         if (phoneStateHandler == null) phoneStateHandler = new PhoneStateHandler(application, logger);
         phoneStateHandler.register(new PhoneStateListenerAdapter() {
             @Override
@@ -117,7 +117,7 @@ final class ConversationalFlowImpl implements ConversationalFlow {
         try {
             if (speechSynthesizer == null) {
                 speechSynthesizer = newInstance(configuration.getSynthesizerServiceType(),
-                        context, configuration, audioManager, bluetoothSco, logger);
+                        context, configuration, audioManager, bluetooth, logger);
             }
         } catch (Exception e) {
             logger.logException(e);
@@ -139,7 +139,7 @@ final class ConversationalFlowImpl implements ConversationalFlow {
         try {
             if (speechRecognizer == null) {
                 speechRecognizer = newInstance(configuration.getRecognizerServiceType(),
-                        context, configuration, audioManager, bluetoothSco, logger);
+                        context, configuration, audioManager, bluetooth, logger);
             }
         } catch (Exception e) {
             logger.logException(e);

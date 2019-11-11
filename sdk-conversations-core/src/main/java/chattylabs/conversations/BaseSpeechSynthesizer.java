@@ -1,7 +1,6 @@
 package chattylabs.conversations;
 
 import android.content.Context;
-import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -22,8 +21,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import static chattylabs.conversations.ConversationalFlow.TAG;
-
 /**
  * This is the base class that handles internally and holds a queue of messages to be played out.
  * <br/>You only need to implement the contract of {@link SpeechSynthesizer} and extend to this
@@ -34,8 +31,8 @@ import static chattylabs.conversations.ConversationalFlow.TAG;
  * <p/>
  * - You will create a constructor that receives the following parameters in the same order:
  * <br/><pre>{@code
- * public Constructor(Application, ComponentConfig, AndroidAudioManager, BluetoothSco, ILogger) {
- *     super(ComponentConfig, AndroidAudioManager, BluetoothSco, ILogger);
+ * public Constructor(Application, ComponentConfig, AndroidAudioManager, AndroidBluetooth, ILogger) {
+ *     super(ComponentConfig, AndroidAudioManager, AndroidBluetooth, ILogger);
  *     //...
  * }
  * }</pre>
@@ -66,7 +63,7 @@ import static chattylabs.conversations.ConversationalFlow.TAG;
  * @see android.app.Application
  * @see ComponentConfig
  * @see AndroidAudioManager
- * @see BluetoothSco
+ * @see AndroidBluetooth
  * @see ILogger
  */
 abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
@@ -76,7 +73,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     protected final ILogger logger;
 
     // Constants
-    static final String DEFAULT_QUEUE_ID = "chattylabs.conversations:default_queue_id";
+    protected static final String DEFAULT_QUEUE_ID = "chattylabs.conversations:default_queue_id";
     private static final String DEFAULT_UTTERANCE_ID = "u:";
     private static final String MAP_UTTERANCE_ID = "utteranceId";
     private static final String MAP_SILENCE = "silence";
@@ -96,7 +93,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
     // Resources
     private final AndroidAudioManager audioManager;
-    private final BluetoothSco bluetoothSco;
+    private final AndroidBluetooth bluetooth;
     private String queueId = DEFAULT_QUEUE_ID;
     private SynthesizerUtteranceListener synthesizerUtteranceListener;
     private String lastQueueId;
@@ -105,7 +102,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
     BaseSpeechSynthesizer(ComponentConfig configuration,
                           AndroidAudioManager audioManager,
-                          BluetoothSco bluetoothSco,
+                          AndroidBluetooth bluetooth,
                           ILogger logger,
                           String tag) {
         this.configuration = configuration;
@@ -113,7 +110,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         this.listenersMap = new LinkedHashMap<>();
         this.queue = new LinkedHashMap<>();
         this.audioManager = audioManager;
-        this.bluetoothSco = bluetoothSco;
+        this.bluetooth = bluetooth;
         this.logger = logger;
         this.TAG = tag;
     }
@@ -130,13 +127,13 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
     abstract SynthesizerUtteranceListener createDelegateUtteranceListener();
 
+    public boolean isReady() {
+        return isReady;
+    }
+
     void setReady(boolean ready) {
         logger.w(TAG, "ready set to " + Boolean.toString(ready));
         isReady = ready;
-    }
-
-    public boolean isReady() {
-        return isReady;
     }
 
     public boolean isSpeaking() {
@@ -149,13 +146,13 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     @Override
-    public void addFilter(TextFilter filter) {
-        filters.add(filter);
+    public List<TextFilter> getFilters() {
+        return filters;
     }
 
     @Override
-    public List<TextFilter> getFilters() {
-        return filters;
+    public void addFilter(TextFilter filter) {
+        filters.add(filter);
     }
 
     @Override
@@ -342,7 +339,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         //if (synthesizerUtteranceListener != null)
         //    synthesizerUtteranceListener.clearTimeout(null);
         // Stop Bluetooth Sco if required
-        bluetoothSco.stopSco();
+        bluetooth.stopSco();
         // Audio focus
         audioManager.abandonAudioFocus();
         setSpeaking(false);
@@ -425,7 +422,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         // Check whether Sco is connected or required
         logger.i(TAG, "bluetooth Sco required: %s",
                 Boolean.toString(configuration.isBluetoothScoRequired()));
-        if (configuration.isBluetoothScoRequired() && !bluetoothSco.isBluetoothScoOn()) {
+        if (bluetooth.isDeviceConnected() && configuration.isBluetoothScoRequired() && !bluetooth.isScoOn()) {
             // Sco Listener
             BluetoothScoListener listener = new BluetoothScoListener() {
                 @Override
@@ -437,14 +434,14 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
                 @Override
                 public void onDisconnected() {
                     logger.i(TAG, "Sco onDisconnected");
-                    if (bluetoothSco.isBluetoothScoOn()) {
+                    if (bluetooth.isScoOn()) {
                         logger.w(TAG, "shutting down from Sco listener");
                         shutdown();
                     }
                 }
             };
             // Start Bluetooth Sco
-            bluetoothSco.startSco(listener);
+            bluetooth.startSco(listener);
             logger.v(TAG, "waiting for bluetooth sco connection");
         }
         else {

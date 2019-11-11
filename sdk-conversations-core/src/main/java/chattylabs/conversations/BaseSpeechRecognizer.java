@@ -1,5 +1,7 @@
 package chattylabs.conversations;
 
+import android.bluetooth.BluetoothAdapter;
+
 import androidx.annotation.CallSuper;
 
 import com.chattylabs.android.commons.internal.ILogger;
@@ -10,8 +12,8 @@ import com.chattylabs.android.commons.internal.ILogger;
  * <b>in the same order</b>:
  * <p/>
  * <pre>{@code
- * public ChildClassConstructor(Application, ComponentConfig, AndroidAudioManager, BluetoothSco, ILogger) {
- *     super(ComponentConfig, AndroidAudioManager, BluetoothSco, ILogger, String);
+ * public ChildClassConstructor(Application, ComponentConfig, AndroidAudioManager, AndroidBluetooth, ILogger) {
+ *     super(ComponentConfig, AndroidAudioManager, AndroidBluetooth, ILogger, String);
  *     //...
  * }
  * }</pre>
@@ -21,7 +23,7 @@ import com.chattylabs.android.commons.internal.ILogger;
  * @see android.app.Application
  * @see ComponentConfig
  * @see AndroidAudioManager
- * @see BluetoothSco
+ * @see AndroidBluetooth
  * @see ILogger
  */
 abstract class BaseSpeechRecognizer implements SpeechRecognizer {
@@ -30,7 +32,7 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
 
     // Resources
     private final ComponentConfig configuration;
-    private final BluetoothSco bluetoothSco;
+    private final AndroidBluetooth bluetooth;
     private final AndroidAudioManager audioManager;
 
     // Log stuff
@@ -39,11 +41,11 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
 
     BaseSpeechRecognizer(ComponentConfig configuration,
                          AndroidAudioManager audioManager,
-                         BluetoothSco bluetoothSco,
+                         AndroidBluetooth bluetooth,
                          ILogger logger,
                          String tag) {
         this.configuration = configuration;
-        this.bluetoothSco = bluetoothSco;
+        this.bluetooth = bluetooth;
         this.audioManager = audioManager;
         this.logger = logger;
         this.tag = tag;
@@ -58,7 +60,7 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
     }
 
     void requestAudioFocus() {
-        if (!bluetoothSco.isBluetoothScoOn()) {
+        if (!bluetooth.isScoOn()) {
             audioManager.requestAudioFocus(
                     getConfiguration().isAudioExclusiveRequiredForRecognizer());
         }
@@ -83,7 +85,7 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
     @CallSuper
     @Override
     public void stop() {
-        bluetoothSco.stopSco();
+        bluetooth.stopSco();
         audioManager.abandonAudioFocus();
         getRecognitionListener().reset();
     }
@@ -91,7 +93,7 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
     @CallSuper
     @Override
     public void cancel() {
-        bluetoothSco.stopSco();
+        bluetooth.stopSco();
         audioManager.abandonAudioFocus();
         getRecognitionListener().reset();
     }
@@ -99,7 +101,7 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
     @CallSuper
     @Override
     public void shutdown() {
-        bluetoothSco.stopSco();
+        bluetooth.stopSco();
         audioManager.abandonAudioFocus();
         getRecognitionListener().reset();
     }
@@ -136,7 +138,7 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
     private void checkForBluetoothScoRequired(Runnable runnable) {
         logger.i(tag, "SPEECH - is bluetooth Sco required: %s",
                 Boolean.toString(configuration.isBluetoothScoRequired()));
-        if (configuration.isBluetoothScoRequired() && !bluetoothSco.isBluetoothScoOn()) {
+        if (bluetooth.isDeviceConnected() && configuration.isBluetoothScoRequired() && !bluetooth.isScoOn()) {
             // Sco Listener
             BluetoothScoListener listener = new BluetoothScoListener() {
                 @Override
@@ -148,18 +150,18 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
                 @Override
                 public void onDisconnected() {
                     logger.w(tag, "SPEECH - Sco onDisconnected");
-                    if (bluetoothSco.isBluetoothScoOn()) {
+                    if (bluetooth.isScoOn()) {
                         logger.w(tag, "SPEECH - shutdown from Sco");
                         shutdown();
                     }
                 }
             };
             // Start Bluetooth Sco
-            bluetoothSco.startSco(listener);
+            bluetooth.startSco(listener);
             logger.v(tag, "SPEECH - waiting for bluetooth sco connection");
         }
         else {
-            logger.v(tag, "SPEECH - bluetooth sco is: %s", Boolean.toString(bluetoothSco.isBluetoothScoOn()));
+            logger.v(tag, "SPEECH - bluetooth sco is: %s", Boolean.toString(bluetooth.isScoOn()));
             runnable.run();
         }
     }
