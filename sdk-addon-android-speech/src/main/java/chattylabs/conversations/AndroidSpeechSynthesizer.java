@@ -1,10 +1,6 @@
 package chattylabs.conversations;
 
 import android.app.Application;
-import android.media.AudioManager;
-import android.media.MediaPlayer;
-import android.net.Uri;
-import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 
@@ -16,9 +12,6 @@ import com.chattylabs.android.commons.StringUtils;
 import com.chattylabs.android.commons.Tag;
 import com.chattylabs.android.commons.internal.ILogger;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Locale;
 
 public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer
@@ -41,9 +34,9 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer
     public AndroidSpeechSynthesizer(Application application,
                              ComponentConfig configuration,
                              AndroidAudioManager audioManager,
-                             BluetoothSco bluetoothSco,
+                             AndroidBluetooth bluetooth,
                              ILogger logger) {
-        super(configuration, audioManager, bluetoothSco, logger, TAG);
+        super(configuration, audioManager, bluetooth, logger, TAG);
         this.release();
         this.application = application;
     }

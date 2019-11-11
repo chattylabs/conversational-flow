@@ -7,20 +7,14 @@ import android.os.Looper;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 
-import androidx.annotation.CallSuper;
 import androidx.annotation.Keep;
-import androidx.annotation.Nullable;
 
 import com.chattylabs.android.commons.Tag;
-import com.chattylabs.android.commons.ThreadUtils;
 import com.chattylabs.android.commons.internal.ILogger;
 import com.chattylabs.android.commons.internal.os.AndroidHandler;
 import com.chattylabs.android.commons.internal.os.AndroidHandlerImpl;
 
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static chattylabs.conversations.ConversationalFlow.selectMostConfidentResult;
 import static chattylabs.conversations.RecognizerListener.*;
@@ -45,9 +39,9 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
     public AndroidSpeechRecognizer(Application application,
                             ComponentConfig configuration,
                             AndroidAudioManager audioManager,
-                            BluetoothSco bluetoothSco,
+                            AndroidBluetooth bluetooth,
                             ILogger logger) {
-        super(configuration, audioManager, bluetoothSco, logger, TAG);
+        super(configuration, audioManager, bluetooth, logger, TAG);
         this.release();
         this.application = application;
         this.mainHandler = new AndroidHandlerImpl(Looper.getMainLooper());
