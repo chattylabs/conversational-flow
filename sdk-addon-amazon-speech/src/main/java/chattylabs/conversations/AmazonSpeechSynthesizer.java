@@ -18,7 +18,6 @@ import com.chattylabs.android.commons.internal.ILogger;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.Map;
 
 public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
@@ -36,9 +35,9 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
     public AmazonSpeechSynthesizer(Application application,
                             ComponentConfig configuration,
                             AndroidAudioManager audioManager,
-                            BluetoothSco bluetoothSco,
+                            AndroidBluetooth bluetooth,
                             ILogger logger) {
-        super(configuration, audioManager, bluetoothSco, logger, TAG);
+        super(configuration, audioManager, bluetooth, logger, TAG);
         mApplication = application;
         mLanguageCode = LanguageUtil.getDeviceLanguageCode(configuration.getSpeechLanguage());
     }
