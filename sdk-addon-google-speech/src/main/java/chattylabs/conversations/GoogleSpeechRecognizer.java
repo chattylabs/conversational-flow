@@ -71,7 +71,6 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
                                   AndroidBluetooth bluetooth,
                                   ILogger logger) {
         super(configuration, audioManager, bluetooth, logger, TAG);
-        this.release();
         this.application = application;
         this.audioEmitter = new AudioEmitter();
     }
@@ -178,7 +177,6 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
 
                 @Override
                 public void onReadyForSpeech(Bundle params) {
-                    requestAudioFocus();
                     startBeep(true);
                     super.onReadyForSpeech(params);
                 }
@@ -393,18 +391,14 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
         super.stop();
     }
 
-    @Override
     public void cancel() {
         logger.w(TAG, "cancel");
         stop();
-        super.cancel();
     }
 
-    @Override
     public void shutdown() {
         logger.w(TAG, "shutdown");
         cancel();
-        super.shutdown();
     }
 
     private String getDefaultLanguageCode() {

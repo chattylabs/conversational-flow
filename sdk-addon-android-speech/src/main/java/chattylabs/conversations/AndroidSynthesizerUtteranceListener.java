@@ -4,9 +4,11 @@ import android.content.Context;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 
+import androidx.annotation.NonNull;
+
 import com.chattylabs.android.commons.Tag;
 
-import androidx.annotation.NonNull;
+import static chattylabs.conversations.SynthesizerListener.Status.*;
 
 class AndroidSynthesizerUtteranceListener extends BaseSynthesizerUtteranceListener {
     private static final String TAG = Tag.make("AndroidSynthesizerUtteranceListener");
@@ -64,6 +66,8 @@ class AndroidSynthesizerUtteranceListener extends BaseSynthesizerUtteranceListen
         if (mode == Mode.CHECKING && utteranceId.equals(supplier.getCheckingUtteranceId())) {
             //clearTimeout(utteranceId);
             logger.v(TAG, "[%s] - on done <%s> -> go to checkStatus language", utteranceId, getCurrentQueueId());
+            setSpeaking(false);
+            supplier.setChecking(false);
             supplier.checkLanguage(true);
         } else {
             super.onDone(utteranceId);
@@ -76,11 +80,12 @@ class AndroidSynthesizerUtteranceListener extends BaseSynthesizerUtteranceListen
         logger.e(TAG, "[%s] - error code: %s", utteranceId, getErrorType(errorCode));
         if (mode == Mode.CHECKING && utteranceId.equals(supplier.getCheckingUtteranceId())) {
             //clearTimeout(utteranceId);
+            supplier.setChecking(false);
             shutdown();
             if (errorCode == TextToSpeech.ERROR_NOT_INSTALLED_YET) {
-                supplier.getOnStatusCheckedListener().execute(SynthesizerListener.Status.NOT_AVAILABLE_ERROR);
+                supplier.getOnStatusCheckedListener().execute(NOT_AVAILABLE_ERROR);
             } else {
-                supplier.getOnStatusCheckedListener().execute(SynthesizerListener.Status.UNKNOWN_ERROR);
+                supplier.getOnStatusCheckedListener().execute(UNKNOWN_ERROR);
             }
         } else {
             super.onError(utteranceId, errorCode);
@@ -122,5 +127,7 @@ class AndroidSynthesizerUtteranceListener extends BaseSynthesizerUtteranceListen
         void checkLanguage(boolean fromUtterance);
 
         String getCheckingUtteranceId();
+
+        void setChecking(boolean checking);
     }
 }

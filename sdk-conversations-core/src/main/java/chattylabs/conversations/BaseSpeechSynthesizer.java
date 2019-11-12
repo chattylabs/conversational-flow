@@ -90,6 +90,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     private boolean isReady;
     private boolean isOnHold;
     private boolean isSpeaking;
+    private boolean isChecking;
 
     // Resources
     private final AndroidAudioManager audioManager;
@@ -182,6 +183,10 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         return configuration;
     }
 
+    public AndroidAudioManager getAudioManager() {
+        return audioManager;
+    }
+
     private SynthesizerUtteranceListener generateUtteranceListener(SynthesizerListener[] listeners) {
         SynthesizerUtteranceListener listener = createDelegateUtteranceListener();
         if (listeners != null) {
@@ -225,7 +230,10 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
                 }
                 else {
                     logger.e(TAG, "[%s] - status ERROR with queue <%s>", uId, queueId);
-                    removeListener(uId).onError(uId, SynthesizerListener.Status.ERROR);
+                    SynthesizerUtteranceListener synthesizerUtteranceListener = removeListener(uId);
+                    shutdown();
+                    getAudioManager().abandonAudioFocus();
+                    synthesizerUtteranceListener.onError(uId, SynthesizerListener.Status.ERROR);
                 }
             });
         }
@@ -256,7 +264,10 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             }
             else {
                 logger.e(TAG, "[%s] - no queue status ERROR", uId);
-                removeListener(uId).onError(uId, SynthesizerListener.Status.ERROR);
+                SynthesizerUtteranceListener synthesizerUtteranceListener = removeListener(uId);
+                shutdown();
+                getAudioManager().abandonAudioFocus();
+                synthesizerUtteranceListener.onError(uId, SynthesizerListener.Status.ERROR);
             }
         });
     }
@@ -284,7 +295,10 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
                 }
                 else {
                     logger.e(TAG, "[%s] - silence status ERROR with queue <%s>", uId, queueId);
-                    removeListener(uId).onError(uId, SynthesizerListener.Status.ERROR);
+                    SynthesizerUtteranceListener synthesizerUtteranceListener = removeListener(uId);
+                    shutdown();
+                    getAudioManager().abandonAudioFocus();
+                    synthesizerUtteranceListener.onError(uId, SynthesizerListener.Status.ERROR);
                 }
             });
         }
@@ -316,7 +330,10 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             }
             else {
                 logger.e(TAG, "[%s] - no queue silence status ERROR", uId);
-                removeListener(uId).onError(uId, SynthesizerListener.Status.ERROR);
+                SynthesizerUtteranceListener synthesizerUtteranceListener = removeListener(uId);
+                shutdown();
+                getAudioManager().abandonAudioFocus();
+                synthesizerUtteranceListener.onError(uId, SynthesizerListener.Status.ERROR);
             }
         });
     }
@@ -331,36 +348,6 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     public void holdCurrentQueue() {
         logger.w(TAG, "isOnHold set to true");
         isOnHold = true;
-    }
-
-    @CallSuper
-    @Override
-    public void stop() {
-        //if (synthesizerUtteranceListener != null)
-        //    synthesizerUtteranceListener.clearTimeout(null);
-        // Stop Bluetooth Sco if required
-        bluetooth.stopSco();
-        // Audio focus
-        audioManager.abandonAudioFocus();
-        setSpeaking(false);
-        freeCurrentQueue();
-        finishPlayer();
-    }
-
-    @CallSuper
-    @Override
-    public void release() {
-        synchronized (lock) {
-            listenersMap.clear();
-            queue.clear();
-            queue.put(DEFAULT_QUEUE_ID, new ConcurrentLinkedQueue<>());
-        }
-        tempFile = null;
-        queueId = DEFAULT_QUEUE_ID;
-        freeCurrentQueue();
-        setReady(false);
-        setSpeaking(false);
-        logger.v(TAG, "states and resources released");
     }
 
     @Override
@@ -381,8 +368,12 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             }
             else {
                 logger.e(TAG, "status ERROR");
-                if (uId != null)
-                    removeListener(uId).onError(uId, SynthesizerListener.Status.ERROR);
+                if (uId != null) {
+                    SynthesizerUtteranceListener synthesizerUtteranceListener = removeListener(uId);
+                    shutdown();
+                    getAudioManager().abandonAudioFocus();
+                    synthesizerUtteranceListener.onError(uId, SynthesizerListener.Status.ERROR);
+                }
             }
         });
     }
@@ -422,7 +413,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         // Check whether Sco is connected or required
         logger.i(TAG, "bluetooth Sco required: %s",
                 Boolean.toString(configuration.isBluetoothScoRequired()));
-        if (bluetooth.isDeviceConnected() && configuration.isBluetoothScoRequired() && !bluetooth.isScoOn()) {
+        if (!isChecking() && bluetooth.isDeviceConnected() && configuration.isBluetoothScoRequired() && !bluetooth.isScoOn()) {
             // Sco Listener
             BluetoothScoListener listener = new BluetoothScoListener() {
                 @Override
@@ -430,33 +421,26 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
                     logger.i(TAG, "Sco onConnected");
                     chooseItemToPlay(map);
                 }
-
-                @Override
-                public void onDisconnected() {
-                    logger.i(TAG, "Sco onDisconnected");
-                    if (bluetooth.isScoOn()) {
-                        logger.w(TAG, "shutting down from Sco listener");
-                        shutdown();
-                    }
-                }
             };
             // Start Bluetooth Sco
+            logger.w(TAG, "waiting for bluetooth Sco connection...");
             bluetooth.startSco(listener);
-            logger.v(TAG, "waiting for bluetooth sco connection");
         }
         else {
-            chooseItemToPlay(map);
+            if (bluetooth.isScoOn())
+                chooseItemToPlay(map);
+            else {
+                audioManager.requestAudioFocus(null, configuration.isAudioExclusiveRequiredForSynthesizer());
+                chooseItemToPlay(map);
+            }
         }
     }
 
     private void chooseItemToPlay(Map<String, Object> map) {
-        audioManager.requestAudioFocus(configuration.isAudioExclusiveRequiredForSynthesizer());
         if (map.containsKey(MAP_MESSAGE)) {
-            //noinspection unchecked
             executeOnEngineReady((String) map.get(MAP_UTTERANCE_ID), (String) map.get(MAP_MESSAGE));
         }
         else if (map.containsKey(MAP_SILENCE)) {
-            //noinspection unchecked
             playSilence((String) map.get(MAP_UTTERANCE_ID), (long) map.get(MAP_SILENCE));
         } else
             throw new RuntimeException("No message or silence item to play");
@@ -553,20 +537,24 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
                 mediaPlayer = MediaPlayer.create(context, Uri.fromFile(tempFile), null,
                         audioManager.getAudioAttributes().build(), AudioManager.AUDIO_SESSION_ID_GENERATE);
                 if (mediaPlayer == null) {
+                    shutdown();
+                    getAudioManager().abandonAudioFocus();
                     listener.onError(utterance, SynthesizerListener.Status.UNKNOWN_ERROR);
                     return;
                 }
 
                 mediaPlayer.setOnCompletionListener(mediaPlayer -> {
-                    logger.v(TAG, "media player complete");
+                    logger.i(TAG, "media player complete");
                     finishPlayer();
                     tempFile = null;
                     listener.onDone(utterance);
                 });
                 mediaPlayer.setOnErrorListener((mp, what, extra) -> {
+                    logger.e(TAG, "media player error");
                     finishPlayer();
                     tempFile = null;
-                    // TODO: When I release the timeout, since I already run onError, it might be called twice
+                    shutdown();
+                    getAudioManager().abandonAudioFocus();
                     listener.onError(utterance, extra);
                     return true;
                 });
@@ -575,11 +563,42 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             } catch (Exception ex) {
                 logger.logException(ex);
                 tempFile = null;
+                shutdown();
+                getAudioManager().abandonAudioFocus();
                 listener.onError(utterance, SynthesizerListener.Status.UNKNOWN_ERROR);
             }
         } else {
             logger.w(TAG, "no media file to play, maybe silence?");
             listener.onDone(utterance);
         }
+    }
+
+    @CallSuper
+    @Override
+    public void stop() {
+        setSpeaking(false);
+        setChecking(false);
+        freeCurrentQueue();
+        finishPlayer();
+    }
+
+    @CallSuper
+    protected void release() {
+        synchronized (lock) {
+            listenersMap.clear();
+            queue.clear();
+            queue.put(DEFAULT_QUEUE_ID, new ConcurrentLinkedQueue<>());
+        }
+        tempFile = null;
+        queueId = DEFAULT_QUEUE_ID;
+        logger.v(TAG, "states and resources released");
+    }
+
+    public boolean isChecking() {
+        return isChecking;
+    }
+
+    public void setChecking(boolean checking) {
+        isChecking = checking;
     }
 }

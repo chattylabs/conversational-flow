@@ -42,19 +42,19 @@ public class AndroidAudioManager {
         this.configuration = configuration;
     }
 
-    public int getMainStreamType() {
-        return configuration.isBluetoothScoRequired() ?
-                AudioManager.STREAM_VOICE_CALL :
-                AudioManager.STREAM_MUSIC;
+    public AudioManager getDefaultAudioManager() {
+        return  audioManager;
     }
 
-    public void requestAudioFocus(boolean exclusive) {
-        if (requestAudioExclusive && !exclusive) {
-            abandonAudioFocus();
-        }
+    public int getMainStreamType() {
+        return AudioManager.STREAM_MUSIC;
+    }
+
+    public void requestAudioFocus(AudioManager.OnAudioFocusChangeListener listener, boolean exclusive) {
         requestAudioExclusive = exclusive;
-        if (requestAudioExclusive) requestAudioFocusExclusive();
-        else requestAudioFocusMayDuck();
+        if (requestAudioExclusive)
+            requestAudioFocusExclusive(listener);
+        else requestAudioFocusMayDuck(listener);
     }
 
     public void abandonAudioFocus() {
@@ -62,18 +62,19 @@ public class AndroidAudioManager {
         abandonAudioFocusExclusive();
     }
 
-    private void requestAudioFocusMayDuck() {
+    private void requestAudioFocusMayDuck(AudioManager.OnAudioFocusChangeListener listener) {
         if (!requestAudioFocusMayDuck) {
             logger.v(TAG, "AUDIO - request Audio Focus May Duck");
-            setAudioMode();
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
                 requestAudioFocusMayDuck = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(
-                        null, getMainStreamType(),
+                        listener, getMainStreamType(),
                         AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
             } else {
-                focusRequestMayDuck = new AudioFocusRequest
+                AudioFocusRequest.Builder builder = new AudioFocusRequest
                         .Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
-                        .setAudioAttributes(getAudioAttributes().build()).build();
+                        .setAudioAttributes(getAudioAttributes().build());
+                if (listener != null) builder.setOnAudioFocusChangeListener(listener);
+                focusRequestMayDuck = builder.build();
                 requestAudioFocusMayDuck = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(focusRequestMayDuck);
             }
         }
@@ -87,24 +88,24 @@ public class AndroidAudioManager {
             } else {
                 audioManager.abandonAudioFocusRequest(focusRequestMayDuck);
             }
-            unsetAudioMode();
             requestAudioFocusMayDuck = false;
         }
     }
 
-    private void requestAudioFocusExclusive() {
+    private void requestAudioFocusExclusive(AudioManager.OnAudioFocusChangeListener listener) {
         if (!requestAudioFocusExclusive) {
             logger.v(TAG, "AUDIO - request Audio Focus Exclusive");
-            setAudioMode();
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
                 requestAudioFocusExclusive = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(
-                        null, getMainStreamType(),
+                        listener, getMainStreamType(),
                         AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE);
 
             } else {
-                focusRequestExclusive = new AudioFocusRequest
+                AudioFocusRequest.Builder builder = new AudioFocusRequest
                         .Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
-                        .setAudioAttributes(getAudioAttributes().build()).build();
+                        .setAudioAttributes(getAudioAttributes().build());
+                if (listener != null) builder.setOnAudioFocusChangeListener(listener);
+                focusRequestExclusive = builder.build();
                 requestAudioFocusExclusive = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(focusRequestExclusive);
             }
         }
@@ -119,15 +120,14 @@ public class AndroidAudioManager {
             } else {
                 audioManager.abandonAudioFocusRequest(focusRequestExclusive);
             }
-            unsetAudioMode();
             requestAudioFocusExclusive = false;
         }
     }
 
-    public void setAudioMode() {
+    public void setAudioMode(int mode) {
         audioMode = audioManager.getMode();
         if (configuration.isBluetoothScoRequired()) {
-            audioManager.setMode(AudioManager.MODE_IN_CALL);
+            audioManager.setMode(mode);
         }
 
         // By enabling this option, the audio is not rooted to the speakers if the sco is activated

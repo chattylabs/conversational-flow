@@ -36,8 +36,6 @@ public interface SpeechSynthesizer {
 
     void shutdown();
 
-    void release();
-
     boolean isEmpty();
 
     String getLastQueueId();

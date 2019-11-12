@@ -1,6 +1,10 @@
 package chattylabs.conversations;
 
-public interface BluetoothScoListener {
-    void onConnected();
-    void onDisconnected();
+public class BluetoothScoListener {
+    public void onConnected() {
+
+    }
+    public void onDisconnected() {
+
+    }
 }

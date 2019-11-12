@@ -103,18 +103,17 @@ class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceListener {
     @Override
     public void onDone(String utteranceId) {
         if (this.mode == Mode.DELEGATE) {
+            setSpeaking(false);
             _getOnDoneListener().execute(utteranceId);
             return;
         }
 
-        //clearTimeout(utteranceId);
         logger.v(TAG, "[%s] - on done <%s> - check for Empty Queue", utteranceId, getCurrentQueueId());
         moveToNextQueueIfNeeded();
 //        if (isEmpty()) {
 //            stop();
 //            logger.i(TAG, "%s[%s] - on done <%s> - Stream Finished", utteranceId, getCurrentQueueId());
 //        }
-        setSpeaking(false);
         if (getListenersMap().size() > 0) {
             SynthesizerUtteranceListener listener = removeListener(utteranceId);
             logger.v(TAG, "[%s] - on done <%s> - execute listener.onDone", utteranceId, getCurrentQueueId());
@@ -126,12 +125,12 @@ class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceListener {
 
     @Override
     public void onError(String utteranceId, int errorCode) {
+        setSpeaking(false);
         if (this.mode == Mode.DELEGATE) {
             _getOnErrorListener().execute(utteranceId, errorCode);
             return;
         }
 
-        //clearTimeout(utteranceId);
         logger.e(TAG, "[%s] - on error <%s> -> stop timeout", utteranceId, getCurrentQueueId());
         logger.e(TAG, "[%s] - error code: %s", utteranceId, getErrorType(errorCode));
         moveToNextQueueIfNeeded();
@@ -139,7 +138,6 @@ class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceListener {
 //            stop();
 //            logger.i(TAG, "[%s] - ERROR <%s> - Stream Finished", utteranceId, getCurrentQueueId());
 //        }
-        setSpeaking(false);
         if (getListenersMap().size() > 0 && getListenersMap().containsKey(utteranceId)) {
             SynthesizerUtteranceListener listener = removeListener(utteranceId);
             shutdown();
@@ -208,7 +206,7 @@ class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceListener {
         return speechSynthesizer.isEmpty();
     }
 
-    private void setSpeaking(boolean speaking) {
+    protected void setSpeaking(boolean speaking) {
         speechSynthesizer.setSpeaking(speaking);
     }
 

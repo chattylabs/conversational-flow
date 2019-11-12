@@ -4,20 +4,27 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.Spinner;
+
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.chattylabs.android.commons.PermissionsHelper;
 import com.chattylabs.android.commons.ThreadUtils;
+
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+
+import javax.inject.Inject;
 
 import chattylabs.conversations.AmazonSpeechSynthesizer;
 import chattylabs.conversations.AndroidSpeechRecognizer;
@@ -30,14 +37,6 @@ import chattylabs.conversations.SpeechRecognizer;
 import chattylabs.conversations.SpeechSynthesizer;
 import chattylabs.conversations.SynthesizerListener;
 import chattylabs.conversations.TextFilterForUrl;
-
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-
-import javax.inject.Inject;
-
 import dagger.android.support.DaggerAppCompatActivity;
 
 abstract class BaseActivity extends DaggerAppCompatActivity
@@ -62,6 +61,7 @@ abstract class BaseActivity extends DaggerAppCompatActivity
     SpeechRecognizer recognizer;
 
     View proceed;
+    boolean proceedEnabled = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,8 +110,9 @@ abstract class BaseActivity extends DaggerAppCompatActivity
     }
 
     private void setup() {
+        if (proceed != null) proceedEnabled = proceed.isEnabled();
         runOnUiThread(() -> {
-            if (proceed != null) proceed.setEnabled(false);
+            if (proceed != null && proceed.isEnabled()) proceed.setEnabled(false);
         });
 
         component.updateConfiguration(builder ->
@@ -147,9 +148,8 @@ abstract class BaseActivity extends DaggerAppCompatActivity
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
-        if (requestCode == 202 &&
-                PermissionsHelper.allGranted(grantResults)) {
-            serialThread.addTask(() -> {
+        if (requestCode == 202 && PermissionsHelper.allGranted(grantResults)) {
+            serialThread.addTask(() -> { System.out.println("checkSpeechSynthesizerStatus");
                 component.checkSpeechSynthesizerStatus(this, synthesizerStatus -> {
                     if (synthesizerStatus == SynthesizerListener.Status.AVAILABLE) {
                         synthesizer = component.getSpeechSynthesizer(this);
@@ -158,7 +158,7 @@ abstract class BaseActivity extends DaggerAppCompatActivity
                             if (recognizerStatus == RecognizerListener.Status.AVAILABLE) {
                                 recognizer = component.getSpeechRecognizer(this);
                                 runOnUiThread(() -> {
-                                    if (proceed != null) proceed.setEnabled(true);
+                                    if (proceed != null) proceed.setEnabled(proceedEnabled);
                                 });
                             }
                         });

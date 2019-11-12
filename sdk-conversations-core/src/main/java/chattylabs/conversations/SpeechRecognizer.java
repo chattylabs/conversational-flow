@@ -11,12 +11,6 @@ public interface SpeechRecognizer {
 
     void stop();
 
-    void cancel();
-
-    void shutdown();
-
-    void release();
-
     void setRmsDebug(boolean debug);
 
     void setNoSoundThreshold(float maxValue);

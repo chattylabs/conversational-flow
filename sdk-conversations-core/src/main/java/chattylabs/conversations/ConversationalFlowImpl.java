@@ -5,6 +5,7 @@ import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
 import android.media.AudioManager;
+
 import androidx.annotation.RequiresPermission;
 
 import com.chattylabs.android.commons.internal.ILogger;
@@ -49,6 +50,7 @@ final class ConversationalFlowImpl implements ConversationalFlow {
                 .setAudioExclusiveRequiredForSynthesizer(() -> false)
                 .setAudioExclusiveRequiredForRecognizer(() -> true)
                 .setSpeechDictation(() -> false)
+                .setBluetoothScoAudioMode(() -> AudioManager.MODE_IN_COMMUNICATION)
                 .build();
         reset();
         Instance.instanceOf = new SoftReference<>(this);
@@ -56,8 +58,9 @@ final class ConversationalFlowImpl implements ConversationalFlow {
 
     @Override
     public void updateConfiguration(ComponentConfig.OnUpdate listener) {
-        configuration = listener.run(new ComponentConfig.Builder(configuration));
-        reset();
+        ComponentConfig newConfig = listener.run(new ComponentConfig.Builder(this.configuration));
+        this.configuration.update(newConfig);
+        shutdown();
     }
 
     private void reset() {
@@ -90,16 +93,20 @@ final class ConversationalFlowImpl implements ConversationalFlow {
             AudioManager systemAudioManager = (AudioManager) application.getSystemService(Context.AUDIO_SERVICE);
             this.audioManager = new AndroidAudioManager(systemAudioManager, configuration, logger);
         }
-        if (bluetooth == null) bluetooth = new AndroidBluetooth(application, audioManager, logger);
+        if (bluetooth == null) bluetooth = new AndroidBluetooth(application, audioManager, configuration, logger);
         if (phoneStateHandler == null) phoneStateHandler = new PhoneStateHandler(application, logger);
         phoneStateHandler.register(new PhoneStateListenerAdapter() {
             @Override
             public void onOutgoingCallStarts() {
+                speechSynthesizer.shutdown();
+                speechRecognizer.stop();
                 shutdown();
             }
 
             @Override
             public void onIncomingCallRinging() {
+                speechSynthesizer.shutdown();
+                speechRecognizer.stop();
                 shutdown();
             }
         });
@@ -171,16 +178,8 @@ final class ConversationalFlowImpl implements ConversationalFlow {
     }
 
     @Override
-    public void stop() {
-        if (speechSynthesizer != null) speechSynthesizer.stop();
-        if (speechRecognizer != null) speechRecognizer.stop();
-        if (phoneStateHandler != null) phoneStateHandler.unregister();
-    }
-
-    @Override
     public void shutdown() {
-        if (speechSynthesizer != null) speechSynthesizer.shutdown();
-        if (speechRecognizer != null) speechRecognizer.shutdown();
         if (phoneStateHandler != null) phoneStateHandler.unregister();
+        if (bluetooth != null) bluetooth.stopSco(() -> audioManager.abandonAudioFocus());
     }
 }

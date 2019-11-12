@@ -92,11 +92,6 @@ public interface ConversationalFlow extends RequiredPermissions {
     Conversation create(Context context);
 
     /**
-     * Stops the current utterance playing or recording.
-     */
-    void stop();
-
-    /**
      * Shuts all internal components down and resets resources.
      */
     void shutdown();

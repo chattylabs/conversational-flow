@@ -3,20 +3,11 @@ package chattylabs.conversations.demo;
 import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.text.Spanned;
-import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.ListView;
 
 import com.chattylabs.android.commons.HtmlUtils;
 import com.chattylabs.android.commons.Tag;
-
-import chattylabs.conversations.Conversation;
-import chattylabs.conversations.Flow;
-import chattylabs.conversations.VoiceMatch;
-import chattylabs.conversations.VoiceMessage;
-import chattylabs.conversations.VoiceMismatch;
-import chattylabs.conversations.VoiceNode;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -25,6 +16,13 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+
+import chattylabs.conversations.Conversation;
+import chattylabs.conversations.Flow;
+import chattylabs.conversations.VoiceMatch;
+import chattylabs.conversations.VoiceMessage;
+import chattylabs.conversations.VoiceMismatch;
+import chattylabs.conversations.VoiceNode;
 
 public class BuildFromJsonActivity extends BaseActivity {
 
@@ -41,6 +39,7 @@ public class BuildFromJsonActivity extends BaseActivity {
     }
 
     private void initViews() {
+        proceedEnabled = true;
         proceed.setOnClickListener(v -> loadConversation());
 
         ListView conversationListView = findViewById(R.id.conversation);

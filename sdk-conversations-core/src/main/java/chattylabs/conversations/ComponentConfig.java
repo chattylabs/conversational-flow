@@ -10,6 +10,7 @@ public class ComponentConfig {
     private LazyProvider<Boolean> bluetoothScoRequired;
     private LazyProvider<Boolean> audioExclusiveRequiredForSynthesizer;
     private LazyProvider<Boolean> audioExclusiveRequiredForRecognizer;
+    private LazyProvider<Integer> bluetoothScoAudioMode;
     private LazyProvider<Class<? extends SpeechRecognizer>> recognizerServiceType;
     private LazyProvider<Class<? extends SpeechSynthesizer>> synthesizerServiceType;
     private RawResourceLazyProvider googleCredentialsResourceFile;
@@ -20,6 +21,7 @@ public class ComponentConfig {
         bluetoothScoRequired = builder.bluetoothScoRequired;
         audioExclusiveRequiredForSynthesizer = builder.audioExclusiveRequiredForSynthesizer;
         audioExclusiveRequiredForRecognizer = builder.audioExclusiveRequiredForRecognizer;
+        bluetoothScoAudioMode = builder.bluetoothScoAudioMode;
         recognizerServiceType = builder.recognizerServiceType;
         synthesizerServiceType = builder.synthesizerServiceType;
         googleCredentialsResourceFile = builder.googleCredentialsResourceFile;
@@ -42,6 +44,10 @@ public class ComponentConfig {
         return audioExclusiveRequiredForRecognizer.get();
     }
 
+    public Integer getBluetoothScoAudioMode() {
+        return bluetoothScoAudioMode.get();
+    }
+
     public Class<? extends SpeechRecognizer> getRecognizerServiceType() {
         return recognizerServiceType.get();
     }
@@ -59,11 +65,24 @@ public class ComponentConfig {
         return speechDictation.get();
     }
 
+    void update(ComponentConfig config) {
+        speechLanguage = config.speechLanguage;
+        bluetoothScoRequired = config.bluetoothScoRequired;
+        audioExclusiveRequiredForSynthesizer = config.audioExclusiveRequiredForSynthesizer;
+        audioExclusiveRequiredForRecognizer = config.audioExclusiveRequiredForRecognizer;
+        bluetoothScoAudioMode = config.bluetoothScoAudioMode;
+        recognizerServiceType = config.recognizerServiceType;
+        synthesizerServiceType = config.synthesizerServiceType;
+        googleCredentialsResourceFile = config.googleCredentialsResourceFile;
+        speechDictation = config.speechDictation;
+    }
+
     public static final class Builder {
         private LazyProvider<Locale> speechLanguage;
         private LazyProvider<Boolean> bluetoothScoRequired;
         private LazyProvider<Boolean> audioExclusiveRequiredForSynthesizer;
         private LazyProvider<Boolean> audioExclusiveRequiredForRecognizer;
+        private LazyProvider<Integer> bluetoothScoAudioMode;
         private LazyProvider<Class<? extends SpeechRecognizer>> recognizerServiceType;
         private LazyProvider<Class<? extends SpeechSynthesizer>> synthesizerServiceType;
         private RawResourceLazyProvider googleCredentialsResourceFile;
@@ -77,6 +96,7 @@ public class ComponentConfig {
             bluetoothScoRequired = copy.bluetoothScoRequired;
             audioExclusiveRequiredForSynthesizer = copy.audioExclusiveRequiredForSynthesizer;
             audioExclusiveRequiredForRecognizer = copy.audioExclusiveRequiredForRecognizer;
+            bluetoothScoAudioMode = copy.bluetoothScoAudioMode;
             recognizerServiceType = copy.recognizerServiceType;
             synthesizerServiceType = copy.synthesizerServiceType;
             googleCredentialsResourceFile = copy.googleCredentialsResourceFile;
@@ -100,6 +120,15 @@ public class ComponentConfig {
 
         public Builder setAudioExclusiveRequiredForRecognizer(LazyProvider<Boolean> lazyProvider) {
             this.audioExclusiveRequiredForRecognizer = lazyProvider;
+            return this;
+        }
+
+        /**
+         * Allowed values {{@link android.media.AudioManager#MODE_IN_CALL}}
+         * or {{@link android.media.AudioManager#MODE_IN_COMMUNICATION}}
+         */
+        public Builder setBluetoothScoAudioMode(LazyProvider<Integer> lazyProvider) {
+            this.bluetoothScoAudioMode = lazyProvider;
             return this;
         }
 
