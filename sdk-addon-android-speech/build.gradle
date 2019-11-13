@@ -13,8 +13,6 @@ versioning {
     }
 }
 
-description = 'Android Speech Addon'
-
 android {
     compileSdkVersion 28
 
@@ -33,4 +31,5 @@ dependencies {
     compileOnly project(':sdk-vui-core')
 }
 
+description = 'Android Speech Addon'
 apply from: '../android-buildsystem/publish.gradle'

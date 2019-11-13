@@ -13,8 +13,6 @@ versioning {
     }
 }
 
-description = 'Amazon Speech Addon'
-
 android {
     compileSdkVersion 28
 
@@ -39,4 +37,5 @@ dependencies {
     implementation group: 'com.google.code.gson', name: 'gson', version: '2.8.5'
 }
 
+description = 'Amazon Speech Addon'
 apply from: '../android-buildsystem/publish.gradle'

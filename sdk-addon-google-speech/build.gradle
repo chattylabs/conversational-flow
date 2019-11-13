@@ -13,8 +13,6 @@ versioning {
     }
 }
 
-description = 'Google Speech Addon'
-
 android {
     compileSdkVersion 28
 
@@ -41,4 +39,5 @@ dependencies {
     implementation "com.google.cloud:google-cloud-speech:1.0.0"
 }
 
+description = 'Google Speech Addon'
 apply from: '../android-buildsystem/publish.gradle'
