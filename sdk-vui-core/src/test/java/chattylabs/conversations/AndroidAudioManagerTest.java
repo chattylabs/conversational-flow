@@ -1,65 +1,44 @@
 package chattylabs.conversations;
 
-import android.media.AudioManager;
-import android.os.Build;
-
-import com.chattylabs.android.commons.UnitTestUtils;
-import com.chattylabs.android.commons.internal.ILogger;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
-
-@RunWith(RobolectricTestRunner.class)
-@Config(sdk = Build.VERSION_CODES.O)
+//@RunWith(RobolectricTestRunner.class)
+//@Config(sdk = Build.VERSION_CODES.O)
 public class AndroidAudioManagerTest {
 
-    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
-
-    @Mock AudioManager audioManager;
-    @Mock ComponentConfig config;
-    @Mock ILogger logger;
-
-    private AndroidAudioManager androidAudioManager;
-    private int currentSdkLevel;
-
-    @Before
-    public void setUp() throws Exception {
-        currentSdkLevel = Build.VERSION.SDK_INT;
-
-        UnitTestUtils.setVersionSdk(Build.VERSION_CODES.O);
-        when(config.isBluetoothScoRequired()).thenReturn(false);
-
-        androidAudioManager = spy(new AndroidAudioManager(audioManager, config, logger));
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        UnitTestUtils.setVersionSdk(currentSdkLevel);
-    }
-
-    @Test
-    public void getMainStreamType() {
-        when(config.isBluetoothScoRequired()).thenReturn(true);
-
-        assertEquals(androidAudioManager.getMainStreamType(), AudioManager.STREAM_VOICE_CALL);
-
-        when(config.isBluetoothScoRequired()).thenReturn(false);
-
-        assertEquals(androidAudioManager.getMainStreamType(), AudioManager.STREAM_MUSIC);
-    }
-
+//    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+//
+//    @Mock AudioManager audioManager;
+//    @Mock ComponentConfig config;
+//    @Mock ILogger logger;
+//
+//    private AndroidAudioManager androidAudioManager;
+//    private int currentSdkLevel;
+//
+//    @Before
+//    public void setUp() throws Exception {
+//        currentSdkLevel = Build.VERSION.SDK_INT;
+//
+//        UnitTestUtils.setVersionSdk(Build.VERSION_CODES.O);
+//        when(config.isBluetoothScoRequired()).thenReturn(false);
+//
+//        androidAudioManager = spy(new AndroidAudioManager(audioManager, config, logger));
+//    }
+//
+//    @After
+//    public void tearDown() throws Exception {
+//        UnitTestUtils.setVersionSdk(currentSdkLevel);
+//    }
+//
+//    @Test
+//    public void getMainStreamType() {
+//        when(config.isBluetoothScoRequired()).thenReturn(true);
+//
+//        assertEquals(androidAudioManager.getMainStreamType(), AudioManager.STREAM_VOICE_CALL);
+//
+//        when(config.isBluetoothScoRequired()).thenReturn(false);
+//
+//        assertEquals(androidAudioManager.getMainStreamType(), AudioManager.STREAM_MUSIC);
+//    }
+//
 //    @SuppressWarnings("ConstantConditions")
 //    @Test
 //    public void requestAudioFocus_AndroidO() throws Exception {

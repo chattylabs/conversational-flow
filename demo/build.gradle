@@ -1,6 +1,10 @@
+repositories {
+    maven { url "https://dl.bintray.com/chattylabs/maven" }
+}
 apply plugin: 'com.android.application'
 apply plugin: 'com.chattylabs.versioning'
-apply from: '../buildsystem/android.gradle'
+apply from: '../android-buildsystem/android.gradle'
+apply from: '../android-buildsystem/versioning.gradle'
 
 versioning {
 
@@ -13,27 +17,19 @@ versioning {
 }
 
 android {
+
+    compileSdkVersion 28
+
     defaultConfig {
-        versionCode versioning.code()
-        versionName versioning.name()
-        applicationId "chattylabs.conversations.demo"
+        minSdkVersion 21
+        targetSdkVersion 28
+        applicationId "chattylabs.vui.demo"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
+        // Enable this option on your own gradle file if you need it
+        vectorDrawables.useSupportLibrary = true
+
         manifestPlaceholders = [HOCKEYAPP_APP_ID: "658862d7f4d34d89b96ae8356aafdb05"]
-    }
-    signingConfigs {
-        debug {
-            storeFile file("../buildsystem/debug.keystore")
-        }
-    }
-    buildTypes {
-        debug {
-            signingConfig signingConfigs.debug
-        }
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
     }
 }
 
@@ -41,22 +37,22 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 
     // Android dependencies
-    implementation 'androidx.appcompat:appcompat:1.0.0-beta01'
+    implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
-    implementation 'androidx.cardview:cardview:1.0.0-beta01'
-    implementation 'androidx.recyclerview:recyclerview:1.0.0-beta01'
+    implementation 'androidx.cardview:cardview:1.0.0'
+    implementation 'androidx.recyclerview:recyclerview:1.1.0-rc01'
 
     // Dagger
-    implementation 'com.google.dagger:dagger:2.15'
-    implementation 'com.google.dagger:dagger-android:2.15'
-    implementation 'com.google.dagger:dagger-android-support:2.15'
+    implementation 'com.google.dagger:dagger:2.16'
+    implementation 'com.google.dagger:dagger-android:2.16'
+    implementation 'com.google.dagger:dagger-android-support:2.16'
     kapt 'com.google.dagger:dagger-compiler:2.15'
     kapt 'com.google.dagger:dagger-android-processor:2.15'
 
     // Dependencies
     implementation 'net.hockeyapp.android:HockeySDK:5.1.0'
     implementation "com.chattylabs:android-commons:$android_commons"
-    implementation project(':sdk-conversations-core')
+    implementation project(':sdk-vui-core')
     implementation project(':sdk-addon-android-speech')
     implementation project(':sdk-addon-google-speech')
     implementation project(':sdk-addon-amazon-speech')

@@ -3,16 +3,15 @@
 |                   	     | TYPE  	| VERSION 	            | STATUS 	          | COVERAGE                |
 |--------------------------- |:-------:	|---------------------- |-------------------- |:-----------------------:|
 | `demo`                     | _demo_  	| ![Latest demo][v0]    | ![Build Status][s0] | ![Coverage Status][c0]  |
-| `conversations-core`       | _core_  	| ![Latest version][v1] | ![Build Status][s1] | ![Coverage Status][c1]  |
+| `vui-core`                 | _core_  	| ![Latest version][v1] | ![Build Status][s1] | ![Coverage Status][c1]  |
 | `addon-android-speech`     | _addon_ 	| ![Latest version][v2] | ![Build Status][s2] | ![Coverage Status][c2]  |
 | `addon-google-speech`      | _addon_	| ![Latest version][v3] | ![Build Status][s3] | ![Coverage Status][c3]  |
 | `addon-amazon-speech`      | _addon_	| ![Latest version][v4] | ![Build Status][s4] | ![Coverage Status][c4]  |
 
 
-Check: [VUI SDK](https://github.com/chattylabs/voice-user-interaction)
-
-This library combines both native built-in resources and cloud services into 
-a software component capable to run reliably a **Speech Synthesizer** and a **Voice Recognizer**.
+This library combines both native built-in resources and cloud services into
+a component capable to run reliably and seamlessly a **Speech Synthesizer**
+and a **Voice Recognizer**.
 
 <br/>
 <p align="center"><img src="art/poster.png" width="800px" /></p>
@@ -61,10 +60,10 @@ The SDK works on Android version 5.0 (Lollipop) and above. _(for lower versions 
     dependencies {
 
         // Required
-        implementation 'chattylabs:conversations-core:<latest version>'
-         
+        implementation 'chattylabs:vui-core:<latest version>'
+
         // You can either use only one or combine addons
-        // i.e. the Voice Recognizer of Google with the Synthesizer of Android
+        // i.e. Use voice Synthesizer from Google and SpeechRecognizer from Android
         implementation 'chattylabs:addon-android-speech:<latest version>'
         implementation 'chattylabs:addon-google-speech:<latest version>'
     }
@@ -116,7 +115,7 @@ There are different [Voice Nodes]() and [Configurations](), check the [wiki page
 &nbsp;
 
 [v0]: https://img.shields.io/badge/demo-v0.6.3-blue.svg
-[v1]: https://api.bintray.com/packages/chattylabs/maven/conversations-core/images/download.svg?label=Latest%20version
+[v1]: https://api.bintray.com/packages/chattylabs/maven/vui-core/images/download.svg?label=Latest%20version
 [v2]: https://api.bintray.com/packages/chattylabs/maven/addon-android-speech/images/download.svg?label=Latest%20version
 [v3]: https://api.bintray.com/packages/chattylabs/maven/addon-google-speech/images/download.svg?label=Latest%20version
 [v4]: https://api.bintray.com/packages/chattylabs/maven/addon-amazon-speech/images/download.svg?label=Latest%20version
@@ -128,7 +127,7 @@ There are different [Voice Nodes]() and [Configurations](), check the [wiki page
 [s4]: https://app.bitrise.io/app/beb0060592365303/status.svg?token=Nn2JIfPDel5PkqA2vDkuWw&branch=master
 
 [c0]: https://coveralls.io/repos/chattylabs/unknown/badge.svg?branch=master&service=github
-[c1]: https://coveralls.io/repos/chattylabs/conversations-core/badge.svg?branch=master&service=github
+[c1]: https://coveralls.io/repos/chattylabs/vui-core/badge.svg?branch=master&service=github
 [c2]: https://coveralls.io/repos/chattylabs/addon-android-speech/badge.svg?branch=master&service=github
 [c3]: https://coveralls.io/repos/chattylabs/addon-google-speech/badge.svg?branch=master&service=github
 [c4]: https://coveralls.io/repos/chattylabs/addon-amazon-speech/badge.svg?branch=master&service=github

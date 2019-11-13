@@ -1,6 +1,15 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.novoda:bintray-release:0.9.1'
+    }
+}
 apply plugin: 'com.android.library'
 apply plugin: 'com.chattylabs.versioning'
-apply from: '../buildsystem/android.gradle'
+apply from: '../android-buildsystem/android.gradle'
+apply from: '../android-buildsystem/versioning.gradle'
 
 versioning {
 
@@ -15,19 +24,13 @@ versioning {
 description = 'Android Speech Addon'
 
 android {
+    compileSdkVersion 28
+
     defaultConfig {
-        versionCode versioning.code()
-        versionName versioning.name()
+        minSdkVersion 21
+        targetSdkVersion 28
     }
     //compileSdkVersion 21
-
-    buildTypes {
-        release {
-            minifyEnabled false
-            useProguard false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-    }
 }
 
 dependencies {
@@ -35,7 +38,7 @@ dependencies {
 
     // Dependencies
     implementation "com.chattylabs:android-commons:$android_commons"
-    compileOnly project(':sdk-conversations-core')
+    compileOnly project(':sdk-vui-core')
 }
 
 apply from: '../publish.gradle'
