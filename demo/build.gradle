@@ -11,8 +11,8 @@ versioning {
     tagPrefix "demo-version/"
 
     keywords {
-        minor "[demo-feature]"
-        patch "[demo-bug]", "[demo-patch]"
+        minor "[demo-feature]", "[feature]"
+        patch "[demo-bug]", "[demo-patch]", "[patch]"
     }
 }
 

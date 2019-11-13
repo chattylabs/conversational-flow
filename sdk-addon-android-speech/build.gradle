@@ -16,8 +16,8 @@ versioning {
     tagPrefix "addon-android-version/"
 
     keywords {
-        minor "[addon-android-feature]"
-        patch "[addon-android-bug]", "[addon-android-patch]"
+        minor "[addon-android-feature]", "[feature]"
+        patch "[addon-android-bug]", "[addon-android-patch]", "[patch]"
     }
 }
 
@@ -41,4 +41,4 @@ dependencies {
     compileOnly project(':sdk-vui-core')
 }
 
-apply from: '../publish.gradle'
+apply from: '../android-buildsystem/publish.gradle'

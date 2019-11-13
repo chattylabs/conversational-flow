@@ -16,8 +16,8 @@ versioning {
     tagPrefix "core-version/"
 
     keywords {
-        minor "[core-feature]"
-        patch "[core-bug]", "[core-patch]"
+        minor "[core-feature]", "[feature]"
+        patch "[core-bug]", "[core-patch]", "[patch]"
     }
 }
 
@@ -47,4 +47,4 @@ dependencies {
     testImplementation 'org.robolectric:robolectric:3.8'
 }
 
-apply from: '../publish.gradle'
+apply from: '../android-buildsystem/publish.gradle'

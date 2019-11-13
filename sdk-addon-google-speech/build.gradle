@@ -16,8 +16,8 @@ versioning {
     tagPrefix "addon-google-version/"
 
     keywords {
-        minor "[addon-google-feature]"
-        patch "[addon-google-bug]", "[addon-google-patch]"
+        minor "[addon-google-feature]", "[feature]"
+        patch "[addon-google-bug]", "[addon-google-patch]", "[patch]"
     }
 }
 
@@ -49,4 +49,4 @@ dependencies {
     implementation "com.google.cloud:google-cloud-speech:1.0.0"
 }
 
-apply from: '../publish.gradle'
+apply from: '../android-buildsystem/publish.gradle'
