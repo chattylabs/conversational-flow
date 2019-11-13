@@ -1,6 +1,3 @@
-repositories {
-    maven { url "https://dl.bintray.com/chattylabs/maven" }
-}
 apply plugin: 'com.android.application'
 apply plugin: 'com.chattylabs.versioning'
 apply from: '../android-buildsystem/android.gradle'
