@@ -53,6 +53,10 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
 
     abstract void startListening();
 
+    public AndroidAudioManager getAudioManager() {
+        return audioManager;
+    }
+
     public ComponentConfig getConfiguration() {
         return configuration;
     }

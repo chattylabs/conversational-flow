@@ -7,6 +7,7 @@ import java.util.Locale;
 
 public class ComponentConfig {
     private LazyProvider<Locale> speechLanguage;
+    private LazyProvider<Boolean> customBeepEnabled;
     private LazyProvider<Boolean> bluetoothScoRequired;
     private LazyProvider<Boolean> audioExclusiveRequiredForSynthesizer;
     private LazyProvider<Boolean> audioExclusiveRequiredForRecognizer;
@@ -18,6 +19,7 @@ public class ComponentConfig {
 
     private ComponentConfig(Builder builder) {
         speechLanguage = builder.speechLanguage;
+        customBeepEnabled = builder.customBeepEnabled;
         bluetoothScoRequired = builder.bluetoothScoRequired;
         audioExclusiveRequiredForSynthesizer = builder.audioExclusiveRequiredForSynthesizer;
         audioExclusiveRequiredForRecognizer = builder.audioExclusiveRequiredForRecognizer;
@@ -30,6 +32,10 @@ public class ComponentConfig {
 
     public Locale getSpeechLanguage() {
         return speechLanguage.get();
+    }
+
+    public boolean isCustomBeepEnabled() {
+        return customBeepEnabled.get();
     }
 
     public boolean isBluetoothScoRequired() {
@@ -67,6 +73,7 @@ public class ComponentConfig {
 
     void update(ComponentConfig config) {
         speechLanguage = config.speechLanguage;
+        customBeepEnabled = config.customBeepEnabled;
         bluetoothScoRequired = config.bluetoothScoRequired;
         audioExclusiveRequiredForSynthesizer = config.audioExclusiveRequiredForSynthesizer;
         audioExclusiveRequiredForRecognizer = config.audioExclusiveRequiredForRecognizer;
@@ -79,6 +86,7 @@ public class ComponentConfig {
 
     public static final class Builder {
         private LazyProvider<Locale> speechLanguage;
+        private LazyProvider<Boolean> customBeepEnabled;
         private LazyProvider<Boolean> bluetoothScoRequired;
         private LazyProvider<Boolean> audioExclusiveRequiredForSynthesizer;
         private LazyProvider<Boolean> audioExclusiveRequiredForRecognizer;
@@ -93,6 +101,7 @@ public class ComponentConfig {
 
         public Builder(ComponentConfig copy) {
             speechLanguage = copy.speechLanguage;
+            customBeepEnabled = copy.customBeepEnabled;
             bluetoothScoRequired = copy.bluetoothScoRequired;
             audioExclusiveRequiredForSynthesizer = copy.audioExclusiveRequiredForSynthesizer;
             audioExclusiveRequiredForRecognizer = copy.audioExclusiveRequiredForRecognizer;
@@ -105,6 +114,11 @@ public class ComponentConfig {
 
         public Builder setSpeechLanguage(LazyProvider<Locale> speechLanguage) {
             this.speechLanguage = speechLanguage;
+            return this;
+        }
+
+        public Builder setCustomBeepEnabled(LazyProvider<Boolean> customBeepEnabled) {
+            this.customBeepEnabled = customBeepEnabled;
             return this;
         }
 

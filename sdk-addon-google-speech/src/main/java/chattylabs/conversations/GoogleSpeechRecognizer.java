@@ -2,17 +2,12 @@ package chattylabs.conversations;
 
 import android.app.Application;
 import android.content.Context;
-import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.speech.SpeechRecognizer;
+import android.text.TextUtils;
 
 import androidx.annotation.Keep;
 import androidx.annotation.RawRes;
-import chattylabs.conversations.RecognizerListener.Status;
-import chattylabs.conversations.addon.google.R;
-import kotlin.Unit;
-
-import android.text.TextUtils;
 
 import com.chattylabs.android.commons.Tag;
 import com.chattylabs.android.commons.internal.ILogger;
@@ -21,10 +16,10 @@ import com.google.api.gax.rpc.ClientStream;
 import com.google.api.gax.rpc.ResponseObserver;
 import com.google.api.gax.rpc.StreamController;
 import com.google.auth.oauth2.GoogleCredentials;
-import com.google.cloud.speech.v1.SpeechRecognitionAlternative;
-import com.google.cloud.speech.v1.SpeechSettings;
 import com.google.cloud.speech.v1.RecognitionConfig;
 import com.google.cloud.speech.v1.SpeechClient;
+import com.google.cloud.speech.v1.SpeechRecognitionAlternative;
+import com.google.cloud.speech.v1.SpeechSettings;
 import com.google.cloud.speech.v1.StreamingRecognitionConfig;
 import com.google.cloud.speech.v1.StreamingRecognitionResult;
 import com.google.cloud.speech.v1.StreamingRecognizeRequest;
@@ -42,8 +37,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import chattylabs.conversations.RecognizerListener.Status;
+import kotlin.Unit;
+
 import static chattylabs.conversations.ConversationalFlow.selectMostConfidentResult;
-import static chattylabs.conversations.RecognizerListener.*;
+import static chattylabs.conversations.RecognizerListener.OnError;
+import static chattylabs.conversations.RecognizerListener.OnMostConfidentResult;
+import static chattylabs.conversations.RecognizerListener.OnPartialResults;
+import static chattylabs.conversations.RecognizerListener.OnPrepared;
+import static chattylabs.conversations.RecognizerListener.OnResults;
+import static chattylabs.conversations.RecognizerListener.OnStatusChecked;
 
 public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
     private static final String TAG = Tag.make("GoogleSpeechRecognizer");
@@ -177,21 +180,16 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
 
                 @Override
                 public void onReadyForSpeech(Bundle params) {
-                    startBeep(true);
                     super.onReadyForSpeech(params);
-                }
-
-                @Override
-                public void onEndOfSpeech() {
-                    startBeep(false);
-                    super.onEndOfSpeech();
+                    getAudioManager().startBeep(application);
                 }
 
                 @Override
                 public void onError(int error) {
                     logger.e(TAG, "error: %s", GoogleSpeechRecognizer.getErrorType(error));
-                    OnError errorListener = _getOnError();
                     onEndOfSpeech();
+                    getAudioManager().errorBeep(application);
+                    OnError errorListener = _getOnError();
                     // We consider 2 sec as the minimum to record audio
                     // If it last less than that, there was an audio issue
                     // So potentially we retry listening again
@@ -219,6 +217,7 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
                 public void onResults(Bundle results) {
                     logger.v(TAG, "onResults");
                     onEndOfSpeech();
+                    getAudioManager().successBeep(application);
                     List<String> list;
                     OnResults onResults = _getOnResults();
                     OnMostConfidentResult onMostConfidentResult = _getOnMostConfidentResult();
@@ -336,12 +335,6 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
 
     private void stopElapsedTime() {
         if (timer != null) timer.cancel();
-    }
-
-    private void startBeep(boolean opening) {
-        MediaPlayer mp = MediaPlayer.create(application, opening ? R.raw.open_beep : R.raw.close_beep);
-        mp.setOnCompletionListener(MediaPlayer::release);
-        mp.start();
     }
 
     private SpeechClient generateFromRawFile(Context context,

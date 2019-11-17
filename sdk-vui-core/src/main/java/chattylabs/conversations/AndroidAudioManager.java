@@ -1,8 +1,10 @@
 package chattylabs.conversations;
 
+import android.content.Context;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.os.Build;
 
 import com.chattylabs.android.commons.Tag;
@@ -151,6 +153,24 @@ public class AndroidAudioManager {
         // meaning that we can force bluetooth sco even with speakers connected
         // TODO: Nice to have feature!
         //audioManager.setSpeakerphoneOn(speakerphoneOn);
+    }
+
+    public void startBeep(Context context) {
+        MediaPlayer mp = MediaPlayer.create(context, R.raw.start_beep);
+        mp.setOnCompletionListener(MediaPlayer::release);
+        mp.start();
+    }
+
+    public void successBeep(Context context) {
+        MediaPlayer mp = MediaPlayer.create(context, R.raw.success_beep);
+        mp.setOnCompletionListener(MediaPlayer::release);
+        mp.start();
+    }
+
+    public void errorBeep(Context context) {
+        MediaPlayer mp = MediaPlayer.create(context, R.raw.error_beep);
+        mp.setOnCompletionListener(MediaPlayer::release);
+        mp.start();
     }
 
     private void setStreamToMaxVolume() {
