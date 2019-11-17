@@ -324,4 +324,12 @@ class ConversationImpl extends Flow.Edge implements Conversation {
         throw new IllegalArgumentException("Node \"" + id + "\" does not exists in the graph. " +
                 "Have you forgotten to add it with addNode(Node)?");
     }
+
+    void resetSpeechSynthesizer(SpeechSynthesizer speechSynthesizer) {
+        this.speechSynthesizer = speechSynthesizer;
+    }
+
+    void resetSpeechRecognizer(SpeechRecognizer speechRecognizer) {
+        this.speechRecognizer = speechRecognizer;
+    }
 }

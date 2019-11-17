@@ -5,12 +5,11 @@ import android.content.Context;
 import android.media.MediaPlayer;
 import android.os.ConditionVariable;
 import android.speech.tts.TextToSpeech;
+import android.text.TextUtils;
 
 import androidx.annotation.Keep;
 import androidx.annotation.RawRes;
 import androidx.annotation.WorkerThread;
-
-import android.text.TextUtils;
 
 import com.chattylabs.android.commons.HtmlUtils;
 import com.chattylabs.android.commons.StringUtils;
@@ -75,6 +74,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
         } catch (Exception e) {
             logger.logException(e);
             shutdown();
+            getAudioManager().abandonAudioFocus();
             listener.execute(SynthesizerListener.Status.NOT_AVAILABLE_ERROR);
         }
     }
@@ -156,6 +156,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
             } catch (Exception e) {
                 logger.logException(e);
                 shutdown();
+                getAudioManager().abandonAudioFocus();
                 onPrepared.execute(SynthesizerListener.Status.ERROR);
             }
         } else if (isReady()) {

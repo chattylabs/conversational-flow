@@ -32,6 +32,7 @@ final class ConversationalFlowImpl implements ConversationalFlow {
     }
 
     // Resources
+    private Conversation conversation;
     private ComponentConfig configuration;
     private AndroidAudioManager audioManager;
     private AndroidBluetooth bluetooth;
@@ -43,16 +44,7 @@ final class ConversationalFlowImpl implements ConversationalFlow {
     private ILogger logger;
 
     private ConversationalFlowImpl() {
-        //noinspection NullableProblems
-        this.configuration = new ComponentConfig.Builder()
-                .setSpeechLanguage(Locale::getDefault)
-                .setBluetoothScoRequired(() -> false)
-                .setAudioExclusiveRequiredForSynthesizer(() -> false)
-                .setAudioExclusiveRequiredForRecognizer(() -> true)
-                .setSpeechDictation(() -> false)
-                .setBluetoothScoAudioMode(() -> AudioManager.MODE_IN_COMMUNICATION)
-                .build();
-        reset();
+        resetConfiguration(null);
         Instance.instanceOf = new SoftReference<>(this);
     }
 
@@ -63,8 +55,29 @@ final class ConversationalFlowImpl implements ConversationalFlow {
         shutdown();
     }
 
+    @SuppressLint("MissingPermission")
+    @Override
+    public void resetConfiguration(Context context) {
+        shutdown(() -> {
+            reset();
+            //noinspection Convert2MethodRef
+            this.configuration = new ComponentConfig.Builder()
+                    .setSpeechLanguage(() -> Locale.getDefault())
+                    .setBluetoothScoRequired(() -> false)
+                    .setAudioExclusiveRequiredForSynthesizer(() -> false)
+                    .setAudioExclusiveRequiredForRecognizer(() -> true)
+                    .setSpeechDictation(() -> false)
+                    .setBluetoothScoAudioMode(() -> AudioManager.MODE_IN_COMMUNICATION)
+                    .build();
+
+            if (conversation != null && context != null) {
+                ((ConversationImpl) conversation).resetSpeechSynthesizer(getSpeechSynthesizer(context));
+                ((ConversationImpl) conversation).resetSpeechRecognizer(getSpeechRecognizer(context));
+            }
+        });
+    }
+
     private void reset() {
-        shutdown();
         audioManager = null;
         bluetooth = null;
         speechSynthesizer = null;
@@ -98,15 +111,11 @@ final class ConversationalFlowImpl implements ConversationalFlow {
         phoneStateHandler.register(new PhoneStateListenerAdapter() {
             @Override
             public void onOutgoingCallStarts() {
-                speechSynthesizer.shutdown();
-                speechRecognizer.stop();
                 shutdown();
             }
 
             @Override
             public void onIncomingCallRinging() {
-                speechSynthesizer.shutdown();
-                speechRecognizer.stop();
                 shutdown();
             }
         });
@@ -174,12 +183,27 @@ final class ConversationalFlowImpl implements ConversationalFlow {
     @SuppressLint("MissingPermission")
     @Override @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     public Conversation create(Context context) {
-        return new ConversationImpl(getSpeechSynthesizer(context), getSpeechRecognizer(context), logger);
+        conversation = new ConversationImpl(getSpeechSynthesizer(context), getSpeechRecognizer(context), logger);
+        return conversation;
     }
 
     @Override
     public void shutdown() {
+        shutdown(null);
+    }
+
+    @Override
+    public void shutdown(Runnable onBluetoothScoDisconnected) {
         if (phoneStateHandler != null) phoneStateHandler.unregister();
-        if (bluetooth != null) bluetooth.stopSco(() -> audioManager.abandonAudioFocus());
+        if (speechSynthesizer != null) speechSynthesizer.shutdown();
+        if (speechRecognizer != null) speechRecognizer.stop();
+        if (bluetooth != null) {
+            bluetooth.stopSco(() -> {
+                if (audioManager != null) audioManager.abandonAudioFocus();
+                if (onBluetoothScoDisconnected != null) onBluetoothScoDisconnected.run();
+            });
+        } else {
+            if (onBluetoothScoDisconnected != null) onBluetoothScoDisconnected.run();
+        }
     }
 }

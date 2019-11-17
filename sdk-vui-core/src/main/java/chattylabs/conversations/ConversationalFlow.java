@@ -2,10 +2,11 @@ package chattylabs.conversations;
 
 import android.Manifest;
 import android.content.Context;
+import android.text.TextUtils;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresPermission;
-import android.text.TextUtils;
 
 import com.chattylabs.android.commons.RequiredPermissions;
 import com.chattylabs.android.commons.Tag;
@@ -17,6 +18,8 @@ import java.util.regex.Pattern;
 
 public interface ConversationalFlow extends RequiredPermissions {
     String TAG = Tag.make("ConversationalFlow");
+
+    void resetConfiguration(Context context);
 
     /**
      * Checks whether the Synthesizer is available and returns a {@link SynthesizerListener.Status}
@@ -161,4 +164,6 @@ public interface ConversationalFlow extends RequiredPermissions {
     static boolean isStatus(int code, int status) {
         return (code > 0) && (code & status) == status;
     }
+
+    void shutdown(Runnable onBluetoothScoDisconnected);
 }

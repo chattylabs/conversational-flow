@@ -128,7 +128,6 @@ public class TestingAddonsActivity extends BaseActivity {
                         listen(index);
                     } else {
                         if (synthesizer.isEmpty()) {
-                            synthesizer.shutdown();
                             component.shutdown();
                         } else {
                             synthesizer.freeCurrentQueue();
@@ -139,14 +138,12 @@ public class TestingAddonsActivity extends BaseActivity {
                 (SynthesizerListener.OnError) (utteranceId, errorCode) -> {
                     if (errorCode == SynthesizerListener.Status.UNKNOWN_ERROR) {
                         if (synthesizer.isEmpty()) {
-                            synthesizer.shutdown();
                             component.shutdown();
                         } else {
                             synthesizer.freeCurrentQueue();
                             synthesizer.resume();
                         }
                     } else {
-                        synthesizer.shutdown();
                         component.shutdown();
                     }
                 });
@@ -167,7 +164,6 @@ public class TestingAddonsActivity extends BaseActivity {
                     }
                     new Handler().postDelayed(() -> {
                         if (synthesizer.isEmpty()) {
-                            synthesizer.shutdown();
                             component.shutdown();
                         } else {
                             synthesizer.freeCurrentQueue();
@@ -178,7 +174,6 @@ public class TestingAddonsActivity extends BaseActivity {
                     Log.e(TAG, "Error " + i);
 
                     if (synthesizer.isEmpty()) {
-                        synthesizer.shutdown();
                         component.shutdown();
                     } else {
                         synthesizer.freeCurrentQueue();
