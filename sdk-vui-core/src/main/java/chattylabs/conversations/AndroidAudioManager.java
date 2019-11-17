@@ -47,7 +47,10 @@ public class AndroidAudioManager {
     }
 
     public int getMainStreamType() {
-        return AudioManager.STREAM_MUSIC;
+        return configuration.isBluetoothScoRequired()
+                && configuration.getBluetoothScoAudioMode() == AudioManager.MODE_IN_CALL ?
+                AudioManager.STREAM_VOICE_CALL :
+                AudioManager.STREAM_MUSIC;
     }
 
     public void requestAudioFocus(AudioManager.OnAudioFocusChangeListener listener, boolean exclusive) {
