@@ -88,8 +88,17 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                 }
 
                 @Override
+                public void onReadyForSpeech(Bundle params) {
+                    super.onReadyForSpeech(params);
+                    if (getConfiguration().isCustomBeepEnabled())
+                        getAudioManager().startBeep(application);
+                }
+
+                @Override
                 public void onError(int error) {
                     onEndOfSpeech();
+                    if (getConfiguration().isCustomBeepEnabled())
+                        getAudioManager().errorBeep(application);
                     logger.e(TAG, "ANDROID SPEECH - error: %s", AndroidSpeechRecognizer.getErrorType(error));
                     OnError errorListener = _getOnError();
                     int soundLevel = getSoundLevel();
@@ -133,6 +142,8 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                 public void onResults(Bundle results) {
                     logger.v(TAG, "GOOGLE SPEECH - onResults");
                     onEndOfSpeech();
+                    if (getConfiguration().isCustomBeepEnabled())
+                        getAudioManager().successBeep(application);
                     List<String> list;
                     OnError onError = _getOnError();
                     OnResults onResults = _getOnResults();
