@@ -99,27 +99,15 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
     private void checkForBluetoothScoRequired(Runnable runnable) {
         logger.i(tag, "SPEECH - is bluetooth Sco required: %s",
                 Boolean.toString(configuration.isBluetoothScoRequired()));
-        if (bluetooth.isDeviceConnected() && configuration.isBluetoothScoRequired() && !bluetooth.isScoOn()) {
-            // Sco Listener
-            BluetoothScoListener listener = new BluetoothScoListener() {
-                @Override
-                public void onConnected() {
-                    logger.w(tag, "SPEECH - Sco onConnected");
-                    runnable.run();
-                }
-            };
+
+        if (bluetooth.isScoOn() || (bluetooth.isDeviceConnected() && configuration.isBluetoothScoRequired())) {
             // Start Bluetooth Sco
             logger.w(tag, "waiting for bluetooth Sco connection...");
-            bluetooth.startSco(listener);
+            bluetooth.startSco(runnable);
         }
         else {
-            logger.v(tag, "SPEECH - bluetooth sco is: %s", Boolean.toString(bluetooth.isScoOn()));
-            if (bluetooth.isScoOn())
-                runnable.run();
-            else {
-                audioManager.requestAudioFocus(null, configuration.isAudioExclusiveRequiredForRecognizer());
-                runnable.run();
-            }
+            audioManager.requestAudioFocus(null, configuration.isAudioExclusiveRequiredForRecognizer());
+            runnable.run();
         }
     }
 

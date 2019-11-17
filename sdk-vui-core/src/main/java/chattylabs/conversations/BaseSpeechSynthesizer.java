@@ -413,26 +413,14 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         // Check whether Sco is connected or required
         logger.i(TAG, "bluetooth Sco required: %s",
                 Boolean.toString(configuration.isBluetoothScoRequired()));
-        if (!isChecking() && bluetooth.isDeviceConnected() && configuration.isBluetoothScoRequired() && !bluetooth.isScoOn()) {
-            // Sco Listener
-            BluetoothScoListener listener = new BluetoothScoListener() {
-                @Override
-                public void onConnected() {
-                    logger.i(TAG, "Sco onConnected");
-                    chooseItemToPlay(map);
-                }
-            };
+
+        if (bluetooth.isScoOn() || (bluetooth.isDeviceConnected() && configuration.isBluetoothScoRequired())) {
             // Start Bluetooth Sco
             logger.w(TAG, "waiting for bluetooth Sco connection...");
-            bluetooth.startSco(listener);
-        }
-        else {
-            if (bluetooth.isScoOn())
-                chooseItemToPlay(map);
-            else {
-                audioManager.requestAudioFocus(null, configuration.isAudioExclusiveRequiredForSynthesizer());
-                chooseItemToPlay(map);
-            }
+            bluetooth.startSco(() -> chooseItemToPlay(map));
+        } else {
+            audioManager.requestAudioFocus(null, configuration.isAudioExclusiveRequiredForSynthesizer());
+            chooseItemToPlay(map);
         }
     }
 
