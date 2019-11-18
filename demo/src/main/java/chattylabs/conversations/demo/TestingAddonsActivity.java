@@ -8,6 +8,7 @@ import android.util.Log;
 import android.util.Pair;
 import android.util.SparseArray;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -38,11 +39,13 @@ public class TestingAddonsActivity extends BaseActivity {
     // Resources
     private TextView execution;
     private Spinner actionSpinner;
+    private Spinner audioModeSpinner;
     private EditText text;
     private Button add;
     private Button clear;
     private SparseArray<Pair<Integer, String>> queue = new SparseArray<>();
     private ArrayAdapter<CharSequence> actionAdapter;
+    private ArrayAdapter<CharSequence> audioModeAdapter;
 
     // Components
     private Peripheral peripheral;
@@ -55,6 +58,16 @@ public class TestingAddonsActivity extends BaseActivity {
         initCommonViews();
         initViews();
         initActions();
+    }
+
+    @Override
+    public void onDestroy() {
+        component.updateConfiguration(
+                builder -> {
+                    builder.setBluetoothScoRequired(() -> false);
+                    return builder.build();
+                });
+        super.onDestroy();
     }
 
     private void initActions() {
@@ -213,7 +226,8 @@ public class TestingAddonsActivity extends BaseActivity {
 
     private void initViews() {
         execution = findViewById(R.id.execution);
-        actionSpinner = findViewById(R.id.spinner);
+        actionSpinner = findViewById(R.id.action);
+        audioModeSpinner = findViewById(R.id.audio_mode);
         text = findViewById(R.id.text);
         add = findViewById(R.id.add);
         clear = findViewById(R.id.clear);
@@ -239,10 +253,32 @@ public class TestingAddonsActivity extends BaseActivity {
                     });
         });
 
-        // Create an ArrayAdapter of the actions
+        // Create an ArrayAdapter for the actions
         actionAdapter = ArrayAdapter.createFromResource(this, R.array.actions, android.R.layout.simple_spinner_item);
         actionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         actionSpinner.setAdapter(actionAdapter);
         actionSpinner.setSelection(0, false);
+
+        // Create an ArrayAdapter for the audio modes
+        audioModeAdapter = ArrayAdapter.createFromResource(this, R.array.audio_mode, android.R.layout.simple_spinner_item);
+        audioModeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        audioModeSpinner.setAdapter(audioModeAdapter);
+        audioModeSpinner.setSelection(0, false);
+        audioModeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                component.updateConfiguration(
+                        builder -> {
+                            builder.setCustomBeepEnabled(() -> position != 0)
+                                    .setBluetoothScoAudioMode(() -> position == 0 ? AudioManager.MODE_IN_COMMUNICATION : AudioManager.MODE_IN_CALL);
+                            return builder.build();
+                        });
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
     }
 }

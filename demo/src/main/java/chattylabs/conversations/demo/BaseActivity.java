@@ -3,7 +3,6 @@ package chattylabs.conversations.demo;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.media.AudioManager;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -134,7 +133,6 @@ abstract class BaseActivity extends DaggerAppCompatActivity
                                 return AndroidSpeechSynthesizer.class;
                             }
                         })
-                        .setBluetoothScoAudioMode(() -> AudioManager.MODE_IN_COMMUNICATION)
                         .setSpeechLanguage(Locale::getDefault).build());
 
         String[] perms = component.requiredPermissions();

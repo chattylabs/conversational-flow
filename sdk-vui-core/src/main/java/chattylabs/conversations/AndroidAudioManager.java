@@ -4,7 +4,7 @@ import android.content.Context;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
-import android.media.MediaPlayer;
+import android.media.SoundPool;
 import android.os.Build;
 
 import com.chattylabs.android.commons.Tag;
@@ -12,6 +12,9 @@ import com.chattylabs.android.commons.internal.ILogger;
 
 public class AndroidAudioManager {
     private static final String TAG = Tag.make("AndroidAudioHandler");
+
+    // Log stuff
+    private ILogger logger;
 
     // States
     private boolean requestAudioFocusMayDuck;
@@ -33,8 +36,10 @@ public class AndroidAudioManager {
     private final AudioManager audioManager;
     private final ComponentConfig configuration;
 
-    // Log stuff
-    private ILogger logger;
+    private SoundPool soundPool;
+    private int priority = 1;
+    private int no_loop = 0;
+    private float normal_playback_rate = 1f;
 
     public AndroidAudioManager(AudioManager audioManager,
                                ComponentConfig configuration,
@@ -155,22 +160,45 @@ public class AndroidAudioManager {
         //audioManager.setSpeakerphoneOn(speakerphoneOn);
     }
 
+    private void setupSoundPool() {
+        if (soundPool == null) {
+            soundPool = new SoundPool.Builder()
+                    .setMaxStreams(1)
+                    .setAudioAttributes(getAudioAttributes().build())
+                    .build();
+        }
+    }
+
+    private void play(SoundPool soundPool, int soundId) {
+        float curVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        float maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        float leftVolume = curVolume / maxVolume;
+        float rightVolume = curVolume / maxVolume;
+        soundPool.play(soundId, leftVolume, rightVolume, priority, no_loop, normal_playback_rate);
+    }
+
     public void startBeep(Context context) {
-        MediaPlayer mp = MediaPlayer.create(context, R.raw.start_beep);
-        mp.setOnCompletionListener(MediaPlayer::release);
-        mp.start();
+        setupSoundPool();
+        soundPool.setOnLoadCompleteListener((sp, sampleId, status) -> {
+            play(sp, sampleId);
+        });
+        soundPool.load(context, R.raw.start_beep, 1);
     }
 
     public void successBeep(Context context) {
-        MediaPlayer mp = MediaPlayer.create(context, R.raw.success_beep);
-        mp.setOnCompletionListener(MediaPlayer::release);
-        mp.start();
+        setupSoundPool();
+        soundPool.setOnLoadCompleteListener((sp, sampleId, status) -> {
+            play(sp, sampleId);
+        });
+        soundPool.load(context, R.raw.success_beep, 1);
     }
 
     public void errorBeep(Context context) {
-        MediaPlayer mp = MediaPlayer.create(context, R.raw.error_beep);
-        mp.setOnCompletionListener(MediaPlayer::release);
-        mp.start();
+        setupSoundPool();
+        soundPool.setOnLoadCompleteListener((sp, sampleId, status) -> {
+            play(sp, sampleId);
+        });
+        soundPool.load(context, R.raw.error_beep, 1);
     }
 
     private void setStreamToMaxVolume() {

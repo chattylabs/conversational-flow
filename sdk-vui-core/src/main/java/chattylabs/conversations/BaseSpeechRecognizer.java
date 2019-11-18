@@ -26,7 +26,7 @@ import com.chattylabs.android.commons.internal.ILogger;
  */
 abstract class BaseSpeechRecognizer implements SpeechRecognizer {
     // Minimum constants
-    int MIN_VOICE_RECOGNITION_TIME_LISTENING = 2000;
+    int MIN_VOICE_RECOGNITION_TIME_LISTENING = 3000;
 
     // Resources
     private final ComponentConfig configuration;

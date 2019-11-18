@@ -56,23 +56,33 @@
         app:layout_constraintTop_toBottomOf="@+id/guideline" />
 
     <Spinner
-        android:id="@+id/addon"
+        android:id="@+id/audio_mode"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="40dp"
+        android:layout_marginStart="30dp"
         app:layout_constraintBottom_toBottomOf="@id/bluetooth_sco"
         app:layout_constraintEnd_toStartOf="@+id/guidelineRight"
         app:layout_constraintStart_toEndOf="@id/bluetooth_sco"
         app:layout_constraintTop_toTopOf="@+id/bluetooth_sco" />
 
     <Spinner
-        android:id="@+id/spinner"
+        android:id="@+id/action"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        app:layout_constraintEnd_toStartOf="@+id/guidelineRight"
+        app:layout_constraintEnd_toStartOf="@+id/addon"
         app:layout_constraintStart_toStartOf="@id/guidelineLeft"
         app:layout_constraintTop_toBottomOf="@+id/bluetooth_sco" />
+
+    <Spinner
+        android:id="@+id/addon"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        app:layout_constraintBottom_toBottomOf="@id/action"
+        app:layout_constraintEnd_toStartOf="@+id/guidelineRight"
+        app:layout_constraintStart_toEndOf="@id/action"
+        app:layout_constraintTop_toTopOf="@+id/action" />
 
     <EditText
         android:id="@+id/text"
@@ -87,7 +97,7 @@
         app:layout_constraintBottom_toBottomOf="@id/proceed"
         app:layout_constraintEnd_toEndOf="@id/guidelineRight"
         app:layout_constraintStart_toStartOf="@id/guidelineLeft"
-        app:layout_constraintTop_toBottomOf="@+id/spinner"
+        app:layout_constraintTop_toBottomOf="@+id/action"
         tools:text="Insert text" />
 
     <Button
@@ -96,9 +106,9 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
         android:text="Add"
-        app:layout_constraintBottom_toBottomOf="@+id/spinner"
+        app:layout_constraintBottom_toBottomOf="@+id/action"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/spinner" />
+        app:layout_constraintTop_toTopOf="@+id/action" />
 
     <Button
         android:id="@+id/clear"

@@ -68,6 +68,7 @@ final class ConversationalFlowImpl implements ConversationalFlow {
                     .setAudioExclusiveRequiredForRecognizer(() -> true)
                     .setSpeechDictation(() -> false)
                     .setBluetoothScoAudioMode(() -> AudioManager.MODE_IN_COMMUNICATION)
+                    .setCustomBeepEnabled(() -> false)
                     .build();
 
             if (conversation != null && context != null) {
