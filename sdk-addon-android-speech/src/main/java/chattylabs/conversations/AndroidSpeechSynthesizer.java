@@ -152,7 +152,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer
                 logger.i(TAG, "new instance created");
                 if (status == TextToSpeech.SUCCESS) {
                     setReady(true);
-                    setupLanguage();
+                    //setupLanguage();
                 }
                 onSynthesizerPrepared.execute(status == TextToSpeech.SUCCESS ?
                         SUCCESS : ERROR);
@@ -162,7 +162,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer
                     getSynthesizerUtteranceListener()).getUtteranceProgressListener();
             tts.setOnUtteranceProgressListener(utterance);
         } else if (isReady()) {
-            setupLanguage();
+            //setupLanguage();
             onSynthesizerPrepared.execute(SUCCESS);
         }
     }
