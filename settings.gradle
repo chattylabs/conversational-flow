@@ -1,5 +1,5 @@
 include ':demo',
-        ':sdk-vui-core',
+        ':sdk-voice-user-interaction',
         ':sdk-addon-android-speech',
         ':sdk-addon-google-speech',
         ':sdk-addon-amazon-speech'

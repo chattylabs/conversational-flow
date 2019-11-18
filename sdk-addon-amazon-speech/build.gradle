@@ -27,7 +27,7 @@ dependencies {
 
     // Dependencies
     implementation "com.chattylabs:android-commons:$android_commons"
-    compileOnly project(':sdk-vui-core')
+    compileOnly project(':sdk-voice-user-interaction')
 
     // AmazonSpeechSynthesizerAdapter mobile client and polly
     implementation('com.amazonaws:aws-android-sdk-mobile-client:2.6.31@aar') { transitive = true }
