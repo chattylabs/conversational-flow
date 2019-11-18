@@ -70,7 +70,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                 private long elapsedTime;
 
                 private void cleanup() {
-                    logger.v(TAG, "GOOGLE SPEECH - reset elapsedTime and intents");
+                    logger.v(TAG, "ANDROID SPEECH - reset elapsedTime and intents");
                     elapsedTime = System.currentTimeMillis();
                     intents = 0;
                 }
@@ -140,7 +140,6 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
 
                 @Override
                 public void onResults(Bundle results) {
-                    logger.v(TAG, "GOOGLE SPEECH - onResults");
                     onEndOfSpeech();
                     if (getConfiguration().isCustomBeepEnabled())
                         getAudioManager().successBeep(application);
@@ -279,6 +278,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
         if (speechRecognizer != null) {
             mainHandler.post(() -> {
                 try {
+                    speechRecognizer.setRecognitionListener(null);
                     speechRecognizer.stopListening();
                     logger.v(TAG, "ANDROID SPEECH - speechRecognizer stopped");
                 } catch (Exception ignored) {}

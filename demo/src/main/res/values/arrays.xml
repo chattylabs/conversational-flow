@@ -8,4 +8,8 @@
         <item>Android</item>
         <item>Google</item>
     </string-array>
+    <string-array name="audio_mode">
+        <item>Communication</item>
+        <item>Call</item>
+    </string-array>
 </resources>
