@@ -31,7 +31,7 @@ dependencies {
 
     // Dependencies
     implementation "com.chattylabs:android-commons:$android_commons"
-    compileOnly project(':sdk-vui-core')
+    compileOnly project(':sdk-voice-user-interaction')
 
     // Google Cloud
     implementation "io.grpc:grpc-okhttp:$grpcVersion"
