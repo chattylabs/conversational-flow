@@ -414,12 +414,13 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         logger.i(TAG, "bluetooth Sco required: %s",
                 Boolean.toString(configuration.isBluetoothScoRequired()));
 
+        audioManager.requestAudioFocus(null, configuration.isAudioExclusiveRequiredForSynthesizer());
+
         if (bluetooth.isScoOn() || (bluetooth.isDeviceConnected() && configuration.isBluetoothScoRequired())) {
             // Start Bluetooth Sco
             logger.w(TAG, "waiting for bluetooth Sco connection...");
             bluetooth.startSco(() -> chooseItemToPlay(map));
         } else {
-            audioManager.requestAudioFocus(null, configuration.isAudioExclusiveRequiredForSynthesizer());
             chooseItemToPlay(map);
         }
     }

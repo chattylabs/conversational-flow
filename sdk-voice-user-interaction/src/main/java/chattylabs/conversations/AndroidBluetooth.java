@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.os.Handler;
+import android.os.Looper;
 
 import com.chattylabs.android.commons.Tag;
 import com.chattylabs.android.commons.ThreadUtils;
@@ -34,7 +35,7 @@ public class AndroidBluetooth {
     // Log stuff
     private ILogger logger;
     private Runnable onScoDisconnected;
-    private Handler connectedHandler;
+    private Handler mainHandler;
 
     public AndroidBluetooth(Application application, AndroidAudioManager audioManager, ComponentConfig config, ILogger logger) {
         this.application = application;
@@ -76,20 +77,13 @@ public class AndroidBluetooth {
             @Override
             @SuppressLint("NewApi")
             public void onConnected() {
-//                AudioFocusRequest b = new AudioFocusRequest
-//                        .Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
-//                        .setAudioAttributes(new AudioAttributes.Builder()
-//                                //.setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-//                                //.setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
-//                                //.setFlags(AudioAttributes.FLAG_AUDIBILITY_ENFORCED | AudioAttributes.FLAG_HW_AV_SYNC)
-//                                .setLegacyStreamType(6)
-//                                .build()).build();
-//                audioManager.getDefaultAudioManager().requestAudioFocus(b);
                 logger.i(TAG, "Sco connected");
 
-                connectedHandler = new Handler();
-                connectedHandler.postDelayed(() -> {
-                    onScoConnected.run();
+                audioManager.setAudioMode(config.getBluetoothScoAudioMode());
+                mainHandler = new Handler(Looper.getMainLooper());
+                mainHandler.postDelayed(() -> {
+                    mainHandler = null;
+                    if (onScoConnected != null) onScoConnected.run();
                     serialThread.release();
                 }, 2500);
             }
@@ -98,12 +92,13 @@ public class AndroidBluetooth {
             public void onDisconnected() {
                 logger.i(TAG, "Sco disconnected");
 
-                if (connectedHandler != null) {
-                    connectedHandler.removeCallbacksAndMessages(null);
-                    connectedHandler = null;
+                if (mainHandler != null) {
+                    mainHandler.removeCallbacksAndMessages(null);
+                    mainHandler = null;
                 }
+                audioManager.unsetAudioMode();
                 unregisterScoReceiver();
-                onScoDisconnected.run();
+                if (onScoDisconnected != null) onScoDisconnected.run();
                 serialThread.release();
             }
         };
@@ -153,7 +148,6 @@ public class AndroidBluetooth {
                     ((BluetoothHeadset) proxy).stopVoiceRecognition(proxy.getConnectedDevices().get(0));
                 }
 
-                logger.v(TAG, "stop bluetooth sco");
                 closeProfileProxy(profile, proxy);
             }
         }, isBluetoothHeadset() ? BluetoothProfile.HEADSET : BluetoothProfile.A2DP);
@@ -166,34 +160,43 @@ public class AndroidBluetooth {
                 logger.i(TAG, "Start Sco");
                 registerScoReceiver(onScoConnected);
                 registerBluetoothProxy(() -> {
-                    audioManager.setAudioMode(config.getBluetoothScoAudioMode());
                     audioManager.startBluetoothSco();
                     audioManager.setBluetoothScoOn(true);
                 });
             }, 10, TimeUnit.SECONDS);
         } else if (isScoOn) {
-            serialThread.addTaskBlocking(() -> {
-                onScoConnected.run();
+            if (mainHandler != null) {
+                mainHandler.removeCallbacksAndMessages(null);
+                mainHandler = null;
                 serialThread.release();
+            }
+            serialThread.addTaskBlocking(() -> {
+                mainHandler = new Handler(Looper.getMainLooper());
+                mainHandler.post(() -> {
+                    mainHandler = null;
+                    onScoConnected.run();
+                    serialThread.release();
+                });
             }, 10, TimeUnit.SECONDS);
         } else onScoConnected.run();
     }
 
     public void stopSco(Runnable runnable) {
         if (audioManager.isBluetoothScoAvailableOffCall() && isScoOn) {
-            if (connectedHandler != null) {
-                connectedHandler.removeCallbacksAndMessages(null);
-                connectedHandler = null;
+            if (mainHandler != null) {
+                mainHandler.removeCallbacksAndMessages(null);
+                mainHandler = null;
                 serialThread.release();
             }
             serialThread.addTaskBlocking(() -> {
                 this.onScoDisconnected = runnable;
                 logger.i(TAG, "Stop Sco");
                 unRegisterBluetoothProxy(() -> {
-                    new Handler().postDelayed(() -> {
-                        audioManager.unsetAudioMode();
+                    mainHandler = new Handler(Looper.getMainLooper());
+                    mainHandler.postDelayed(() -> {
+                        mainHandler = null;
                         audioManager.stopBluetoothSco();
-                        //audioManager.stopBluetoothSco();
+                        audioManager.stopBluetoothSco();
                         audioManager.setBluetoothScoOn(false);
                         isScoOn = false;
                         // TODO: There are still race conditions here

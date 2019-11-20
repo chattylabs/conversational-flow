@@ -68,8 +68,8 @@ public class AndroidAudioManager {
     }
 
     public void abandonAudioFocus() {
-        abandonAudioFocusMayDuck();
         abandonAudioFocusExclusive();
+        abandonAudioFocusMayDuck();
     }
 
     private void requestAudioFocusMayDuck(AudioManager.OnAudioFocusChangeListener listener) {
@@ -125,7 +125,6 @@ public class AndroidAudioManager {
         if (requestAudioFocusExclusive) {
             logger.v(TAG, "AUDIO - abandon Audio Focus Exclusive");
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
-                //noinspection deprecation
                 audioManager.abandonAudioFocus(null);
             } else {
                 audioManager.abandonAudioFocusRequest(focusRequestExclusive);
@@ -135,7 +134,7 @@ public class AndroidAudioManager {
     }
 
     public void setAudioMode(int mode) {
-        audioMode = audioManager.getMode();
+        //audioMode = audioManager.getMode();
         if (configuration.isBluetoothScoRequired()) {
             audioManager.setMode(mode);
         }
@@ -150,14 +149,34 @@ public class AndroidAudioManager {
     }
 
     public void unsetAudioMode() {
-        if (audioMode != audioManager.getMode()) {
-            audioManager.setMode(audioMode);
-        }
+        //if (audioMode != audioManager.getMode()) {
+            audioManager.setMode(AudioManager.MODE_NORMAL);
+        //}
 
         // By enabling this option, the audio is not rooted to the speakers if the sco is activated
         // meaning that we can force bluetooth sco even with speakers connected
         // TODO: Nice to have feature!
         //audioManager.setSpeakerphoneOn(speakerphoneOn);
+    }
+
+    public AudioAttributes.Builder getAudioAttributes() {
+        return new AudioAttributes.Builder().setLegacyStreamType(getMainStreamType());
+    }
+
+    public boolean isBluetoothScoAvailableOffCall() {
+        return audioManager.isBluetoothScoAvailableOffCall();
+    }
+
+    public void setBluetoothScoOn(boolean on) {
+        audioManager.setBluetoothScoOn(on);
+    }
+
+    public void startBluetoothSco() {
+        audioManager.startBluetoothSco();
+    }
+
+    public void stopBluetoothSco() {
+        audioManager.stopBluetoothSco();
     }
 
     private void setupSoundPool() {
@@ -174,7 +193,7 @@ public class AndroidAudioManager {
         float maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         float leftVolume = curVolume / maxVolume;
         float rightVolume = curVolume / maxVolume;
-        soundPool.play(soundId, leftVolume, rightVolume, priority, no_loop, normal_playback_rate);
+        soundPool.play(soundId, maxVolume, maxVolume, priority, no_loop, normal_playback_rate);
     }
 
     public void startBeep(Context context) {
@@ -228,25 +247,5 @@ public class AndroidAudioManager {
         audioManager.setStreamVolume(AudioManager.STREAM_NOTIFICATION, notifVolume, 0);
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, musicVolume, 0);
         audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL, callVolume, 0);
-    }
-
-    public AudioAttributes.Builder getAudioAttributes() {
-        return new AudioAttributes.Builder().setLegacyStreamType(getMainStreamType());
-    }
-
-    public boolean isBluetoothScoAvailableOffCall() {
-        return audioManager.isBluetoothScoAvailableOffCall();
-    }
-
-    public void setBluetoothScoOn(boolean on) {
-        audioManager.setBluetoothScoOn(on);
-    }
-
-    public void startBluetoothSco() {
-        audioManager.startBluetoothSco();
-    }
-
-    public void stopBluetoothSco() {
-        audioManager.stopBluetoothSco();
     }
 }
