@@ -52,7 +52,6 @@ final class ConversationalFlowImpl implements ConversationalFlow {
     public void updateConfiguration(ComponentConfig.OnUpdate listener) {
         ComponentConfig newConfig = listener.run(new ComponentConfig.Builder(this.configuration));
         this.configuration.update(newConfig);
-        shutdown();
     }
 
     @SuppressLint("MissingPermission")
@@ -200,10 +199,14 @@ final class ConversationalFlowImpl implements ConversationalFlow {
         if (speechRecognizer != null) speechRecognizer.stop();
         if (bluetooth != null) {
             bluetooth.stopSco(() -> {
-                if (audioManager != null) audioManager.abandonAudioFocus();
+                if (audioManager != null) {
+                    audioManager.abandonAudioFocus();
+                    audioManager.unsetAudioMode();
+                }
                 if (onBluetoothScoDisconnected != null) onBluetoothScoDisconnected.run();
             });
         } else {
+            if (audioManager != null) audioManager.abandonAudioFocus();
             if (onBluetoothScoDisconnected != null) onBluetoothScoDisconnected.run();
         }
     }

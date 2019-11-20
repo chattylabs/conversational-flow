@@ -1,5 +1,4 @@
 apply plugin: 'com.android.application'
-apply plugin: 'com.chattylabs.versioning'
 apply from: '../android-buildsystem/android.gradle'
 apply from: '../android-buildsystem/versioning.gradle'
 
@@ -25,8 +24,6 @@ android {
 
         // Enable this option on your own gradle file if you need it
         vectorDrawables.useSupportLibrary = true
-
-        manifestPlaceholders = [HOCKEYAPP_APP_ID: "658862d7f4d34d89b96ae8356aafdb05"]
     }
 }
 
@@ -43,8 +40,8 @@ dependencies {
     implementation 'com.google.dagger:dagger:2.16'
     implementation 'com.google.dagger:dagger-android:2.16'
     implementation 'com.google.dagger:dagger-android-support:2.16'
-    kapt 'com.google.dagger:dagger-compiler:2.15'
-    kapt 'com.google.dagger:dagger-android-processor:2.15'
+    kapt 'com.google.dagger:dagger-compiler:2.16'
+    kapt 'com.google.dagger:dagger-android-processor:2.16'
 
     // Dependencies
     implementation 'net.hockeyapp.android:HockeySDK:5.1.0'

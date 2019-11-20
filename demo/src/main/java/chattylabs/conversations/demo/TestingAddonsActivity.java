@@ -67,6 +67,7 @@ public class TestingAddonsActivity extends BaseActivity {
                     builder.setBluetoothScoRequired(() -> false);
                     return builder.build();
                 });
+        component.shutdown();
         super.onDestroy();
     }
 

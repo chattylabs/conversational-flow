@@ -22,7 +22,6 @@ import com.chattylabs.android.commons.ThreadUtils;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 
 import javax.inject.Inject;
 
@@ -132,8 +131,7 @@ abstract class BaseActivity extends DaggerAppCompatActivity
                             } else {
                                 return AndroidSpeechSynthesizer.class;
                             }
-                        })
-                        .setSpeechLanguage(Locale::getDefault).build());
+                        }).build());
 
         String[] perms = component.requiredPermissions();
         PermissionsHelper.check(this,

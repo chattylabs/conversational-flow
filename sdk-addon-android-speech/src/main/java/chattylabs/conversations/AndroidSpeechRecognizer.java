@@ -280,6 +280,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                 try {
                     speechRecognizer.setRecognitionListener(null);
                     speechRecognizer.stopListening();
+                    speechRecognizer.destroy();
                     logger.v(TAG, "ANDROID SPEECH - speechRecognizer stopped");
                 } catch (Exception ignored) {}
                 release();
