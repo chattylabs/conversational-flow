@@ -1,9 +1,8 @@
 package chattylabs.conversations;
 
-import com.chattylabs.android.commons.internal.ILogger;
-import com.chattylabs.android.commons.internal.ILoggerImpl;
+import chattylabs.android.commons.internal.ILogger;
+import chattylabs.android.commons.internal.ILoggerImpl;
 import chattylabs.conversations.demo.BuildFromJsonActivity;
-
 import chattylabs.conversations.demo.TestingAddonsActivity;
 import dagger.android.AndroidInjector;
 import dagger.android.ContributesAndroidInjector;

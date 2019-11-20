@@ -7,8 +7,8 @@ import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.Build;
 
-import com.chattylabs.android.commons.Tag;
-import com.chattylabs.android.commons.internal.ILogger;
+import chattylabs.android.commons.Tag;
+import chattylabs.android.commons.internal.ILogger;
 
 public class AndroidAudioManager {
     private static final String TAG = Tag.make("AndroidAudioHandler");

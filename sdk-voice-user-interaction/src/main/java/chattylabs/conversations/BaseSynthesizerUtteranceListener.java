@@ -3,14 +3,14 @@ package chattylabs.conversations;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 
-import com.chattylabs.android.commons.internal.ILogger;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
+
+import chattylabs.android.commons.internal.ILogger;
 
 class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceListener {
     private final String TAG;

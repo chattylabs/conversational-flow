@@ -17,9 +17,8 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.chattylabs.android.commons.HtmlUtils;
-import com.chattylabs.android.commons.Tag;
-
+import chattylabs.android.commons.HtmlUtils;
+import chattylabs.android.commons.Tag;
 import chattylabs.conversations.Peripheral;
 import chattylabs.conversations.RecognizerListener;
 import chattylabs.conversations.SynthesizerListener;

@@ -1,6 +1,7 @@
 package chattylabs.conversations;
 
 import android.os.Bundle;
+
 import androidx.annotation.CallSuper;
 
 abstract class GoogleSpeechRecognitionAdapter implements RecognizerUtteranceListener {

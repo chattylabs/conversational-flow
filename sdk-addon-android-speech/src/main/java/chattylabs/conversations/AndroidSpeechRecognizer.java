@@ -9,15 +9,20 @@ import android.speech.SpeechRecognizer;
 
 import androidx.annotation.Keep;
 
-import com.chattylabs.android.commons.Tag;
-import com.chattylabs.android.commons.internal.ILogger;
-import com.chattylabs.android.commons.internal.os.AndroidHandler;
-import com.chattylabs.android.commons.internal.os.AndroidHandlerImpl;
-
 import java.util.List;
 
+import chattylabs.android.commons.Tag;
+import chattylabs.android.commons.internal.ILogger;
+import chattylabs.android.commons.internal.os.AndroidHandler;
+import chattylabs.android.commons.internal.os.AndroidHandlerImpl;
+
 import static chattylabs.conversations.ConversationalFlow.selectMostConfidentResult;
-import static chattylabs.conversations.RecognizerListener.*;
+import static chattylabs.conversations.RecognizerListener.OnError;
+import static chattylabs.conversations.RecognizerListener.OnMostConfidentResult;
+import static chattylabs.conversations.RecognizerListener.OnPartialResults;
+import static chattylabs.conversations.RecognizerListener.OnResults;
+import static chattylabs.conversations.RecognizerListener.OnStatusChecked;
+import static chattylabs.conversations.RecognizerListener.Status;
 
 public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
     private static final String TAG = Tag.make("AndroidSpeechRecognizer");

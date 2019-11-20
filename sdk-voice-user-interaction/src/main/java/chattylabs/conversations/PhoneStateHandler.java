@@ -2,8 +2,8 @@ package chattylabs.conversations;
 
 import android.app.Application;
 
-import com.chattylabs.android.commons.Tag;
-import com.chattylabs.android.commons.internal.ILogger;
+import chattylabs.android.commons.Tag;
+import chattylabs.android.commons.internal.ILogger;
 
 public class PhoneStateHandler {
     private static final String TAG = Tag.make("PhoneStateHandler");

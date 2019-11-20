@@ -6,9 +6,6 @@ import android.text.Spanned;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
-import com.chattylabs.android.commons.HtmlUtils;
-import com.chattylabs.android.commons.Tag;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -17,6 +14,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 
+import chattylabs.android.commons.HtmlUtils;
+import chattylabs.android.commons.Tag;
 import chattylabs.conversations.Conversation;
 import chattylabs.conversations.Flow;
 import chattylabs.conversations.VoiceMatch;

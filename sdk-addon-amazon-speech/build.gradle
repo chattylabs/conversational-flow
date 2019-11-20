@@ -26,7 +26,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     // Dependencies
-    implementation "com.chattylabs:android-commons:$android_commons"
+    implementation "chattylabs.android:commons:$android_commons"
     compileOnly project(':sdk-voice-user-interaction')
 
     // AmazonSpeechSynthesizerAdapter mobile client and polly

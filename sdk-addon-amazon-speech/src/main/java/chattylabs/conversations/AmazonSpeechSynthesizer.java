@@ -3,6 +3,7 @@ package chattylabs.conversations;
 import android.app.Application;
 import android.media.MediaPlayer;
 import android.os.ConditionVariable;
+
 import androidx.annotation.NonNull;
 
 import com.amazonaws.services.polly.AmazonPollyPresigningClient;
@@ -12,13 +13,14 @@ import com.amazonaws.services.polly.model.LanguageCode;
 import com.amazonaws.services.polly.model.OutputFormat;
 import com.amazonaws.services.polly.model.SynthesizeSpeechPresignRequest;
 import com.amazonaws.services.polly.model.Voice;
-import com.chattylabs.android.commons.HtmlUtils;
-import com.chattylabs.android.commons.Tag;
-import com.chattylabs.android.commons.internal.ILogger;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.Map;
+
+import chattylabs.android.commons.HtmlUtils;
+import chattylabs.android.commons.Tag;
+import chattylabs.android.commons.internal.ILogger;
 
 public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
 

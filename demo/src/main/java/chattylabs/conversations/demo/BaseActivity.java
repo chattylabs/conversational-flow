@@ -16,15 +16,14 @@ import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-import com.chattylabs.android.commons.PermissionsHelper;
-import com.chattylabs.android.commons.ThreadUtils;
-
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 
 import javax.inject.Inject;
 
+import chattylabs.android.commons.PermissionsHelper;
+import chattylabs.android.commons.ThreadUtils;
 import chattylabs.conversations.AmazonSpeechSynthesizer;
 import chattylabs.conversations.AndroidSpeechRecognizer;
 import chattylabs.conversations.AndroidSpeechSynthesizer;

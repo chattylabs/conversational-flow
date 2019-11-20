@@ -9,8 +9,6 @@ import android.text.TextUtils;
 import androidx.annotation.Keep;
 import androidx.annotation.RawRes;
 
-import com.chattylabs.android.commons.Tag;
-import com.chattylabs.android.commons.internal.ILogger;
 import com.google.api.gax.core.FixedExecutorProvider;
 import com.google.api.gax.rpc.ClientStream;
 import com.google.api.gax.rpc.ResponseObserver;
@@ -37,6 +35,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import chattylabs.android.commons.Tag;
+import chattylabs.android.commons.internal.ILogger;
 import chattylabs.conversations.RecognizerListener.Status;
 import kotlin.Unit;
 

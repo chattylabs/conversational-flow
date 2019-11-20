@@ -1,8 +1,8 @@
 package chattylabs.conversations;
 
-import java.util.List;
-
 import androidx.annotation.NonNull;
+
+import java.util.List;
 
 public class VoiceMismatch implements VoiceAction {
     public final String id;
