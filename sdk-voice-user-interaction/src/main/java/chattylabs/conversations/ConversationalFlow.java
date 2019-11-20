@@ -8,13 +8,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresPermission;
 
-import com.chattylabs.android.commons.RequiredPermissions;
-import com.chattylabs.android.commons.Tag;
-import com.chattylabs.android.commons.internal.ILogger;
-
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import chattylabs.android.commons.RequiredPermissions;
+import chattylabs.android.commons.Tag;
+import chattylabs.android.commons.internal.ILogger;
 
 public interface ConversationalFlow extends RequiredPermissions {
     String TAG = Tag.make("ConversationalFlow");

@@ -8,12 +8,12 @@ import android.media.AudioManager;
 
 import androidx.annotation.RequiresPermission;
 
-import com.chattylabs.android.commons.internal.ILogger;
-
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Locale;
+
+import chattylabs.android.commons.internal.ILogger;
 
 final class ConversationalFlowImpl implements ConversationalFlow {
 

@@ -11,11 +11,11 @@ import android.media.AudioManager;
 import android.os.Handler;
 import android.os.Looper;
 
-import com.chattylabs.android.commons.Tag;
-import com.chattylabs.android.commons.ThreadUtils;
-import com.chattylabs.android.commons.internal.ILogger;
-
 import java.util.concurrent.TimeUnit;
+
+import chattylabs.android.commons.Tag;
+import chattylabs.android.commons.ThreadUtils;
+import chattylabs.android.commons.internal.ILogger;
 
 public class AndroidBluetooth {
     private static final String TAG = Tag.make("AndroidBluetooth");

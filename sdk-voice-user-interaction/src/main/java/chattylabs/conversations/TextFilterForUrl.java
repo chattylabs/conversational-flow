@@ -3,9 +3,9 @@ package chattylabs.conversations;
 import android.net.Uri;
 import android.util.Patterns;
 
-import com.chattylabs.android.commons.StringUtils;
-
 import java.util.List;
+
+import chattylabs.android.commons.StringUtils;
 
 /**
  * Once applied it shortens an url leaving only {@code domain/first-path} as a string.

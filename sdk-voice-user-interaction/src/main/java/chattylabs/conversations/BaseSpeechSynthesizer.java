@@ -9,8 +9,6 @@ import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.chattylabs.android.commons.internal.ILogger;
-
 import java.io.File;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -20,6 +18,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import chattylabs.android.commons.internal.ILogger;
 
 /**
  * This is the base class that handles internally and holds a queue of messages to be played out.

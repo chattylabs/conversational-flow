@@ -6,9 +6,10 @@ import android.speech.tts.UtteranceProgressListener;
 
 import androidx.annotation.NonNull;
 
-import com.chattylabs.android.commons.Tag;
+import chattylabs.android.commons.Tag;
 
-import static chattylabs.conversations.SynthesizerListener.Status.*;
+import static chattylabs.conversations.SynthesizerListener.Status.NOT_AVAILABLE_ERROR;
+import static chattylabs.conversations.SynthesizerListener.Status.UNKNOWN_ERROR;
 
 class AndroidSynthesizerUtteranceListener extends BaseSynthesizerUtteranceListener {
     private static final String TAG = Tag.make("AndroidSynthesizerUtteranceListener");

@@ -2,7 +2,7 @@ package chattylabs.conversations;
 
 import androidx.annotation.CallSuper;
 
-import com.chattylabs.android.commons.internal.ILogger;
+import chattylabs.android.commons.internal.ILogger;
 
 
 /**

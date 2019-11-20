@@ -2,16 +2,16 @@ package chattylabs.conversations;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.util.Pools;
 import androidx.collection.SimpleArrayMap;
-
-import com.chattylabs.android.commons.Tag;
-import com.chattylabs.android.commons.internal.ILogger;
+import androidx.core.util.Pools;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import chattylabs.android.commons.Tag;
+import chattylabs.android.commons.internal.ILogger;
 
 class ConversationImpl extends Flow.Edge implements Conversation {
     private final String TAG = Tag.make("Conversation");

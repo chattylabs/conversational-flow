@@ -11,10 +11,6 @@ import androidx.annotation.Keep;
 import androidx.annotation.RawRes;
 import androidx.annotation.WorkerThread;
 
-import com.chattylabs.android.commons.HtmlUtils;
-import com.chattylabs.android.commons.StringUtils;
-import com.chattylabs.android.commons.Tag;
-import com.chattylabs.android.commons.internal.ILogger;
 import com.google.api.gax.core.FixedExecutorProvider;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.texttospeech.v1beta1.AudioConfig;
@@ -34,6 +30,11 @@ import java.io.InputStream;
 import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
+import chattylabs.android.commons.HtmlUtils;
+import chattylabs.android.commons.StringUtils;
+import chattylabs.android.commons.Tag;
+import chattylabs.android.commons.internal.ILogger;
 
 public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
 

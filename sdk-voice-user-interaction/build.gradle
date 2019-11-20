@@ -39,7 +39,7 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
 
     // Dependencies
-    implementation "com.chattylabs:android-commons:$android_commons"
+    implementation "chattylabs.android:commons:$android_commons"
 
     // Test dependencies
     testImplementation 'junit:junit:4.12'

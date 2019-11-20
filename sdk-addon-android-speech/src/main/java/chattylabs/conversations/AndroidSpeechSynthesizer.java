@@ -7,15 +7,21 @@ import android.speech.tts.UtteranceProgressListener;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 
-import com.chattylabs.android.commons.HtmlUtils;
-import com.chattylabs.android.commons.StringUtils;
-import com.chattylabs.android.commons.Tag;
-import com.chattylabs.android.commons.internal.ILogger;
-
 import java.util.List;
 import java.util.Locale;
 
-import static chattylabs.conversations.SynthesizerListener.Status.*;
+import chattylabs.android.commons.HtmlUtils;
+import chattylabs.android.commons.StringUtils;
+import chattylabs.android.commons.Tag;
+import chattylabs.android.commons.internal.ILogger;
+
+import static chattylabs.conversations.SynthesizerListener.Status.AVAILABLE;
+import static chattylabs.conversations.SynthesizerListener.Status.AVAILABLE_BUT_INACTIVE;
+import static chattylabs.conversations.SynthesizerListener.Status.ERROR;
+import static chattylabs.conversations.SynthesizerListener.Status.LANGUAGE_NOT_SUPPORTED_ERROR;
+import static chattylabs.conversations.SynthesizerListener.Status.NOT_AVAILABLE_ERROR;
+import static chattylabs.conversations.SynthesizerListener.Status.SUCCESS;
+import static chattylabs.conversations.SynthesizerListener.Status.UNKNOWN_ERROR;
 
 public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer
         implements AndroidSynthesizerUtteranceListener.AndroidSynthesizerUtteranceSupplier {
