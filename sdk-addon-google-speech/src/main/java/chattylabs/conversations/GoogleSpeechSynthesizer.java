@@ -38,11 +38,11 @@ import chattylabs.android.commons.internal.ILogger;
 
 public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
 
-    private static final int MAX_SPEECH_TIME_SEC = 60;
     private static final String TAG = Tag.make("GoogleSpeechSynthesizer");
 
     // Resources
     private final Application application;
+    private BaseSynthesizerUtteranceListener utteranceListener;
     private TextToSpeechClient tts;
     private VoiceSelectionParams voice;
     private AudioConfig audioConfig;
@@ -68,8 +68,11 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
                 application, getConfiguration().getGoogleCredentialsResourceFile())) {
             ListVoicesResponse response = ttsClient.listVoices(getDefaultLanguageCode());
             if (response.getVoicesCount() > 0) {
+                getAudioManager().abandonAudioFocus();
                 listener.execute(SynthesizerListener.Status.AVAILABLE);
             } else {
+                shutdown();
+                getAudioManager().abandonAudioFocus();
                 listener.execute(SynthesizerListener.Status.LANGUAGE_NOT_SUPPORTED_ERROR);
             }
         } catch (Exception e) {
@@ -88,12 +91,6 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
                         Math.max(2, Math.min(Runtime.getRuntime().availableProcessors() - 1, 4))
                 )))
                 .setCredentialsProvider(() -> GoogleCredentials.fromStream(stream)).build());
-    }
-
-    @Override
-    SynthesizerUtteranceListener createDelegateUtteranceListener() {
-        return new BaseSynthesizerUtteranceListener(this,
-                BaseSynthesizerUtteranceListener.Mode.DELEGATE, TAG);
     }
 
     @Override
@@ -152,7 +149,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
                         application, getConfiguration().getGoogleCredentialsResourceFile());
                 this.audioConfig = AudioConfig.newBuilder().setAudioEncoding(AudioEncoding.MP3).build();
                 setupLanguage();
-                setSynthesizerUtteranceListener(createBaseUtteranceListener());
+                utteranceListener = new BaseSynthesizerUtteranceListener(application, this);
                 onPrepared.execute(SynthesizerListener.Status.SUCCESS);
             } catch (Exception e) {
                 logger.logException(e);
@@ -166,31 +163,25 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
         }
     }
 
+    private String getErrorType(int error) {
+        switch (error) {
+            case MediaPlayer.MEDIA_ERROR_IO:
+                return "MEDIA_ERROR_IO";
+            case MediaPlayer.MEDIA_ERROR_MALFORMED:
+                return "MEDIA_ERROR_MALFORMED";
+            case MediaPlayer.MEDIA_ERROR_UNSUPPORTED:
+                return "MEDIA_ERROR_UNSUPPORTED";
+            case MediaPlayer.MEDIA_ERROR_TIMED_OUT:
+                return "MEDIA_ERROR_TIMED_OUT";
+            default:
+                return "ERROR_UNKNOWN";
+        }
+    }
+
     private void setupLanguage() {
         this.voice = VoiceSelectionParams.newBuilder()
                 .setLanguageCode(getDefaultLanguageCode())
                 .setSsmlGender(SsmlVoiceGender.NEUTRAL).build();
-    }
-
-    private SynthesizerUtteranceListener createBaseUtteranceListener() {
-        return new BaseSynthesizerUtteranceListener(this, TAG) {
-
-            @Override
-            protected String getErrorType(int error) {
-                switch (error) {
-                    case MediaPlayer.MEDIA_ERROR_IO:
-                        return "MEDIA_ERROR_IO";
-                    case MediaPlayer.MEDIA_ERROR_MALFORMED:
-                        return "MEDIA_ERROR_MALFORMED";
-                    case MediaPlayer.MEDIA_ERROR_UNSUPPORTED:
-                        return "MEDIA_ERROR_UNSUPPORTED";
-                    case MediaPlayer.MEDIA_ERROR_TIMED_OUT:
-                        return "MEDIA_ERROR_TIMED_OUT";
-                    default:
-                        return "ERROR_UNKNOWN";
-                }
-            }
-        };
     }
 
     private String getDefaultLanguageCode() {
@@ -207,7 +198,6 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     @Override
     void executeOnEngineReady(String utteranceId, String text) {
-        //noinspection ConstantConditions
         String finalText = HtmlUtils.from(text).toString();
 
         for (TextFilter filter : getFilters()) {
@@ -227,14 +217,14 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     @Override
     void playSilence(String utteranceId, long durationInMillis) {
-        getSynthesizerUtteranceListener().onStart(utteranceId);
+        utteranceListener.onStart(utteranceId);
         mCondVar.block(durationInMillis);
-        getSynthesizerUtteranceListener().onDone(utteranceId);
+        utteranceListener.onDone(utteranceId);
     }
 
     private void play(String utteranceId, String text) {
         logger.i(TAG, "[%s] - reading out loud: \"%s\"", utteranceId, text);
-        getSynthesizerUtteranceListener().onStart(utteranceId);
+        utteranceListener.onStart(utteranceId);
         prepare(status -> {
             if (status == SynthesizerListener.Status.SUCCESS) {
 
@@ -253,15 +243,14 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
                     FileOutputStream fos = new FileOutputStream(createTempFile(application));
                     fos.write(audioContents.toByteArray());
                     fos.close();
-
-                    handleSynthesizedFile(application, getSynthesizerUtteranceListener(), utteranceId);
+                    handleSynthesizedFile(application, utteranceListener, utteranceId);
                 } catch (Exception ex) {
                     logger.logException(ex);
                 }
 
             } else {
                 logger.e(TAG, "[%s] - internal playText status ERROR ", utteranceId);
-                getSynthesizerUtteranceListener().onError(utteranceId, SynthesizerListener.Status.ERROR);
+                utteranceListener.onError(utteranceId, SynthesizerListener.Status.ERROR);
             }
         });
     }

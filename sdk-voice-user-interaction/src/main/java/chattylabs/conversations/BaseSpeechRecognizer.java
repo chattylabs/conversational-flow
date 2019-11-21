@@ -82,19 +82,32 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
         if (listeners != null && listeners.length > 0) {
             for (RecognizerListener item : listeners) {
                 if (item instanceof RecognizerListener.OnReady) {
-                    getRecognitionListener()._setOnReady((RecognizerListener.OnReady) item);
+                    getRecognitionListener()._setOnReady(
+                            params -> {
+                                audioManager.requestAudioFocus(null, configuration.isAudioExclusiveRequiredForRecognizer());
+                                ((RecognizerListener.OnReady) item).execute(params);
+                            });
                 }
                 else if (item instanceof RecognizerListener.OnResults) {
-                    getRecognitionListener()._setOnResults((RecognizerListener.OnResults) item);
+                    getRecognitionListener()._setOnResults((results, confidences) -> {
+                        stop();
+                        ((RecognizerListener.OnResults) item).execute(results, confidences);
+                    });
                 }
                 else if (item instanceof RecognizerListener.OnMostConfidentResult) {
-                    getRecognitionListener()._setOnMostConfidentResult((RecognizerListener.OnMostConfidentResult) item);
+                    getRecognitionListener()._setOnMostConfidentResult(result -> {
+                        stop();
+                        ((RecognizerListener.OnMostConfidentResult) item).execute(result);
+                    });
                 }
                 else if (item instanceof RecognizerListener.OnPartialResults) {
                     getRecognitionListener()._setOnPartialResults((RecognizerListener.OnPartialResults) item);
                 }
                 else if (item instanceof RecognizerListener.OnError) {
-                    getRecognitionListener()._setOnError((RecognizerListener.OnError) item);
+                    getRecognitionListener()._setOnError((error, originalError) -> {
+                        stop();
+                        ((RecognizerListener.OnError) item).execute(error, originalError);
+                    });
                 }
             }
         }
@@ -103,8 +116,6 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
     private void checkForBluetoothScoRequired(Runnable runnable) {
         logger.i(tag, "SPEECH - is bluetooth Sco required: %s",
                 Boolean.toString(configuration.isBluetoothScoRequired()));
-
-        audioManager.requestAudioFocus(null, configuration.isAudioExclusiveRequiredForRecognizer());
 
         if (bluetooth.isScoOn() || (bluetooth.isDeviceConnected() && configuration.isBluetoothScoRequired())) {
             // Start Bluetooth Sco
@@ -118,5 +129,7 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
 
     @CallSuper
     @Override
-    public void stop() {}
+    public void stop() {
+        audioManager.abandonAudioFocus();
+    }
 }

@@ -1,235 +1,89 @@
 package chattylabs.conversations;
 
-import androidx.annotation.IntDef;
+import android.content.Context;
+import android.speech.tts.UtteranceProgressListener;
+
 import androidx.annotation.NonNull;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.TimeUnit;
-
+import chattylabs.android.commons.Tag;
 import chattylabs.android.commons.internal.ILogger;
 
 class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceListener {
-    private final String TAG;
-
-    private static final int MAX_SPEECH_TIME_SEC = 60;
+    private static final String TAG = Tag.make("BaseSynthesizerUtteranceListener");
 
     protected final ILogger logger;
 
-    @Mode final int mode;
-
     private final BaseSpeechSynthesizer speechSynthesizer;
+    private final UtteranceProgressListener utteranceProgressListener;
 
-    private SynthesizerListener.OnStart onStartedListener;
-    private SynthesizerListener.OnDone onDoneListener;
-    private SynthesizerListener.OnError onErrorListener;
-    private long timestamp;
-    private TimerTask task;
-    private Timer timer;
-
-    BaseSynthesizerUtteranceListener(@NonNull final BaseSpeechSynthesizer speechSynthesizer,
-                                     @Mode int mode, @NonNull String tag) {
+    BaseSynthesizerUtteranceListener(@NonNull Context context, @NonNull final BaseSpeechSynthesizer speechSynthesizer) {
         this.speechSynthesizer = speechSynthesizer;
         this.logger = speechSynthesizer.logger;
-        this.mode = mode;
-        this.TAG = tag;
-    }
+        this.utteranceProgressListener = new UtteranceProgressListener() {
+            private String onStarted;
 
-    BaseSynthesizerUtteranceListener(@NonNull final BaseSpeechSynthesizer speechSynthesizer,
-                                     @NonNull String logLabel) {
-        this(speechSynthesizer, Mode.CHECKING, logLabel);
-    }
+            @Override
+            public void onStart(String utteranceId) {
+                // https://android.googlesource.com/platform/cts/+/master/tests/tests/speech/src/android/speech/tts/cts/TextToSpeechWrapper.java#232
+                //
+                // Due to a bug in the framework onStart() is called twice for
+                // synthesizeToFile requests.
+                if (onStarted == null || !onStarted.equals(utteranceId)) {
+                    onStarted = utteranceId;
+                    BaseSynthesizerUtteranceListener.this.onStart(utteranceId);
+                }
+            }
 
-    @Override
-    public SynthesizerListener.OnStart _getOnStartedListener() {
-        return onStartedListener != null ? onStartedListener : item -> {
+            @Override
+            public void onDone(String utteranceId) {
+                speechSynthesizer.handleSynthesizedFile(context, BaseSynthesizerUtteranceListener.this, utteranceId);
+            }
+
+            @Override
+            public void onError(String utteranceId) {
+                // No Impl
+            }
+
+            @Override
+            public void onError(String utteranceId, int errorCode) {
+                BaseSynthesizerUtteranceListener.this.onError(utteranceId, errorCode);
+            }
         };
     }
 
-    @Override
-    public SynthesizerUtteranceListener _setOnStartedListener(SynthesizerListener.OnStart onStartedListener) {
-        this.onStartedListener = onStartedListener;
-        return this;
-    }
-
-    @Override
-    public SynthesizerListener.OnDone _getOnDoneListener() {
-        return onDoneListener != null ? onDoneListener : item -> {
-        };
-    }
-
-    @Override
-    public SynthesizerUtteranceListener _setOnDoneListener(SynthesizerListener.OnDone onDoneListener) {
-        this.onDoneListener = onDoneListener;
-        return this;
-    }
-
-    @Override
-    public SynthesizerListener.OnError _getOnErrorListener() {
-        return onErrorListener != null ? onErrorListener : (item1, item2) -> {
-        };
-    }
-
-    @Override
-    public SynthesizerUtteranceListener _setOnErrorListener(SynthesizerListener.OnError onErrorListener) {
-        this.onErrorListener = onErrorListener;
-        return this;
+    public UtteranceProgressListener getUtteranceProgressListener() {
+        return utteranceProgressListener;
     }
 
     @Override
     public void onStart(String utteranceId) {
-        if (this.mode == Mode.DELEGATE) {
-            _getOnStartedListener().execute(utteranceId);
-            return;
-        }
-
         logger.v(TAG, "[%s] - on start", utteranceId);
-
-        timestamp = System.currentTimeMillis();
-        //startTimeout(utteranceId);
-
-        // On Mode CHECKING there shouldn't be any onStart event
-        if (getListenersMap().size() > 0) {
-            SynthesizerUtteranceListener listener = getListenersMap().get(utteranceId);
-            if (listener != null) {
-                listener.onStart(utteranceId);
-            }
-        }
+        speechSynthesizer.getAudioManager().requestAudioFocus(null,
+                speechSynthesizer.getConfiguration().isAudioExclusiveRequiredForSynthesizer());
+        speechSynthesizer.executeListener(utteranceId, BaseSpeechSynthesizer.ON_START, 0);
     }
 
     @Override
     public void onDone(String utteranceId) {
-        if (this.mode == Mode.DELEGATE) {
-            setSpeaking(false);
-            _getOnDoneListener().execute(utteranceId);
-            return;
-        }
-
-        logger.v(TAG, "[%s] - on done <%s> - check for Empty Queue", utteranceId, getCurrentQueueId());
-        moveToNextQueueIfNeeded();
-//        if (isEmpty()) {
-//            stop();
-//            logger.i(TAG, "%s[%s] - on done <%s> - Stream Finished", utteranceId, getCurrentQueueId());
-//        }
-        if (getListenersMap().size() > 0) {
-            SynthesizerUtteranceListener listener = removeListener(utteranceId);
-            logger.v(TAG, "[%s] - on done <%s> - execute listener.onDone", utteranceId, getCurrentQueueId());
-            if (listener != null) {
-                listener.onDone(utteranceId);
-            }
-        }
+        speechSynthesizer.setSpeaking(false);
+        logger.v(TAG, "[%s] - on done <%s> - check for Empty Queue", utteranceId, speechSynthesizer.getCurrentQueueId());
+        speechSynthesizer.moveToNextQueueIfNeeded();
+        logger.v(TAG, "[%s] - on done <%s> - execute listener.onDone", utteranceId, speechSynthesizer.getCurrentQueueId());
+        speechSynthesizer.getAudioManager().abandonAudioFocus();
+        speechSynthesizer.removeAndExecuteListener(utteranceId, BaseSpeechSynthesizer.ON_DONE, 0);
     }
 
     @Override
     public void onError(String utteranceId, int errorCode) {
-        setSpeaking(false);
-        if (this.mode == Mode.DELEGATE) {
-            _getOnErrorListener().execute(utteranceId, errorCode);
-            return;
-        }
-
-        logger.e(TAG, "[%s] - on error <%s> -> stop timeout", utteranceId, getCurrentQueueId());
-        logger.e(TAG, "[%s] - error code: %s", utteranceId, getErrorType(errorCode));
-        moveToNextQueueIfNeeded();
-//        if (isEmpty()) {
-//            stop();
-//            logger.i(TAG, "[%s] - ERROR <%s> - Stream Finished", utteranceId, getCurrentQueueId());
-//        }
-        if (getListenersMap().size() > 0 && getListenersMap().containsKey(utteranceId)) {
-            SynthesizerUtteranceListener listener = removeListener(utteranceId);
-            shutdown();
-            if (listener != null) {
-                listener.onError(utteranceId, errorCode);
-            }
-        } else {
-            shutdown();
-        }
-    }
-
-    @Override
-    public void clearTimeout(String utteranceId) {
-        logger.v(TAG, "[%s] - utterance timeout cleared", utteranceId);
-        if (task != null) task.cancel();
-        if (timer != null) timer.cancel();
-    }
-
-    @Override
-    public void startTimeout(String utteranceId) {
-        logger.i(TAG, "[%s] - started timeout", utteranceId);
-        timer = new Timer();
-        task = new TimerTask() {
-            @Override
-            public void run() {
-                if (!isTtsSpeaking()) {
-                    logger.e(TAG, "[%s] - is null or not speaking && reached timeout", utteranceId);
-                    speechSynthesizer.stop();
-                    onError(utteranceId, SynthesizerListener.Status.TIMEOUT);
-                } else {
-                    if ((System.currentTimeMillis() - timestamp) > TimeUnit.SECONDS.toMillis(MAX_SPEECH_TIME_SEC)) {
-                        logger.e(TAG, "[%s] - exceeded %s seconds", utteranceId, MAX_SPEECH_TIME_SEC);
-                        speechSynthesizer.stop();
-                        onError(utteranceId, SynthesizerListener.Status.TIMEOUT);
-                    } else {
-                        clearTimeout(utteranceId);
-                        startTimeout(utteranceId);
-                    }
-                }
-            }
-        };
-        timer.schedule(task, TimeUnit.SECONDS.toMillis(10));
+        speechSynthesizer.setSpeaking(false);
+        logger.e(TAG, "[%s] - error <%s> - code: %s", utteranceId, speechSynthesizer.getCurrentQueueId(), getErrorType(errorCode));
+        speechSynthesizer.moveToNextQueueIfNeeded();
+        speechSynthesizer.shutdown();
+        speechSynthesizer.getAudioManager().abandonAudioFocus();
+        speechSynthesizer.removeAndExecuteListener(utteranceId, BaseSpeechSynthesizer.ON_DONE, 0);
     }
 
     protected String getErrorType(int error) {
         return "Error Code: " + error;
-    }
-
-    /**
-     * Util Methods For Speech Synthesizer
-     **/
-
-    private boolean isTtsSpeaking() {
-        return speechSynthesizer.isTtsSpeaking();
-    }
-
-    private Map<String, SynthesizerUtteranceListener> getListenersMap() {
-        return speechSynthesizer.getListenersMap();
-    }
-
-    String getCurrentQueueId() {
-        return speechSynthesizer.getCurrentQueueId();
-    }
-
-    protected boolean isEmpty() {
-        return speechSynthesizer.isEmpty();
-    }
-
-    protected void setSpeaking(boolean speaking) {
-        speechSynthesizer.setSpeaking(speaking);
-    }
-
-    private SynthesizerUtteranceListener removeListener(String utteranceId) {
-        return speechSynthesizer.removeListener(utteranceId);
-    }
-
-    private void moveToNextQueueIfNeeded() {
-        speechSynthesizer.moveToNextQueueIfNeeded();
-    }
-
-    protected void stop() {
-        speechSynthesizer.stop();
-    }
-
-    protected void shutdown() {
-        speechSynthesizer.shutdown();
-    }
-
-    @IntDef({Mode.CHECKING, Mode.DELEGATE})
-    @Retention(RetentionPolicy.SOURCE)
-    @interface Mode {
-        int CHECKING = 0;
-        int DELEGATE = 1;
     }
 }
