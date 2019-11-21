@@ -103,6 +103,7 @@ public interface ConversationalFlow extends RequiredPermissions {
      * Convenient provider method to return an instance of {@link ConversationalFlow}
      */
     static ConversationalFlow provide(ILogger logger) {
+        logger.i(TAG, "------ Init %s", TAG);
         logger.setBuildDebug(BuildConfig.DEBUG);
         ConversationalFlow component = ConversationalFlowImpl.Instance.get();
         ((ConversationalFlowImpl)component).setLogger(logger);

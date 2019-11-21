@@ -54,20 +54,26 @@ final class ConversationalFlowImpl implements ConversationalFlow {
         this.configuration.update(newConfig);
     }
 
+    @SuppressWarnings("NullableProblems")
     @SuppressLint("MissingPermission")
     @Override
     public void resetConfiguration(Context context) {
         shutdown(() -> {
             reset();
-            //noinspection Convert2MethodRef
             this.configuration = new ComponentConfig.Builder()
-                    .setSpeechLanguage(() -> Locale.getDefault())
-                    .setBluetoothScoRequired(() -> false)
-                    .setAudioExclusiveRequiredForSynthesizer(() -> false)
-                    .setAudioExclusiveRequiredForRecognizer(() -> true)
+                    .setSynthesizerServiceType(() ->
+                            this.configuration.getSynthesizerServiceType())
+                    .setRecognizerServiceType(() ->
+                            this.configuration.getRecognizerServiceType())
+                    .setGoogleCredentialsResourceFile(() ->
+                            this.configuration.getGoogleCredentialsResourceFile())
+                    .setSpeechLanguage(Locale::getDefault)
                     .setSpeechDictation(() -> false)
+                    .setBluetoothScoRequired(() -> false)
                     .setBluetoothScoAudioMode(() -> AudioManager.MODE_IN_COMMUNICATION)
                     .setCustomBeepEnabled(() -> false)
+                    .setAudioExclusiveRequiredForSynthesizer(() -> false)
+                    .setAudioExclusiveRequiredForRecognizer(() -> true)
                     .build();
 
             if (conversation != null && context != null) {
@@ -95,7 +101,6 @@ final class ConversationalFlowImpl implements ConversationalFlow {
 
     private <T> T newInstance(Class cls, Object... parameters) throws
             IllegalAccessException, InvocationTargetException, InstantiationException {
-        //noinspection unchecked
         Constructor constructor = cls.getDeclaredConstructors()[0];
         //noinspection unchecked
         return (T) constructor.newInstance(parameters);
@@ -129,11 +134,19 @@ final class ConversationalFlowImpl implements ConversationalFlow {
         speechSynthesizer.checkStatus(listener);
     }
 
+    @Override
+    public void checkSpeechRecognizerStatus(Context context, RecognizerListener.OnStatusChecked listener) {
+        final Application application = (Application) context.getApplicationContext();
+        initDependencies(application);
+        createSpeechRecognizerInstance(application);
+        speechRecognizer.checkStatus(listener);
+    }
+
     private void createSpeechSynthesizerInstance(Context context) {
         try {
             if (speechSynthesizer == null) {
                 speechSynthesizer = newInstance(configuration.getSynthesizerServiceType(),
-                        context, configuration, audioManager, bluetooth, logger);
+                        context.getApplicationContext(), configuration, audioManager, bluetooth, logger);
             }
         } catch (Exception e) {
             logger.logException(e);
@@ -143,19 +156,11 @@ final class ConversationalFlowImpl implements ConversationalFlow {
         }
     }
 
-    @Override
-    public void checkSpeechRecognizerStatus(Context context, RecognizerListener.OnStatusChecked listener) {
-        final Application application = (Application) context.getApplicationContext();
-        initDependencies(application);
-        createSpeechRecognizerInstance(application);
-        speechRecognizer.checkStatus(listener);
-    }
-
     private void createSpeechRecognizerInstance(Context context) {
         try {
             if (speechRecognizer == null) {
                 speechRecognizer = newInstance(configuration.getRecognizerServiceType(),
-                        context, configuration, audioManager, bluetooth, logger);
+                        context.getApplicationContext(), configuration, audioManager, bluetooth, logger);
             }
         } catch (Exception e) {
             logger.logException(e);
@@ -183,6 +188,7 @@ final class ConversationalFlowImpl implements ConversationalFlow {
     @SuppressLint("MissingPermission")
     @Override @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     public Conversation create(Context context) {
+        logger.i(TAG, "----- Create");
         conversation = new ConversationImpl(getSpeechSynthesizer(context), getSpeechRecognizer(context), logger);
         return conversation;
     }
@@ -194,18 +200,28 @@ final class ConversationalFlowImpl implements ConversationalFlow {
 
     @Override
     public void shutdown(Runnable onBluetoothScoDisconnected) {
-        if (phoneStateHandler != null) phoneStateHandler.unregister();
-        if (speechSynthesizer != null) speechSynthesizer.shutdown();
-        if (speechRecognizer != null) speechRecognizer.stop();
+        if (phoneStateHandler != null) {
+            phoneStateHandler.unregister();
+        }
+        if (speechSynthesizer != null) {
+            speechSynthesizer.shutdown();
+        }
+        if (speechRecognizer != null) {
+            speechRecognizer.stop();
+        }
         if (bluetooth != null) {
             bluetooth.stopSco(() -> {
                 if (audioManager != null) {
-                    audioManager.abandonAudioFocus();
+                    audioManager.abandonAudioFocus(configuration.isAudioExclusiveRequiredForSynthesizer());
+                    audioManager.abandonAudioFocus(configuration.isAudioExclusiveRequiredForRecognizer());
                 }
                 if (onBluetoothScoDisconnected != null) onBluetoothScoDisconnected.run();
             });
         } else {
-            if (audioManager != null) audioManager.abandonAudioFocus();
+            if (audioManager != null) {
+                audioManager.abandonAudioFocus(configuration.isAudioExclusiveRequiredForSynthesizer());
+                audioManager.abandonAudioFocus(configuration.isAudioExclusiveRequiredForRecognizer());
+            }
             if (onBluetoothScoDisconnected != null) onBluetoothScoDisconnected.run();
         }
     }

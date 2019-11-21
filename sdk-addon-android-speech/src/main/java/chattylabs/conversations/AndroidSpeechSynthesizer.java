@@ -22,23 +22,23 @@ import static chattylabs.conversations.SynthesizerListener.Status.SUCCESS;
 import static chattylabs.conversations.SynthesizerListener.Status.UNKNOWN_ERROR;
 
 public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
+    private static final String TAG = Tag.make("AndroidSpeechSynthesizer");
 
     private static final String CHECKING_UTTERANCE_ID = "<CHECKING_UTTERANCE_ID>";
     private static final String TESTING_STRING = "%%TESTING_STRING%%";
-    private static final String TAG = Tag.make("AndroidSpeechSynthesizer");
 
     // Resources
     private Application application;
     private TextToSpeech tts; // released
-    private BaseSynthesizerUtteranceListener utteranceListener;
+    private BaseSynthesizerUtteranceListener utteranceListener; // released
 
     @Keep
     public AndroidSpeechSynthesizer(Application application,
-                             ComponentConfig configuration,
-                             AndroidAudioManager audioManager,
-                             AndroidBluetooth bluetooth,
-                             ILogger logger) {
-        super(configuration, audioManager, bluetooth, logger, TAG);
+                                    ComponentConfig configuration,
+                                    AndroidAudioManager audioManager,
+                                    AndroidBluetooth bluetooth,
+                                    ILogger logger) {
+        super(configuration, audioManager, bluetooth, logger);
         this.release();
         this.application = application;
     }
@@ -51,16 +51,34 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
         } catch (Exception e) {
             logger.logException(e);
             shutdown();
-            getAudioManager().abandonAudioFocus();
             listener.execute(NOT_AVAILABLE_ERROR);
         }
     }
 
+    @Override
+    public void prune() {
+        if (isEmpty() && hasQueue()) shutdown();
+        else {
+            logger.w(TAG, "prune tts...");
+            stop();
+            destroyTTS();
+        }
+    }
+
+    @Override
+    public void shutdown() {
+        logger.w(TAG, "shutting down");
+        stop();
+        destroyTTS();
+        release();
+    }
+
     private void checkTTS(SynthesizerListener.OnStatusChecked listener) {
         try {
-            // Try downloading data voice!
+            // Try speaking an empty text!
             SynthesizerListener onDone = (SynthesizerListener.OnDone) utteranceId -> {
                 logger.v(TAG, "[%s] - on done <%s> -> go to checkStatus language", utteranceId, getCurrentQueueId());
+                getAudioManager().abandonAudioFocus(getConfiguration().isAudioExclusiveRequiredForSynthesizer());
                 listener.execute(AVAILABLE);
             };
             SynthesizerListener onError = (SynthesizerListener.OnError) (utteranceId, errorCode) -> {
@@ -85,11 +103,11 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
                     int result = _tts.isLanguageAvailable(getLanguage());
                     _tts.shutdown();
                     if (result == TextToSpeech.LANG_AVAILABLE) {
-                        getAudioManager().abandonAudioFocus();
+                        if (isEmpty() && hasQueue()) shutdown();
+                        else getAudioManager().abandonAudioFocus(getConfiguration().isAudioExclusiveRequiredForSynthesizer());
                         listener.execute(AVAILABLE);
                     } else {
                         shutdown();
-                        getAudioManager().abandonAudioFocus();
                         logger.e(TAG, "LANGUAGE_NOT_SUPPORTED_ERROR");
                         listener.execute(LANGUAGE_NOT_SUPPORTED_ERROR);
                     }
@@ -100,7 +118,6 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
         } else {
             logger.e(TAG, "UNKNOWN_ERROR - %s", getErrorType(errorCode));
             shutdown();
-            getAudioManager().abandonAudioFocus();
             listener.execute(UNKNOWN_ERROR);
         }
     }
@@ -129,26 +146,16 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
     }
 
     @Override
-    boolean isTtsNull() {
-        return tts == null;
-    }
-
-    @Override
-    boolean isTtsSpeaking() {
-        return !isTtsNull() && tts.isSpeaking();
-    }
-
-    @Override
     void prepare(SynthesizerListener.OnPrepared onSynthesizerPrepared) {
         if (isTtsNull()) {
             setReady(false);
-            logger.i(TAG, "creating new instance of TextToSpeech.class");
+            logger.i(TAG, "creating new instance of Android TextToSpeech.class");
             tts = createTextToSpeech(application, status -> {
-                logger.i(TAG, "new instance created");
                 if (status == TextToSpeech.SUCCESS) {
+                    logger.i(TAG, "Android TextToSpeech.class new instance created");
                     setReady(true);
                     //setupLanguage();
-                }
+                } else prune();
                 onSynthesizerPrepared.execute(status == TextToSpeech.SUCCESS ?
                         SUCCESS : ERROR);
             });
@@ -160,36 +167,17 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
         }
     }
 
-    private void setupLanguage() {
-        // setLanguage might throw an IllegalArgumentException: Invalid int: "OS" - Samsung Android 6
-        try {
-            if (tts != null) tts.setLanguage(getLanguage());
-        } catch (Exception e) {
-            logger.logException(e);
-        }
-    }
-
-    private Locale getLanguage() {
-        Locale speechLanguage = getConfiguration().getSpeechLanguage();
-        return speechLanguage != null ? speechLanguage : Locale.getDefault();
-    }
-
-    private TextToSpeech createTextToSpeech(Application application, TextToSpeech.OnInitListener listener) {
-        return new TextToSpeech(application, listener);
-    }
-
     @Override
     void executeOnEngineReady(String utteranceId, String text) {
-        //noinspection ConstantConditions
         String finalText = HtmlUtils.from(text).toString();
-
-        for (TextFilter filter : getFilters()) {
-            logger.v(TAG, "[%s] - apply filter: %s", utteranceId, filter);
-            finalText = filter.apply(finalText);
-        }
 
         if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
             finalText = " ";
+        } else {
+            for (TextFilter filter : getFilters()) {
+                logger.v(TAG, "[%s] - apply filter: %s", utteranceId, filter);
+                finalText = filter.apply(finalText);
+            }
         }
 
         if (finalText.length() > TextToSpeech.getMaxSpeechInputLength()) {
@@ -215,17 +203,14 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
         });
     }
 
-    private void play(String utteranceId, String text) {
-        logger.i(TAG, "[%s] - reading out loud: \"%s\"", utteranceId, text);
-        prepare(status -> {
-            if (status == SUCCESS) {
-                tts.synthesizeToFile(text, null, createTempFile(application), utteranceId);
-                //tts.speak(text, TextToSpeech.QUEUE_ADD, null, utteranceId);
-            } else {
-                logger.e(TAG, "[%s] - internal playText status ERROR ", utteranceId);
-                utteranceListener.onError(utteranceId, ERROR);
-            }
-        });
+    @Override
+    boolean isTtsNull() {
+        return tts == null;
+    }
+
+    @Override
+    boolean isTtsSpeaking() {
+        return !isTtsNull() && tts.isSpeaking();
     }
 
     @Override
@@ -233,31 +218,60 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
         logger.w(TAG, "stopping");
         super.stop();
         if (!isTtsNull()) {
+            logger.v(TAG, "stopped");
             try {
                 tts.stop();
-                logger.v(TAG, "stopped");
             } catch (Exception ignored) {
             }
         }
-    }
-
-    @Override
-    public void shutdown() {
-        logger.w(TAG, "shutting down");
-        stop();
-        if (!isTtsNull()) {
-            try {
-                tts.shutdown();
-                logger.v(TAG, "destroyed");
-            } catch (Exception ignored) {
-            }
-        }
-        release();
+        getAudioManager().abandonAudioFocus(getConfiguration().isAudioExclusiveRequiredForSynthesizer());
     }
 
     protected void release() {
         super.release();
-        tts = null;
-        setReady(false);
+        utteranceListener = null;
+    }
+
+    private void setupLanguage() {
+        // setLanguage might throw an IllegalArgumentException: Invalid int: "OS" - Samsung Android 6
+        try {
+            if (tts != null) tts.setLanguage(getLanguage());
+        } catch (Exception e) {
+            logger.logException(e);
+        }
+    }
+
+    private Locale getLanguage() {
+        Locale speechLanguage = getConfiguration().getSpeechLanguage();
+        return speechLanguage != null ? speechLanguage : Locale.getDefault();
+    }
+
+    private TextToSpeech createTextToSpeech(Application application, TextToSpeech.OnInitListener listener) {
+        return new TextToSpeech(application, listener);
+    }
+
+    private void play(String utteranceId, String text) {
+        logger.i(TAG, "[%s] - reading out loud: \"%s\"", utteranceId, text);
+        prepare(status -> {
+            if (status == SUCCESS) {
+                tts.synthesizeToFile(text, null, createTempFile(application), utteranceId);
+                //tts.speak(text, TextToSpeech.QUEUE_ADD, null, utteranceId);
+            } else {
+                logger.e(TAG, "[%s] - internal playTextNow status ERROR ", utteranceId);
+                utteranceListener.onError(utteranceId, ERROR);
+            }
+        });
+    }
+
+    private void destroyTTS() {
+        if (!isTtsNull()) {
+            try {
+                tts.shutdown();
+            } catch (Exception ignored) {
+            }
+            logger.v(TAG, "destroyed");
+            tts = null;
+            setReady(false);
+        }
     }
 }

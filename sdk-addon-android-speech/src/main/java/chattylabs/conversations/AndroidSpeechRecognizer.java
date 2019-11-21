@@ -46,7 +46,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                             AndroidAudioManager audioManager,
                             AndroidBluetooth bluetooth,
                             ILogger logger) {
-        super(configuration, audioManager, bluetooth, logger, TAG);
+        super(configuration, audioManager, bluetooth, logger);
         release();
         this.application = application;
         this.mainHandler = new AndroidHandlerImpl(Looper.getMainLooper());
@@ -72,12 +72,14 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
         if (listener == null) {
             listener = new AndroidSpeechRecognitionAdapter() {
                 private int intents;
+                private boolean retried;
                 private long elapsedTime;
 
                 private void cleanup() {
-                    logger.v(TAG, "ANDROID SPEECH - reset elapsedTime and intents");
+                    logger.v(TAG, "- reset elapsedTime and intents");
                     elapsedTime = System.currentTimeMillis();
                     intents = 0;
+                    retried = false;
                 }
 
                 @Override
@@ -104,39 +106,44 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                     onEndOfSpeech();
                     if (getConfiguration().isCustomBeepEnabled())
                         getAudioManager().errorBeep(application);
-                    logger.e(TAG, "ANDROID SPEECH - error: %s", AndroidSpeechRecognizer.getErrorType(error));
+                    logger.e(TAG, "error: %s", AndroidSpeechRecognizer.getErrorType(error));
                     OnError errorListener = _getOnError();
                     int soundLevel = getSoundLevel();
-                    logger.v(TAG, "ANDROID SPEECH - sound level: %s", getSoundLevelAsString(soundLevel));
-                    // We consider 2 sec as the minimum to record audio
+                    logger.v(TAG, "- sound level: %s", getSoundLevelAsString(soundLevel));
+                    // We consider 3 sec as the minimum to record audio
                     // If it last less than that, there was an audio issue
                     // So potentially we retry listening again
                     boolean stoppedTooEarly = (System.currentTimeMillis() - elapsedTime) < MIN_VOICE_RECOGNITION_TIME_LISTENING;
+                    if (stoppedTooEarly && !retried) {
+                        retried = true;
+                        elapsedTime = System.currentTimeMillis();
+                        if (speechRecognizer != null) speechRecognizer.startListening(speechRecognizerIntent);
+                        else processError(error, errorListener, soundLevel, true);
+                    } else {
+                        processError(error, errorListener, soundLevel, stoppedTooEarly);
+                    }
+                }
+
+                private void processError(int error, OnError errorListener, int soundLevel, boolean stoppedTooEarly) {
                     getRecognitionListener().reset();
                     mainHandler.post(() -> {
                         release();
                         if (errorListener != null) {
                             if (needRetry(error)) {
                                 errorListener.execute(Status.UNAVAILABLE_ERROR, error);
-                            }
-                            else if (stoppedTooEarly) {
+                            } else if (stoppedTooEarly) {
                                 errorListener.execute(Status.STOPPED_TOO_EARLY_ERROR, error);
-                            }
-                            else if (soundLevel == NO_SOUND) {
+                            } else if (soundLevel == NO_SOUND) {
                                 errorListener.execute(Status.NO_SOUND_ERROR, error);
-                            }
-                            else if (soundLevel == LOW_SOUND) {
+                            } else if (soundLevel == LOW_SOUND) {
                                 errorListener.execute(Status.LOW_SOUND_ERROR, error);
-                            }
-                            else if (intents > 0) {
-                                errorListener.execute(Status.AFTER_PARTIALS_ERROR, error);
-                            }
-                            else if (this.tryAgainRequired()) {
+                            } else if (intents > 0) {
+                                errorListener.execute(Status.AFTER_PARTIAL_RESULTS_ERROR, error);
+                            } else if (this.tryAgainRequired()) {
                                 errorListener.execute(error == SpeechRecognizer.ERROR_NO_MATCH ?
                                         Status.UNKNOWN_ERROR :
                                         Status.RETRY_ERROR, error);
-                            }
-                            else { // Restore ANDROID SPEECH
+                            } else { // Restore ANDROID SPEECH
                                 errorListener.execute(Status.UNKNOWN_ERROR, error);
                             }
                         }
@@ -160,17 +167,17 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                     mainHandler.post(() -> {
                         if (list != null && !list.isEmpty()) {
                             if (onResults != null) {
-                                logger.v(TAG, "ANDROID SPEECH - results: %s", list);
+                                logger.v(TAG, "- results: %s", list);
                                 onResults.execute(list, confidences);
                             }
                             if (onMostConfidentResult != null) {
                                 String result = selectMostConfidentResult(list, confidences);
-                                logger.v(TAG, "ANDROID SPEECH - confident result: %s", result);
+                                logger.v(TAG, "- confident result: %s", result);
                                 onMostConfidentResult.execute(result);
                             }
                         }
                         else {
-                            logger.e(TAG, "ANDROID SPEECH - No results > onError");
+                            logger.e(TAG, "- No results > onError");
                             if (onError != null) {
                                 onError.execute(Status.EMPTY_RESULTS_ERROR, -1);
                             }
@@ -180,7 +187,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
 
                 @Override
                 public void onPartialResults(Bundle partialResults) {
-                    logger.v(TAG, "ANDROID SPEECH - onPartialResults");
+                    logger.v(TAG, "- onPartialResults");
                     List<String> list;
                     intents++;
                     OnPartialResults onPartialResults = _getOnPartialResults();
@@ -189,7 +196,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                     list = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                     float[] confidences = partialResults.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
                     if (list != null && !list.isEmpty()) {
-                        logger.v(TAG, "ANDROID SPEECH - partial results: %s", list);
+                        logger.v(TAG, "- partial results: %s", list);
                         onPartialResults.execute(list, confidences);
                     }
                 }
@@ -212,7 +219,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
 
     @Override
     void startListening() {
-        logger.i(TAG, "ANDROID SPEECH - started listening");
+        logger.i(TAG, "- started listening");
         if (mainHandler != null)  {
             mainHandler.removeCallbacksAndMessages(null);
             mainHandler.post(() -> {
@@ -223,7 +230,6 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                 if (lowSoundThreshold > 0)
                     getRecognitionListener().setLowSoundThreshold(lowSoundThreshold);
                 speechRecognizer.setRecognitionListener(getRecognitionListener());
-                //adjustVolumeForBeep();
                 speechRecognizer.startListening(speechRecognizerIntent);
             });
         }
@@ -274,12 +280,12 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
         setRmsDebug(false);
         setNoSoundThreshold(0);
         setLowSoundThreshold(0);
-        logger.i(TAG, "ANDROID SPEECH - released");
+        logger.i(TAG, "- released");
     }
 
     @Override
     public void stop() {
-        logger.w(TAG, "ANDROID SPEECH - stop");
+        logger.w(TAG, "- stop");
         if (mainHandler != null) mainHandler.removeCallbacksAndMessages(null);
         getRecognitionListener().reset();
         super.stop();
@@ -289,7 +295,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                 try {
                     speechRecognizer.stopListening();
                     speechRecognizer.destroy();
-                    logger.v(TAG, "ANDROID SPEECH - speechRecognizer stopped");
+                    logger.v(TAG, "- speechRecognizer stopped");
                 } catch (Exception ignored) {}
                 release();
             });

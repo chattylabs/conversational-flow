@@ -27,7 +27,6 @@ import static chattylabs.conversations.ConversationalFlow.matches;
 
 
 public class TestingAddonsActivity extends BaseActivity {
-
     private static final String TAG = Tag.make(TestingAddonsActivity.class);
 
     // Constants
@@ -57,17 +56,6 @@ public class TestingAddonsActivity extends BaseActivity {
         initCommonViews();
         initViews();
         initActions();
-    }
-
-    @Override
-    public void onDestroy() {
-        component.updateConfiguration(
-                builder -> {
-                    builder.setBluetoothScoRequired(() -> false);
-                    return builder.build();
-                });
-        component.shutdown();
-        super.onDestroy();
     }
 
     private void initActions() {
@@ -137,33 +125,30 @@ public class TestingAddonsActivity extends BaseActivity {
                     Log.i(TAG, "on Done index: " + index);
                     Pair<Integer, String> next = queue.get(index + 1);
                     if (next != null && next.first == LISTEN) {
-                        synthesizer.holdCurrentQueue();
+                        synthesizer.lock();
                         listen(index);
                     } else {
                         if (synthesizer.isEmpty()) {
                             component.shutdown();
                         } else {
-                            synthesizer.freeCurrentQueue();
+                            synthesizer.unlock();
                             synthesizer.resume();
                         }
                     }
                 },
                 (SynthesizerListener.OnError) (utteranceId, errorCode) -> {
-                    if (errorCode == SynthesizerListener.Status.UNKNOWN_ERROR) {
-                        if (synthesizer.isEmpty()) {
-                            component.shutdown();
-                        } else {
-                            synthesizer.freeCurrentQueue();
-                            synthesizer.resume();
-                        }
-                    } else {
+                    if (synthesizer.isEmpty()) {
                         component.shutdown();
+                    } else {
+                        synthesizer.unlock();
+                        synthesizer.resume();
                     }
                 });
     }
 
     private void listen(int index) {
-        recognizer.listen((RecognizerListener.OnReady) bundle -> representQueue(index + 1, true),
+        recognizer.listen(
+                (RecognizerListener.OnReady) bundle -> representQueue(index + 1, true),
                 (RecognizerListener.OnMostConfidentResult) o -> {
                     representQueue(-1);
                     SparseArray<String> news = getChecks(new SparseArray<>(), index + 1);
@@ -179,7 +164,7 @@ public class TestingAddonsActivity extends BaseActivity {
                         if (synthesizer.isEmpty()) {
                             component.shutdown();
                         } else {
-                            synthesizer.freeCurrentQueue();
+                            synthesizer.unlock();
                             synthesizer.resume();
                         }
                     }, 1000);
@@ -189,7 +174,7 @@ public class TestingAddonsActivity extends BaseActivity {
                     if (synthesizer.isEmpty()) {
                         component.shutdown();
                     } else {
-                        synthesizer.freeCurrentQueue();
+                        synthesizer.unlock();
                         synthesizer.resume();
                     }
 
@@ -218,6 +203,7 @@ public class TestingAddonsActivity extends BaseActivity {
                 if (item.first == READ) {
                     playByIndex(item.second, i);
                 } else if (i == 0 && item.first == LISTEN) {
+                    synthesizer.lock();
                     listen(-1);
                 }
             }

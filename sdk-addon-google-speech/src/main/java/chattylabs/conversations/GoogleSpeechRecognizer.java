@@ -73,7 +73,7 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
                                   AndroidAudioManager audioManager,
                                   AndroidBluetooth bluetooth,
                                   ILogger logger) {
-        super(configuration, audioManager, bluetooth, logger, TAG);
+        super(configuration, audioManager, bluetooth, logger);
         this.application = application;
         this.audioEmitter = new AudioEmitter();
     }
@@ -202,7 +202,7 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
                         } else if (stoppedTooEarly) {
                             errorListener.execute(Status.STOPPED_TOO_EARLY_ERROR, error);
                         } else if (intents > 0) {
-                            errorListener.execute(Status.AFTER_PARTIALS_ERROR, error);
+                            errorListener.execute(Status.AFTER_PARTIAL_RESULTS_ERROR, error);
                         } else if (tryAgainRequired()) {
                             errorListener.execute(error == SpeechRecognizer.ERROR_NO_MATCH ?
                                     Status.UNKNOWN_ERROR :

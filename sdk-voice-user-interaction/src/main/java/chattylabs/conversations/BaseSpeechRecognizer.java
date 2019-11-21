@@ -2,6 +2,7 @@ package chattylabs.conversations;
 
 import androidx.annotation.CallSuper;
 
+import chattylabs.android.commons.Tag;
 import chattylabs.android.commons.internal.ILogger;
 
 
@@ -11,7 +12,7 @@ import chattylabs.android.commons.internal.ILogger;
  * <p/>
  * <pre>{@code
  * public ChildClassConstructor(Application, ComponentConfig, AndroidAudioManager, AndroidBluetooth, ILogger) {
- *     super(ComponentConfig, AndroidAudioManager, AndroidBluetooth, ILogger, String);
+ *     super(ComponentConfig, AndroidAudioManager, AndroidBluetooth, ILogger);
  *     //...
  * }
  * }</pre>
@@ -25,6 +26,8 @@ import chattylabs.android.commons.internal.ILogger;
  * @see ILogger
  */
 abstract class BaseSpeechRecognizer implements SpeechRecognizer {
+    private static final String TAG = Tag.make("BaseSpeechRecognizer");
+
     // Minimum constants
     int MIN_VOICE_RECOGNITION_TIME_LISTENING = 3000;
 
@@ -35,18 +38,15 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
 
     // Log stuff
     protected final ILogger logger;
-    private final String tag;
 
     BaseSpeechRecognizer(ComponentConfig configuration,
                          AndroidAudioManager audioManager,
                          AndroidBluetooth bluetooth,
-                         ILogger logger,
-                         String tag) {
+                         ILogger logger) {
         this.configuration = configuration;
         this.bluetooth = bluetooth;
         this.audioManager = audioManager;
         this.logger = logger;
-        this.tag = tag;
     }
 
     abstract RecognizerUtteranceListener getRecognitionListener();
@@ -72,7 +72,7 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
     @CallSuper
     @Override
     public void listen(RecognizerListener... listeners) {
-        logger.i(tag, "SPEECH - start listening");
+        logger.i(TAG, "- start listening");
         handleListeners(listeners);
         checkForBluetoothScoRequired(this::startListening);
     }
@@ -114,12 +114,12 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
     }
 
     private void checkForBluetoothScoRequired(Runnable runnable) {
-        logger.i(tag, "SPEECH - is bluetooth Sco required: %s",
+        logger.i(TAG, "- is bluetooth Sco required: %s",
                 Boolean.toString(configuration.isBluetoothScoRequired()));
 
         if (bluetooth.isScoOn() || (bluetooth.isDeviceConnected() && configuration.isBluetoothScoRequired())) {
             // Start Bluetooth Sco
-            logger.w(tag, "waiting for bluetooth Sco connection...");
+            logger.w(TAG, "- waiting for bluetooth Sco connection...");
             bluetooth.startSco(runnable);
         }
         else {
@@ -130,6 +130,6 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
     @CallSuper
     @Override
     public void stop() {
-        audioManager.abandonAudioFocus();
+        audioManager.abandonAudioFocus(configuration.isAudioExclusiveRequiredForRecognizer());
     }
 }

@@ -12,31 +12,19 @@ public interface SpeechSynthesizer {
 
     void checkStatus(SynthesizerListener.OnStatusChecked listener);
 
-    void addFilter(TextFilter filter);
-
-    List<TextFilter> getFilters();
-
-    void clearFilters();
-
     void playText(String text, String queueId, SynthesizerListener... listeners);
 
-    void playText(String text, SynthesizerListener... listeners);
+    void playTextNow(String text, SynthesizerListener... listeners);
 
     void playSilence(long durationInMillis, String queueId, SynthesizerListener... listeners);
 
-    void playSilence(long durationInMillis, SynthesizerListener... listeners);
+    void playSilenceNow(long durationInMillis, SynthesizerListener... listeners);
 
-    void freeCurrentQueue();
+    void addFilter(TextFilter filter);
 
-    void holdCurrentQueue();
+    void clearFilters();
 
-    void stop();
-
-    void resume();
-
-    void shutdown();
-
-    boolean isEmpty();
+    List<TextFilter> getFilters();
 
     String getLastQueueId();
 
@@ -46,4 +34,23 @@ public interface SpeechSynthesizer {
     String getCurrentQueueId();
 
     Set<String> getQueueSet();
+
+    boolean isEmpty();
+
+    boolean hasQueue();
+
+    void resume();
+
+    void lock();
+
+    void unlock();
+
+    /**
+     * Clear and release resources without affecting current listeners and queue of messages
+     */
+    void prune();
+
+    void stop();
+
+    void shutdown();
 }

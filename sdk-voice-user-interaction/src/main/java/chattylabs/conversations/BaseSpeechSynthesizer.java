@@ -19,6 +19,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import chattylabs.android.commons.Tag;
 import chattylabs.android.commons.internal.ILogger;
 
 /**
@@ -43,8 +44,8 @@ import chattylabs.android.commons.internal.ILogger;
  * is available.
  * <p/>
  * - You must implement {@link #prepare(SynthesizerListener.OnPrepared)} which is the entry point
- * for any call to {@link #playText(String, SynthesizerListener[])} or
- * {@link #playSilence(long, SynthesizerListener[])} and its variations.
+ * for any call to {@link #playTextNow(String, SynthesizerListener[])} or
+ * {@link #playSilenceNow(long, SynthesizerListener[])} and its variations.
  * <br/>This method behaves like {@link #checkStatus(SynthesizerListener.OnStatusChecked)} but it stores the current
  * Text To Speech client, sets up the current required language, and initializes a
  * {@link SynthesizerUtteranceListener}.
@@ -64,47 +65,41 @@ import chattylabs.android.commons.internal.ILogger;
  * @see ILogger
  */
 abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
-    private final String TAG;
-
+    private static final String TAG = Tag.make("BaseSpeechSynthesizer");
+    // Constants
+    protected static final String DEFAULT_QUEUE_ID = "chattylabs.conversations:default_queue_id";
     static final int ON_START = 1;
     static final int ON_DONE = 2;
     static final int ON_ERROR = 3;
-
-    // Log stuff
-    protected final ILogger logger;
-
-    // Constants
-    protected static final String DEFAULT_QUEUE_ID = "chattylabs.conversations:default_queue_id";
     private static final String DEFAULT_UTTERANCE_ID = "u:";
     private static final String MAP_UTTERANCE_ID = "utteranceId";
     private static final String MAP_SILENCE = "silence";
     private static final String MAP_MESSAGE = "message";
-
+    // Log stuff
+    protected final ILogger logger;
     // Data
-    private final ComponentConfig configuration;
-    private final LinkedHashMap<String, LinkedHashMap<Integer, SynthesizerListener>> listeners;
-    private final LinkedHashMap<String, ConcurrentLinkedQueue<Map<String, Object>>> queue;
+    private final LinkedHashMap<String, LinkedHashMap<Integer, SynthesizerListener>> listeners; //released
+    private final LinkedHashMap<String, ConcurrentLinkedQueue<Map<String, Object>>> queue; //released
     private final List<TextFilter> filters;
     private final Object lock = new Object();
-
-    // States
-    private boolean isReady;
-    private boolean isOnHold;
-    private boolean isSpeaking;
-
     // Resources
+    private final ComponentConfig configuration;
     private final AndroidAudioManager audioManager;
     private final AndroidBluetooth bluetooth;
-    private String queueId = DEFAULT_QUEUE_ID;
-    private String lastQueueId;
-    private File tempFile;
-    MediaPlayer mediaPlayer;
+    MediaPlayer mediaPlayer; //released
+    private String queueId = DEFAULT_QUEUE_ID; //reset
+    private String lastQueueId; //reset
+    // States
+    private boolean isReady; //reset
+    private boolean isLocked; //reset
+    private boolean isSpeaking; //reset
+    private boolean hasQueue; //reset
+    private File tempFile; //released
 
     BaseSpeechSynthesizer(ComponentConfig configuration,
                           AndroidAudioManager audioManager,
                           AndroidBluetooth bluetooth,
-                          ILogger logger,
-                          String tag) {
+                          ILogger logger) {
         this.configuration = configuration;
         this.filters = new LinkedList<>();
         this.listeners = new LinkedHashMap<>();
@@ -112,7 +107,6 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         this.audioManager = audioManager;
         this.bluetooth = bluetooth;
         this.logger = logger;
-        this.TAG = tag;
     }
 
     abstract void prepare(SynthesizerListener.OnPrepared onSynthesizerPrepared);
@@ -124,39 +118,6 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     abstract boolean isTtsNull();
 
     abstract boolean isTtsSpeaking();
-
-    protected boolean isReady() {
-        return isReady;
-    }
-
-    void setReady(boolean ready) {
-        logger.w(TAG, "ready set to " + Boolean.toString(ready));
-        isReady = ready;
-    }
-
-    public boolean isSpeaking() {
-        return isSpeaking;
-    }
-
-    void setSpeaking(boolean speaking) {
-        logger.w(TAG, "speaking set to " + Boolean.toString(speaking));
-        isSpeaking = speaking;
-    }
-
-    @Override
-    public List<TextFilter> getFilters() {
-        return filters;
-    }
-
-    @Override
-    public void addFilter(TextFilter filter) {
-        filters.add(filter);
-    }
-
-    @Override
-    public void clearFilters() {
-        filters.clear();
-    }
 
     private void selectListener(LinkedHashMap<Integer, SynthesizerListener> map,
                                 String utteranceId, int method, int errorCode) {
@@ -182,26 +143,14 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
     void executeListener(String utteranceId, int method, int errorCode) {
         synchronized (lock) {
-            selectListener(getListeners().get(utteranceId), utteranceId, method, errorCode);
+            selectListener(listeners.get(utteranceId), utteranceId, method, errorCode);
         }
     }
 
     void removeAndExecuteListener(String utteranceId, int method, int errorCode) {
         synchronized (lock) {
-            selectListener(getListeners().remove(utteranceId), utteranceId, method, errorCode);
+            selectListener(listeners.remove(utteranceId), utteranceId, method, errorCode);
         }
-    }
-
-    public ComponentConfig getConfiguration() {
-        return configuration;
-    }
-
-    public AndroidAudioManager getAudioManager() {
-        return audioManager;
-    }
-
-    LinkedHashMap<String, LinkedHashMap<Integer, SynthesizerListener>> getListeners() {
-        return listeners;
     }
 
     private void handleListener(@NonNull String utteranceId,
@@ -230,7 +179,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     void playText(String text, String queueId, String utteranceId,
-                          @Nullable SynthesizerListener... listeners) {
+                  @Nullable SynthesizerListener... listeners) {
         logger.i(TAG, "[%s] - play \"%s\" on queue <%s>", utteranceId, text, queueId);
         if (this.listeners.containsKey(utteranceId)) {
             utteranceId = utteranceId + "_" + this.listeners.size();
@@ -239,31 +188,30 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         if (listeners != null && listeners.length > 0) handleListener(uId, listeners);
         addToQueue(uId, text, -1, queueId);
         logger.i(TAG, "[%s] - ready: %s | speaking: %s | held: %s",
-                uId, Boolean.toString(isReady), Boolean.toString(isSpeaking), Boolean.toString(isOnHold));
-        if (isTtsNull() && !isSpeaking) {
+                uId, Boolean.toString(isReady), Boolean.toString(isSpeaking), Boolean.toString(isLocked));
+        if (isTtsNull() && !isSpeaking && !isLocked) {
             setSpeaking(true);
             prepare(status -> {
                 if (status == SynthesizerListener.Status.SUCCESS) {
+                    hasQueue = true;
                     run();
-                }
-                else {
+                } else {
                     logger.e(TAG, "[%s] - status ERROR with queue <%s>", uId, queueId);
-                    shutdown();
-                    getAudioManager().abandonAudioFocus();
                     removeAndExecuteListener(uId, ON_ERROR, SynthesizerListener.Status.ERROR);
                 }
             });
-        }
-        else if (isReady && !isSpeaking && !isOnHold) {
+        } else if (isReady && !isSpeaking && !isLocked) {
             setSpeaking(true);
             run();
+        } else {
+            moveToNextQueueIfNeeded();
         }
     }
 
     @Override
-    public void playText(String text, SynthesizerListener... listeners) {
+    public void playTextNow(String text, SynthesizerListener... listeners) {
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
-        logger.i(TAG, "[%s] - immediately play \"%s\"", utteranceId, text);
+        logger.i(TAG, "[%s] - play immediately \"%s\"", utteranceId, text);
         if (this.listeners.containsKey(utteranceId)) {
             utteranceId = utteranceId + "_" + this.listeners.size();
         }
@@ -277,20 +225,18 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         prepare(status -> {
             if (status == SynthesizerListener.Status.SUCCESS) {
                 playTheCurrentQueue(map);
-            }
-            else {
+            } else {
                 logger.e(TAG, "[%s] - no queue status ERROR", uId);
-                shutdown();
-                getAudioManager().abandonAudioFocus();
                 removeAndExecuteListener(uId, ON_ERROR, SynthesizerListener.Status.ERROR);
             }
         });
     }
 
     @Override
-    public  void playSilence(long durationInMillis, String queueId,
-                             SynthesizerListener... listeners) {
-        if (durationInMillis <= 0) throw new IllegalArgumentException("Silence duration must be greater than 0");
+    public void playSilence(long durationInMillis, String queueId,
+                            SynthesizerListener... listeners) {
+        if (durationInMillis <= 0)
+            throw new IllegalArgumentException("Silence duration must be greater than 0");
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
         logger.i(TAG, "[%s] - play silence on queue <%s>", utteranceId, queueId);
         if (this.listeners.containsKey(utteranceId)) {
@@ -300,32 +246,32 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         if (listeners != null && listeners.length > 0) handleListener(uId, listeners);
         addToQueue(uId, null, durationInMillis, queueId);
         logger.i(TAG, "[%s] - ready: %s | speaking: %s | held: %s",
-                uId, Boolean.toString(isReady), Boolean.toString(isSpeaking), Boolean.toString(isOnHold));
-        if (isTtsNull() && !isSpeaking) {
+                uId, Boolean.toString(isReady), Boolean.toString(isSpeaking), Boolean.toString(isLocked));
+        if (isTtsNull() && !isSpeaking && !isLocked) {
             setSpeaking(true);
             prepare(status -> {
                 if (status == SynthesizerListener.Status.SUCCESS) {
+                    hasQueue = true;
                     run();
-                }
-                else {
+                } else {
                     logger.e(TAG, "[%s] - silence status ERROR with queue <%s>", uId, queueId);
-                    shutdown();
-                    getAudioManager().abandonAudioFocus();
                     removeAndExecuteListener(uId, ON_ERROR, SynthesizerListener.Status.ERROR);
                 }
             });
-        }
-        else if (isReady && !isSpeaking && !isOnHold) {
+        } else if (isReady && !isSpeaking && !isLocked) {
             setSpeaking(true);
             run();
+        } else {
+            moveToNextQueueIfNeeded();
         }
     }
 
     @Override
-    public void playSilence(long durationInMillis, SynthesizerListener... listeners) {
-        if (durationInMillis <= 0) throw new IllegalArgumentException("Silence duration must be greater than 0");
+    public void playSilenceNow(long durationInMillis, SynthesizerListener... listeners) {
+        if (durationInMillis <= 0)
+            throw new IllegalArgumentException("Silence duration must be greater than 0");
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
-        logger.i(TAG, "[%s] - immediately play silence", utteranceId);
+        logger.i(TAG, "[%s] - play silence immediately", utteranceId);
         if (this.listeners.containsKey(utteranceId)) {
             utteranceId = utteranceId + "_" + this.listeners.size();
         }
@@ -339,49 +285,37 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         prepare(status -> {
             if (status == SynthesizerListener.Status.SUCCESS) {
                 playTheCurrentQueue(map);
-            }
-            else {
+            } else {
                 logger.e(TAG, "[%s] - no queue silence status ERROR", uId);
-                shutdown();
-                getAudioManager().abandonAudioFocus();
                 removeAndExecuteListener(uId, ON_ERROR, SynthesizerListener.Status.ERROR);
             }
         });
     }
 
     @Override
-    public void freeCurrentQueue() {
-        logger.w(TAG, "isOnHold set to false");
-        isOnHold = false;
-    }
-
-    @Override
-    public void holdCurrentQueue() {
-        logger.w(TAG, "isOnHold set to true");
-        isOnHold = true;
-    }
-
-    @Override
     public void resume() {
-        if (isSpeaking || isOnHold) return;
+        if (isSpeaking || isLocked) return;
         String utteranceId = null;
-        if (!isEmpty() && queue.containsKey(getCurrentQueueId())) {
-            Map map = queue.get(getCurrentQueueId()).peek();
-            if (map != null && map.containsKey(MAP_UTTERANCE_ID))
-                utteranceId = (String) map.get(MAP_UTTERANCE_ID);
+        if (!isEmpty()) {
+            if (queue.containsKey(getCurrentQueueId())) {
+                ConcurrentLinkedQueue<Map<String, Object>> maps = queue.get(getCurrentQueueId());
+                if (maps != null && !maps.isEmpty()) {
+                    Map map = maps.peek();
+                    if (map != null && map.containsKey(MAP_UTTERANCE_ID))
+                        utteranceId = (String) map.get(MAP_UTTERANCE_ID);
+                }
+            }
+            setSpeaking(true);
         }
         final String uId = utteranceId;
         logger.i(TAG, "[%s] - resume queue <%s>", uId, queueId);
-        if (!isEmpty()) setSpeaking(true);
         prepare(status -> {
             if (status == SynthesizerListener.Status.SUCCESS) {
+                hasQueue = true;
                 run();
-            }
-            else {
+            } else {
                 logger.e(TAG, "status ERROR");
                 if (uId != null) {
-                    shutdown();
-                    getAudioManager().abandonAudioFocus();
                     removeAndExecuteListener(uId, ON_ERROR, SynthesizerListener.Status.ERROR);
                 }
             }
@@ -392,8 +326,12 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         moveToNextQueueIfNeeded();
         if (!isEmpty()) {
             // Gets and plays the current message in the queue
-            playTheCurrentQueue(queue.get(queueId).poll());
+            playTheCurrentQueue(Objects.requireNonNull(queue.get(queueId)).peek());
         }
+    }
+
+    void poolQueueFromLast() {
+        if (!isEmpty()) Objects.requireNonNull(queue.get(queueId)).remove();
     }
 
     void moveToNextQueueIfNeeded() {
@@ -419,6 +357,26 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         }
     }
 
+    private void addToQueue(@NonNull String utteranceId, String message,
+                            long duration, @NonNull String queueId) {
+        Map<String, Object> map = new HashMap<>();
+        map.put(MAP_UTTERANCE_ID, utteranceId);
+        if (message != null) map.put(MAP_MESSAGE, message);
+        if (duration > 0) map.put(MAP_SILENCE, duration);
+        if (!queue.containsKey(queueId)) {
+            logger.v(TAG, "[%s] - added new queue <%s>", utteranceId, queueId);
+            lastQueueId = queueId;
+            synchronized (lock) {
+                queue.put(queueId, new ConcurrentLinkedQueue<>());
+            }
+        }
+        Objects.requireNonNull(queue.get(queueId)).add(map);
+        logger.v(TAG, "[%s] - added message to queue <%s>", utteranceId, queueId);
+        logger.v(TAG, "[%s] - queues [%s] ", utteranceId, queue.size());
+        logger.v(TAG, "[%s] - messages in queue <%s> = %s", utteranceId, queueId,
+                Objects.requireNonNull(queue.get(queueId)).size());
+    }
+
     private void playTheCurrentQueue(Map<String, Object> map) {
         // Check whether Sco is connected or required
         logger.i(TAG, "bluetooth Sco required: %s",
@@ -436,64 +394,13 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     private void chooseItemToPlay(Map<String, Object> map) {
         if (map.containsKey(MAP_MESSAGE)) {
             executeOnEngineReady((String) map.get(MAP_UTTERANCE_ID), (String) map.get(MAP_MESSAGE));
-        }
-        else if (map.containsKey(MAP_SILENCE)) {
+        } else if (map.containsKey(MAP_SILENCE)) {
             playSilence((String) map.get(MAP_UTTERANCE_ID), (long) map.get(MAP_SILENCE));
         } else
             throw new RuntimeException("No message or silence item to play");
     }
 
-    @Override
-    public String getCurrentQueueId() {
-        return queueId;
-    }
-
-    @Override
-    public String getLastQueueId() {
-        return lastQueueId;
-    }
-
-    @Nullable
-    @Override
-    public String getNextQueueId() {
-        Set<String> keys = getQueueSet();
-        if (keys.size() > 1) {
-            return (String) keys.toArray()[1];
-        }
-        else {
-            return null;
-        }
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return queue.isEmpty() || (queue.containsKey(queueId) && queue.get(queueId).isEmpty());
-    }
-
-    @Override
-    public Set<String> getQueueSet() {
-        return queue.keySet();
-    }
-
-    private void addToQueue(@NonNull String utteranceId, String message,
-                            long duration, @NonNull String queueId) {
-        Map<String, Object> map = new HashMap<>();
-        map.put(MAP_UTTERANCE_ID, utteranceId);
-        if (message != null) map.put(MAP_MESSAGE, message);
-        if (duration > 0) map.put(MAP_SILENCE, duration);
-        if (!queue.containsKey(queueId)) {
-            logger.v(TAG, "[%s] - added new queue <%s>", utteranceId, queueId);
-            lastQueueId = queueId;
-            synchronized (lock) {
-                queue.put(queueId, new ConcurrentLinkedQueue<>());
-            }
-        }
-        queue.get(queueId).add(map);
-        logger.v(TAG, "[%s] - added message to queue <%s>",utteranceId, queueId);
-        logger.v(TAG, "[%s] - queues [%s] ", utteranceId, queue.size());
-        logger.v(TAG, "[%s] - messages in queue <%s> = %s", utteranceId, queueId, queue.get(queueId).size());
-    }
-
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     File createTempFile(Context context) {
         try {
             tempFile = File.createTempFile(
@@ -508,52 +415,45 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     private void finishPlayer() {
-        logger.v(TAG, "stop media player");
+        logger.v(TAG, "stop and release MediaPlayer");
         try {
             if (mediaPlayer.isPlaying())
                 mediaPlayer.stop();
             mediaPlayer.reset();
             mediaPlayer.release();
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         mediaPlayer = null;
     }
 
     void handleSynthesizedFile(Context context, SynthesizerUtteranceListener listener, String utterance) {
         finishPlayer();
-        logger.v(TAG, "start media player");
+        logger.v(TAG, "start MediaPlayer");
         if (tempFile != null) {
             try {
                 mediaPlayer = MediaPlayer.create(context, Uri.fromFile(tempFile), null,
                         audioManager.getAudioAttributes().build(), AudioManager.AUDIO_SESSION_ID_GENERATE);
                 if (mediaPlayer == null) {
-                    shutdown();
-                    getAudioManager().abandonAudioFocus();
+                    prune();
                     listener.onError(utterance, SynthesizerListener.Status.UNKNOWN_ERROR);
                     return;
                 }
 
                 mediaPlayer.setOnCompletionListener(mediaPlayer -> {
-                    logger.i(TAG, "media player complete");
+                    logger.i(TAG, "MediaPlayer complete");
                     finishPlayer();
-                    tempFile = null;
                     listener.onDone(utterance);
                 });
                 mediaPlayer.setOnErrorListener((mp, what, extra) -> {
-                    logger.e(TAG, "media player error");
-                    finishPlayer();
-                    tempFile = null;
-                    shutdown();
-                    getAudioManager().abandonAudioFocus();
+                    logger.e(TAG, "MediaPlayer error");
+                    prune();
                     listener.onError(utterance, extra);
                     return true;
                 });
-                //mediaPlayer.setAudioStreamType(audioManager.getMainStreamType());
                 mediaPlayer.start();
             } catch (Exception ex) {
                 logger.logException(ex);
-                tempFile = null;
-                shutdown();
-                getAudioManager().abandonAudioFocus();
+                prune();
                 listener.onError(utterance, SynthesizerListener.Status.UNKNOWN_ERROR);
             }
         } else {
@@ -562,14 +462,109 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         }
     }
 
+    @Override
+    public void addFilter(TextFilter filter) {
+        filters.add(filter);
+    }
+
+    @Override
+    public void clearFilters() {
+        filters.clear();
+    }
+
+    @Override
+    public List<TextFilter> getFilters() {
+        return filters;
+    }
+
+    @Override
+    public String getLastQueueId() {
+        return lastQueueId;
+    }
+
+    @Nullable
+    @Override
+    public String getNextQueueId() {
+        Set<String> keys = getQueueSet();
+        if (keys.size() > 1) {
+            return (String) Objects.requireNonNull(keys.toArray())[1];
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public String getCurrentQueueId() {
+        return queueId;
+    }
+
+    @Override
+    public Set<String> getQueueSet() {
+        return queue.keySet();
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return queue.isEmpty() || (queue.containsKey(queueId) && Objects.requireNonNull(queue.get(queueId)).isEmpty());
+    }
+
+    @Override
+    public boolean hasQueue() {
+        return hasQueue;
+    }
+
+    protected boolean isReady() {
+        return isReady;
+    }
+
+    void setReady(boolean ready) {
+        logger.w(TAG, "ready set to " + Boolean.toString(ready));
+        isReady = ready;
+    }
+
+    public boolean isSpeaking() {
+        return isSpeaking;
+    }
+
+    void setSpeaking(boolean speaking) {
+        logger.w(TAG, "speaking set to " + Boolean.toString(speaking));
+        isSpeaking = speaking;
+    }
+
+    public ComponentConfig getConfiguration() {
+        return configuration;
+    }
+
+    public AndroidAudioManager getAudioManager() {
+        return audioManager;
+    }
+
+    @Override
+    public void lock() {
+        logger.w(TAG, "isLocked set to true");
+        isLocked = true;
+    }
+
+    @Override
+    public void unlock() {
+        logger.w(TAG, "isLocked set to false");
+        isLocked = false;
+    }
+
+    /**
+     * Set speaking to false, free current message queue and finishes the MediaPlayer.
+     */
     @CallSuper
     @Override
     public void stop() {
         setSpeaking(false);
-        freeCurrentQueue();
+        unlock();
         finishPlayer();
     }
 
+    /**
+     * Clear listeners and messages queue, and restores queue Id to default value
+     */
     @CallSuper
     protected void release() {
         synchronized (lock) {
@@ -577,8 +572,10 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             queue.clear();
             queue.put(DEFAULT_QUEUE_ID, new ConcurrentLinkedQueue<>());
         }
-        tempFile = null;
         queueId = DEFAULT_QUEUE_ID;
+        hasQueue = false;
+        lastQueueId = null;
+        tempFile = null;
         logger.v(TAG, "states and resources released");
     }
 }
