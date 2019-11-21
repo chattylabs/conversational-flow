@@ -12,6 +12,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import chattylabs.android.commons.HtmlUtils;
@@ -24,7 +25,6 @@ import chattylabs.conversations.VoiceMismatch;
 import chattylabs.conversations.VoiceNode;
 
 public class BuildFromJsonActivity extends BaseActivity {
-
     private static final String TAG = Tag.make(BuildFromJsonActivity.class);
 
     private ArrayAdapter<Spanned> listViewAdapter;
@@ -67,9 +67,7 @@ public class BuildFromJsonActivity extends BaseActivity {
                 String text = object.getString("message");
                 VoiceMessage message = VoiceMessage.newBuilder()
                         .setText(text)
-                        .setOnReady(node -> {
-                            addIntoAdapter(node.text);
-                        }).build();
+                        .setOnReady(node -> addIntoAdapter(node.text)).build();
 
                 VoiceMatch matches = null;
                 VoiceMismatch noMatches = null;
@@ -80,9 +78,7 @@ public class BuildFromJsonActivity extends BaseActivity {
                         stringArray[i] = jsonArray.getString(i);
                     }
                     matches = VoiceMatch.newBuilder()
-                            .setOnReady(node -> {
-                                addIntoAdapter(dots);
-                            })
+                            .setOnReady(node -> addIntoAdapter(dots))
                             .setExpectedResults(stringArray)
                             .setOnMatched((node, strings) -> {
                                 removeLastFromAdapter();
@@ -121,28 +117,25 @@ public class BuildFromJsonActivity extends BaseActivity {
     }
 
     private void removeLastFromAdapter() {
-        runOnUiThread(() -> {
-            listViewAdapter.remove(listViewAdapter.getItem(
-                    listViewAdapter.getCount() - 1
-            ));
-        });
+        runOnUiThread(() -> listViewAdapter.remove(listViewAdapter.getItem(
+                listViewAdapter.getCount() - 1
+        )));
     }
 
     private void addIntoAdapter(String text) {
-        runOnUiThread(() -> {
-            listViewAdapter.add(HtmlUtils.from(text));
-        });
+        runOnUiThread(() -> listViewAdapter.add(HtmlUtils.from(text)));
     }
 
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public String loadJSONFromAsset() {
-        String json = null;
+        String json;
         try {
             InputStream is = getResources().openRawResource(R.raw.demo_conversation);
             int size = is.available();
             byte[] buffer = new byte[size];
             is.read(buffer);
             is.close();
-            json = new String(buffer, "UTF-8");
+            json = new String(buffer, StandardCharsets.UTF_8);
         } catch (IOException ex) {
             ex.printStackTrace();
             return null;

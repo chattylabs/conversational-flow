@@ -23,24 +23,22 @@ import chattylabs.android.commons.Tag;
 import chattylabs.android.commons.internal.ILogger;
 
 public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
-
     private static final String TAG = Tag.make("AmazonSpeechSynthesizer");
 
     private final Application mApplication;
-    private BaseSynthesizerUtteranceListener utteranceListener;
     private final LanguageCode mLanguageCode;
+    private final ConditionVariable mCondVar = new ConditionVariable();
+    private BaseSynthesizerUtteranceListener utteranceListener;
     private MediaPlayer mMediaPlayer;
     private AmazonPollyPresigningClient mAmazonSpeechClient;
     private Voice mDefaultVoices;
 
-    private final ConditionVariable mCondVar = new ConditionVariable();
-
     public AmazonSpeechSynthesizer(Application application,
-                            ComponentConfig configuration,
-                            AndroidAudioManager audioManager,
-                            AndroidBluetooth bluetooth,
-                            ILogger logger) {
-        super(configuration, audioManager, bluetooth, logger, TAG);
+                                   ComponentConfig configuration,
+                                   AndroidAudioManager audioManager,
+                                   AndroidBluetooth bluetooth,
+                                   ILogger logger) {
+        super(configuration, audioManager, bluetooth, logger);
         mApplication = application;
         mLanguageCode = LanguageUtil.getDeviceLanguageCode(configuration.getSpeechLanguage());
     }
@@ -76,7 +74,7 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
             String finalText = HtmlUtils.from(text).toString();
 
             for (TextFilter filter : getFilters()) {
-                logger.v(TAG, "AMAZON TTS[%s] - apply filter: %s", utteranceId, filter);
+                logger.v(TAG, "[%s] - apply filter: %s", utteranceId, filter);
                 finalText = filter.apply(finalText);
             }
 
@@ -113,6 +111,29 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
         });
     }
 
+    @Override
+    void playSilence(String utteranceId, long durationInMillis) {
+        utteranceListener.onStart(utteranceId);
+        mCondVar.block(durationInMillis);
+        utteranceListener.onDone(utteranceId);
+    }
+
+    @Override
+    boolean isTtsNull() {
+        return mAmazonSpeechClient == null;
+    }
+
+    @Override
+    boolean isTtsSpeaking() {
+        return mMediaPlayer != null && mMediaPlayer.isPlaying();
+    }
+
+    @Override
+    public void stop() {
+        super.stop();
+        closeMediaPlayer();
+    }
+
     private void onListenersAvailable(String utteranceId,
                                       Operation operation,
                                       OnUtteranceListenerAvailable callback) {
@@ -135,23 +156,6 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
     }
 
     @Override
-    void playSilence(String utteranceId, long durationInMillis) {
-        utteranceListener.onStart(utteranceId);
-        mCondVar.block(durationInMillis);
-        utteranceListener.onDone(utteranceId);
-    }
-
-    @Override
-    boolean isTtsNull() {
-        return mAmazonSpeechClient == null;
-    }
-
-    @Override
-    boolean isTtsSpeaking() {
-        return mMediaPlayer != null && mMediaPlayer.isPlaying();
-    }
-
-    @Override
     public void checkStatus(SynthesizerListener.OnStatusChecked listener) {
         prepare(synthesizerStatus -> {
             final DescribeVoicesResult voicesResult = mAmazonSpeechClient.describeVoices(new DescribeVoicesRequest()
@@ -166,9 +170,8 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
     }
 
     @Override
-    public void stop() {
-        super.stop();
-        closeMediaPlayer();
+    public void prune() {
+
     }
 
     @Override
@@ -178,10 +181,6 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
             mAmazonSpeechClient.shutdown();
         }
         mAmazonSpeechClient = null;
-    }
-
-    private interface OnUtteranceListenerAvailable {
-        void onAvailable(SynthesizerUtteranceListener listener);
     }
 
     private enum Operation {
@@ -202,5 +201,9 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
 
         abstract SynthesizerUtteranceListener get(String utteranceId,
                                                   @NonNull Map<String, SynthesizerUtteranceListener> listenerMap);
+    }
+
+    private interface OnUtteranceListenerAvailable {
+        void onAvailable(SynthesizerUtteranceListener listener);
     }
 }

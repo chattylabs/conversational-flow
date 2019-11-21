@@ -19,8 +19,6 @@ public class AndroidAudioManager {
     // States
     private boolean requestAudioFocusMayDuck;
     private boolean requestAudioFocusExclusive;
-    private boolean requestAudioExclusive;
-    private int audioMode = AudioManager.MODE_CURRENT;
 
     private int dtmfVolume;
     private int systemVolume;
@@ -61,19 +59,18 @@ public class AndroidAudioManager {
     }
 
     public void requestAudioFocus(AudioManager.OnAudioFocusChangeListener listener, boolean exclusive) {
-        requestAudioExclusive = exclusive;
-        if (requestAudioExclusive)
-            requestAudioFocusExclusive(listener);
+        if (exclusive) requestAudioFocusExclusive(listener);
         else requestAudioFocusMayDuck(listener);
     }
 
-    public void abandonAudioFocus() {
-        abandonAudioFocusExclusive();
-        abandonAudioFocusMayDuck();
+    public void abandonAudioFocus(boolean exclusive) {
+        if (exclusive) abandonAudioFocusExclusive();
+        else abandonAudioFocusMayDuck();
     }
 
     private void requestAudioFocusMayDuck(AudioManager.OnAudioFocusChangeListener listener) {
         if (!requestAudioFocusMayDuck) {
+            requestAudioFocusExclusive = false;
             logger.v(TAG, "AUDIO - request Audio Focus May Duck");
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
                 requestAudioFocusMayDuck = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(
@@ -104,6 +101,7 @@ public class AndroidAudioManager {
 
     private void requestAudioFocusExclusive(AudioManager.OnAudioFocusChangeListener listener) {
         if (!requestAudioFocusExclusive) {
+            requestAudioFocusMayDuck = false;
             logger.v(TAG, "AUDIO - request Audio Focus Exclusive");
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
                 requestAudioFocusExclusive = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(

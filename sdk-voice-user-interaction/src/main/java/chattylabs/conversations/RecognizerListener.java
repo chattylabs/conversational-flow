@@ -45,7 +45,7 @@ public interface RecognizerListener {
         public static final int UNAVAILABLE_ERROR = 205;
         public static final int STOPPED_TOO_EARLY_ERROR = 206;
         public static final int RETRY_ERROR = 207;
-        public static final int AFTER_PARTIALS_ERROR = 208;
+        public static final int AFTER_PARTIAL_RESULTS_ERROR = 208;
         public static final int NO_SOUND_ERROR = 209;
         public static final int LOW_SOUND_ERROR = 210;
     }

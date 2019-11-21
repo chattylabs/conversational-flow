@@ -66,21 +66,13 @@ abstract class BaseActivity extends DaggerAppCompatActivity
         super.onCreate(savedInstanceState);
         serialThread = ThreadUtils.newSerialThread();
         setup();
-        //UpdateManager.register(this);
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        //CrashManager.register(this);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        //UpdateManager.unregister();
         serialThread.shutdownNow();
-        component.shutdown();
+        component.resetConfiguration(this);
     }
 
     void initCommonViews() {
@@ -88,7 +80,7 @@ abstract class BaseActivity extends DaggerAppCompatActivity
         Spinner addonSpinner = findViewById(R.id.addon);
         if (addonSpinner != null) {
             // Create an ArrayAdapter of the addons
-            List<String> addonList = Arrays.asList(addonMap.values().toArray(new String[addonMap.size()]));
+            List<String> addonList = Arrays.asList(addonMap.values().toArray(new String[0]));
             ArrayAdapter<String> addonAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, addonList);
             addonAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
             addonSpinner.setAdapter(addonAdapter);
@@ -146,20 +138,24 @@ abstract class BaseActivity extends DaggerAppCompatActivity
                                            @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
         if (requestCode == 202 && PermissionsHelper.allGranted(grantResults)) {
-            serialThread.addTask(() -> { System.out.println("checkSpeechSynthesizerStatus");
+            serialThread.addTask(() -> {
                 component.checkSpeechSynthesizerStatus(this, synthesizerStatus -> {
+
                     if (synthesizerStatus == SynthesizerListener.Status.AVAILABLE) {
                         synthesizer = component.getSpeechSynthesizer(this);
                         synthesizer.addFilter(new TextFilterForUrl());
+
                         component.checkSpeechRecognizerStatus(this, recognizerStatus -> {
+
                             if (recognizerStatus == RecognizerListener.Status.AVAILABLE) {
+
                                 recognizer = component.getSpeechRecognizer(this);
                                 runOnUiThread(() -> {
                                     if (proceed != null) proceed.setEnabled(proceedEnabled);
                                 });
-                            }
+                            } else throw new UnsupportedOperationException("SpeechRecognizer not available. Cannot proceed.");
                         });
-                    }
+                    } else throw new UnsupportedOperationException("SpeechSynthetizer not available. Cannot proceed.");
                 });
             });
         }
