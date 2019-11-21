@@ -285,7 +285,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
         super.stop();
         if (speechRecognizer != null) {
             speechRecognizer.setRecognitionListener(null);
-            mainHandler.post(() -> {
+            if (mainHandler != null) mainHandler.post(() -> {
                 try {
                     speechRecognizer.stopListening();
                     speechRecognizer.destroy();
