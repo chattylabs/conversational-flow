@@ -201,7 +201,6 @@ final class ConversationalFlowImpl implements ConversationalFlow {
             bluetooth.stopSco(() -> {
                 if (audioManager != null) {
                     audioManager.abandonAudioFocus();
-                    audioManager.unsetAudioMode();
                 }
                 if (onBluetoothScoDisconnected != null) onBluetoothScoDisconnected.run();
             });

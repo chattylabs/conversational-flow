@@ -213,18 +213,20 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
     @Override
     void startListening() {
         logger.i(TAG, "ANDROID SPEECH - started listening");
-
-        mainHandler.post(() -> {
-            speechRecognizer = recognizerCreator.create();
-            getRecognitionListener().setRmsDebug(rmsDebug);
-            if (noSoundThreshold > 0)
-                getRecognitionListener().setNoSoundThreshold(noSoundThreshold);
-            if (lowSoundThreshold > 0)
-                getRecognitionListener().setLowSoundThreshold(lowSoundThreshold);
-            speechRecognizer.setRecognitionListener(getRecognitionListener());
-            //adjustVolumeForBeep();
-            speechRecognizer.startListening(speechRecognizerIntent);
-        });
+        if (mainHandler != null)  {
+            mainHandler.removeCallbacksAndMessages(null);
+            mainHandler.post(() -> {
+                speechRecognizer = recognizerCreator.create();
+                getRecognitionListener().setRmsDebug(rmsDebug);
+                if (noSoundThreshold > 0)
+                    getRecognitionListener().setNoSoundThreshold(noSoundThreshold);
+                if (lowSoundThreshold > 0)
+                    getRecognitionListener().setLowSoundThreshold(lowSoundThreshold);
+                speechRecognizer.setRecognitionListener(getRecognitionListener());
+                //adjustVolumeForBeep();
+                speechRecognizer.startListening(speechRecognizerIntent);
+            });
+        }
     }
 
     @Override
@@ -269,7 +271,6 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
 
     private void release() {
         speechRecognizer = null;
-        if (mainHandler != null) mainHandler.removeCallbacksAndMessages(null);
         setRmsDebug(false);
         setNoSoundThreshold(0);
         setLowSoundThreshold(0);
@@ -279,21 +280,21 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
     @Override
     public void stop() {
         logger.w(TAG, "ANDROID SPEECH - stop");
+        if (mainHandler != null) mainHandler.removeCallbacksAndMessages(null);
         getRecognitionListener().reset();
+        super.stop();
         if (speechRecognizer != null) {
+            speechRecognizer.setRecognitionListener(null);
             mainHandler.post(() -> {
                 try {
-                    speechRecognizer.setRecognitionListener(null);
                     speechRecognizer.stopListening();
                     speechRecognizer.destroy();
                     logger.v(TAG, "ANDROID SPEECH - speechRecognizer stopped");
                 } catch (Exception ignored) {}
                 release();
-                super.stop();
             });
         } else {
             release();
-            super.stop();
         }
     }
 }

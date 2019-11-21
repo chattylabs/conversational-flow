@@ -27,6 +27,7 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
     private static final String TAG = Tag.make("AmazonSpeechSynthesizer");
 
     private final Application mApplication;
+    private BaseSynthesizerUtteranceListener utteranceListener;
     private final LanguageCode mLanguageCode;
     private MediaPlayer mMediaPlayer;
     private AmazonPollyPresigningClient mAmazonSpeechClient;
@@ -56,17 +57,12 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
 //                    Regions.fromName(configuration.getRegion())
 //            );
 
-//            setSynthesizerUtteranceListener(createUtterancesListener());
+//            utteranceListener = new BaseSynthesizerUtteranceListener(application, this);
 //            mAmazonSpeechClient = new AmazonPollyPresigningClient(credentialsProvider);
 //            onSynthesizerPrepared.execute(SynthesizerListener.Status.SUCCESS);
         } else {
             onSynthesizerPrepared.execute(SynthesizerListener.Status.SUCCESS);
         }
-    }
-
-    private SynthesizerUtteranceListener createUtterancesListener() {
-        return new BaseSynthesizerUtteranceListener(this,
-                BaseSynthesizerUtteranceListener.Mode.DELEGATE, TAG);
     }
 
     @Override
@@ -120,10 +116,10 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
     private void onListenersAvailable(String utteranceId,
                                       Operation operation,
                                       OnUtteranceListenerAvailable callback) {
-        final SynthesizerUtteranceListener utteranceListener = operation.get(utteranceId, getListenersMap());
-        if (utteranceListener != null) {
-            callback.onAvailable(utteranceListener);
-        }
+//        final SynthesizerUtteranceListener utteranceListener = operation.get(utteranceId, getListeners());
+//        if (utteranceListener != null) {
+//            callback.onAvailable(utteranceListener);
+//        }
     }
 
     private void closeMediaPlayer() {
@@ -140,9 +136,9 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     @Override
     void playSilence(String utteranceId, long durationInMillis) {
-        getSynthesizerUtteranceListener().onStart(utteranceId);
+        utteranceListener.onStart(utteranceId);
         mCondVar.block(durationInMillis);
-        getSynthesizerUtteranceListener().onDone(utteranceId);
+        utteranceListener.onDone(utteranceId);
     }
 
     @Override
@@ -153,12 +149,6 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
     @Override
     boolean isTtsSpeaking() {
         return mMediaPlayer != null && mMediaPlayer.isPlaying();
-    }
-
-    @Override
-    SynthesizerUtteranceListener createDelegateUtteranceListener() {
-        return new BaseSynthesizerUtteranceListener(this,
-                BaseSynthesizerUtteranceListener.Mode.DELEGATE, TAG);
     }
 
     @Override
