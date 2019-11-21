@@ -284,15 +284,17 @@ class ConversationImpl extends Flow.Edge implements Conversation {
     }
 
     private VoiceActionList getActionSet(ArrayList<VoiceNode> edges) {
+        String id = "UNKNOWN";
         try {
             VoiceActionList actionSet = new VoiceActionList();
             for (int i = 0, size = edges.size(); i < size; i++) {
+                id = edges.get(i).getId();
                 actionSet.add((VoiceAction) edges.get(i));
             }
             //Collections.sort(actionSet);
             return actionSet;
         } catch (ClassCastException ignored) {
-            throw new IllegalStateException("Only Actions can represent several edges in the graph");
+            throw new IllegalStateException("Only Actions can represent several edges in the graph. Error in [" + id + "] node.");
         }
     }
 
