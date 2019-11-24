@@ -1,6 +1,7 @@
 package chattylabs.conversations;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.StringRes;
 
 public interface Conversation {
     int FLAG_ENABLE_ERROR_MESSAGE_ON_LOW_SOUND = 1;
@@ -12,6 +13,10 @@ public interface Conversation {
     boolean hasFlag(@Flag int flag);
 
     void addNode(@NonNull VoiceNode node);
+
+    VoiceNode getNode(@NonNull String id);
+
+    VoiceNode getNode(@StringRes int id);
 
     Flow prepare();
 

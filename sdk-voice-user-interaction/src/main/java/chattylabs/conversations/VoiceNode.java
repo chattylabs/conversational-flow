@@ -1,4 +1,4 @@
 package chattylabs.conversations;
 
-public interface VoiceNode extends Identifiable {
+public interface VoiceNode {
 }

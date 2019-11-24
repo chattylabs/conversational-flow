@@ -65,7 +65,7 @@ public class BuildFromJsonActivity extends BaseActivity {
                 JSONObject object = array.getJSONObject(a);
 
                 String text = object.getString("message");
-                VoiceMessage message = VoiceMessage.newBuilder()
+                VoiceMessage message = VoiceMessage.newBuilder("message" + a)
                         .setText(text)
                         .setOnReady(node -> addIntoAdapter(node.text)).build();
 
@@ -77,7 +77,7 @@ public class BuildFromJsonActivity extends BaseActivity {
                     for (int i = 0; i < jsonArray.length(); i++) {
                         stringArray[i] = jsonArray.getString(i);
                     }
-                    matches = VoiceMatch.newBuilder()
+                    matches = VoiceMatch.newBuilder("matches" + a)
                             .setOnReady(node -> addIntoAdapter(dots))
                             .setExpectedResults(stringArray)
                             .setOnMatched((node, strings) -> {
@@ -88,7 +88,7 @@ public class BuildFromJsonActivity extends BaseActivity {
                                 }
                             })
                             .build();
-                    noMatches = VoiceMismatch.newBuilder()
+                    noMatches = VoiceMismatch.newBuilder("noMatches" + a)
                             .setOnNotMatched((node, strings) -> {
                                 removeLastFromAdapter();
                                 addIntoAdapter("<b>You said:</b> " + strings);
