@@ -189,7 +189,9 @@ final class ConversationalFlowImpl implements ConversationalFlow {
     @Override @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     public Conversation create(Context context) {
         logger.i(TAG, "----- Create");
-        conversation = new ConversationImpl(getSpeechSynthesizer(context), getSpeechRecognizer(context), logger);
+        conversation = new ConversationImpl(context.getApplicationContext(),
+                                            getSpeechSynthesizer(context),
+                                            getSpeechRecognizer(context), logger);
         return conversation;
     }
 
