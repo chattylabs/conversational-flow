@@ -132,7 +132,6 @@ public class TestingAddonsActivity extends BaseActivity {
                             component.shutdown();
                         } else {
                             synthesizer.unlock();
-                            synthesizer.resume();
                         }
                     }
                 },
@@ -165,7 +164,6 @@ public class TestingAddonsActivity extends BaseActivity {
                             component.shutdown();
                         } else {
                             synthesizer.unlock();
-                            synthesizer.resume();
                         }
                     }, 1000);
                 }, (RecognizerListener.OnError) (i, i1) -> {
