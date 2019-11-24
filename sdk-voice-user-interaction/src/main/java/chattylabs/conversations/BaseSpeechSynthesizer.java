@@ -174,7 +174,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     @Override
-    public void playText(String text, String queueId, SynthesizerListener... listeners) {
+    public synchronized void playText(String text, String queueId, SynthesizerListener... listeners) {
         playText(text, queueId, DEFAULT_UTTERANCE_ID + System.nanoTime(), listeners);
     }
 
@@ -209,7 +209,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     @Override
-    public void playTextNow(String text, SynthesizerListener... listeners) {
+    public synchronized void playTextNow(String text, SynthesizerListener... listeners) {
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
         logger.i(TAG, "[%s] - play immediately \"%s\"", utteranceId, text);
         if (this.listeners.containsKey(utteranceId)) {
@@ -233,7 +233,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     @Override
-    public void playSilence(long durationInMillis, String queueId,
+    public synchronized void playSilence(long durationInMillis, String queueId,
                             SynthesizerListener... listeners) {
         if (durationInMillis <= 0)
             throw new IllegalArgumentException("Silence duration must be greater than 0");
@@ -267,7 +267,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     @Override
-    public void playSilenceNow(long durationInMillis, SynthesizerListener... listeners) {
+    public synchronized void playSilenceNow(long durationInMillis, SynthesizerListener... listeners) {
         if (durationInMillis <= 0)
             throw new IllegalArgumentException("Silence duration must be greater than 0");
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
@@ -293,7 +293,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     @Override
-    public void resume() {
+    public synchronized void resume() {
         if (isSpeaking || isLocked) return;
         String utteranceId = null;
         if (!isEmpty()) {
@@ -484,7 +484,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
     @Nullable
     @Override
-    public String getNextQueueId() {
+    public synchronized String getNextQueueId() {
         Set<String> keys = getQueueSet();
         if (keys.size() > 1) {
             return (String) Objects.requireNonNull(keys.toArray())[1];
@@ -504,7 +504,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     @Override
-    public boolean isEmpty() {
+    public synchronized boolean isEmpty() {
         return queue.isEmpty() || (queue.containsKey(queueId) && Objects.requireNonNull(queue.get(queueId)).isEmpty());
     }
 
@@ -540,13 +540,13 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     @Override
-    public void lock() {
+    public synchronized void lock() {
         logger.w(TAG, "isLocked set to true");
         isLocked = true;
     }
 
     @Override
-    public void unlock() {
+    public synchronized void unlock() {
         logger.w(TAG, "isLocked set to false");
         isLocked = false;
     }
