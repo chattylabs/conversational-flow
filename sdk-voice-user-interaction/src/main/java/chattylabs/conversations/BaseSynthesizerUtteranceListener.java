@@ -72,6 +72,7 @@ class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceListener {
         logger.v(TAG, "[%s] - on done <%s> - execute listener.onDone", utteranceId, speechSynthesizer.getCurrentQueueId());
         speechSynthesizer.removeAndExecuteListener(utteranceId, BaseSpeechSynthesizer.ON_DONE, 0);
         if (speechSynthesizer.isEmpty() && speechSynthesizer.hasQueue()) speechSynthesizer.shutdown();
+        else if (speechSynthesizer.hasQueue()) speechSynthesizer.resume();
     }
 
     @Override
