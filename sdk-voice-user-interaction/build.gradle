@@ -21,8 +21,6 @@ versioning {
     }
 }
 
-description = 'Android Voice User Interaction'
-
 android {
     compileSdkVersion 28
 
@@ -47,4 +45,7 @@ dependencies {
     testImplementation 'org.robolectric:robolectric:3.8'
 }
 
-apply from: '../android-buildsystem/publish.gradle'
+
+description = 'Android Voice User Interaction'
+ext.website = "https://github.com/chattylabs/android-voice-user-interaction"
+apply from: rootDir.toString() + '/android-buildsystem/publish.gradle'
