@@ -93,7 +93,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     private boolean isReady; //reset
     private boolean isLocked; //reset
     private boolean isSpeaking; //reset
-    private boolean hasQueue; //reset
+    private boolean isOnQueue; //reset
     private File tempFile; //released
 
     BaseSpeechSynthesizer(ComponentConfig configuration,
@@ -193,8 +193,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             setSpeaking(true);
             prepare(status -> {
                 if (status == SynthesizerListener.Status.SUCCESS) {
-                    hasQueue = true;
-                    run();
+                    runOnQueue();
                 } else {
                     logger.e(TAG, "[%s] - status ERROR with queue <%s>", uId, queueId);
                     removeAndExecuteListener(uId, ON_ERROR, SynthesizerListener.Status.ERROR);
@@ -202,7 +201,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             });
         } else if (isReady && !isSpeaking && !isLocked) {
             setSpeaking(true);
-            run();
+            runOnQueue();
         } else {
             moveToNextQueueIfNeeded();
         }
@@ -224,7 +223,8 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
                 uId, Boolean.toString(isReady), Boolean.toString(isSpeaking));
         prepare(status -> {
             if (status == SynthesizerListener.Status.SUCCESS) {
-                playTheCurrentQueue(map);
+                isOnQueue = false;
+                play(map);
             } else {
                 logger.e(TAG, "[%s] - no queue status ERROR", uId);
                 removeAndExecuteListener(uId, ON_ERROR, SynthesizerListener.Status.ERROR);
@@ -251,8 +251,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             setSpeaking(true);
             prepare(status -> {
                 if (status == SynthesizerListener.Status.SUCCESS) {
-                    hasQueue = true;
-                    run();
+                    runOnQueue();
                 } else {
                     logger.e(TAG, "[%s] - silence status ERROR with queue <%s>", uId, queueId);
                     removeAndExecuteListener(uId, ON_ERROR, SynthesizerListener.Status.ERROR);
@@ -260,7 +259,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             });
         } else if (isReady && !isSpeaking && !isLocked) {
             setSpeaking(true);
-            run();
+            runOnQueue();
         } else {
             moveToNextQueueIfNeeded();
         }
@@ -284,7 +283,8 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
                 uId, Boolean.toString(isReady), Boolean.toString(isSpeaking));
         prepare(status -> {
             if (status == SynthesizerListener.Status.SUCCESS) {
-                playTheCurrentQueue(map);
+                isOnQueue = false;
+                play(map);
             } else {
                 logger.e(TAG, "[%s] - no queue silence status ERROR", uId);
                 removeAndExecuteListener(uId, ON_ERROR, SynthesizerListener.Status.ERROR);
@@ -311,8 +311,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         logger.i(TAG, "[%s] - resume queue <%s>", uId, queueId);
         prepare(status -> {
             if (status == SynthesizerListener.Status.SUCCESS) {
-                hasQueue = true;
-                run();
+                runOnQueue();
             } else {
                 logger.e(TAG, "status ERROR");
                 if (uId != null) {
@@ -322,11 +321,26 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         });
     }
 
-    private void run() {
+    private void runOnQueue() {
+        isOnQueue = true;
         moveToNextQueueIfNeeded();
         if (!isEmpty()) {
             // Gets and plays the current message in the queue
-            playTheCurrentQueue(Objects.requireNonNull(queue.get(queueId)).peek());
+            play(Objects.requireNonNull(queue.get(queueId)).peek());
+        }
+    }
+
+    private void play(Map<String, Object> map) {
+        // Check whether Sco is connected or required
+        logger.i(TAG, "bluetooth Sco required: %s",
+                 Boolean.toString(configuration.isBluetoothScoRequired()));
+
+        if (bluetooth.isScoOn() || (bluetooth.isDeviceConnected() && configuration.isBluetoothScoRequired())) {
+            // Start Bluetooth Sco
+            logger.w(TAG, "waiting for bluetooth Sco connection...");
+            bluetooth.startSco(() -> chooseFromMapToPlay(map));
+        } else {
+            chooseFromMapToPlay(map);
         }
     }
 
@@ -377,21 +391,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
                 Objects.requireNonNull(queue.get(queueId)).size());
     }
 
-    private void playTheCurrentQueue(Map<String, Object> map) {
-        // Check whether Sco is connected or required
-        logger.i(TAG, "bluetooth Sco required: %s",
-                Boolean.toString(configuration.isBluetoothScoRequired()));
-
-        if (bluetooth.isScoOn() || (bluetooth.isDeviceConnected() && configuration.isBluetoothScoRequired())) {
-            // Start Bluetooth Sco
-            logger.w(TAG, "waiting for bluetooth Sco connection...");
-            bluetooth.startSco(() -> chooseItemToPlay(map));
-        } else {
-            chooseItemToPlay(map);
-        }
-    }
-
-    private void chooseItemToPlay(Map<String, Object> map) {
+    private void chooseFromMapToPlay(Map<String, Object> map) {
         if (map.containsKey(MAP_MESSAGE)) {
             executeOnEngineReady((String) map.get(MAP_UTTERANCE_ID), (String) map.get(MAP_MESSAGE));
         } else if (map.containsKey(MAP_SILENCE)) {
@@ -442,6 +442,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
                 mediaPlayer.setOnCompletionListener(mediaPlayer -> {
                     logger.i(TAG, "MediaPlayer complete");
                     finishPlayer();
+                    tempFile = null;
                     listener.onDone(utterance);
                 });
                 mediaPlayer.setOnErrorListener((mp, what, extra) -> {
@@ -509,8 +510,8 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     @Override
-    public boolean hasQueue() {
-        return hasQueue;
+    public synchronized boolean isOnQueue() {
+        return isOnQueue;
     }
 
     protected boolean isReady() {
@@ -522,7 +523,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         isReady = ready;
     }
 
-    public boolean isSpeaking() {
+    public synchronized boolean isSpeaking() {
         return isSpeaking;
     }
 
@@ -551,6 +552,11 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         isLocked = false;
     }
 
+    @Override
+    public synchronized boolean isLocked() {
+        return isLocked;
+    }
+
     /**
      * Set speaking to false, free current message queue and finishes the MediaPlayer.
      */
@@ -572,10 +578,10 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             queue.clear();
             queue.put(DEFAULT_QUEUE_ID, new ConcurrentLinkedQueue<>());
         }
-        queueId = DEFAULT_QUEUE_ID;
-        hasQueue = false;
+        queueId     = DEFAULT_QUEUE_ID;
+        isOnQueue   = false;
         lastQueueId = null;
-        tempFile = null;
+        tempFile    = null;
         logger.v(TAG, "states and resources released");
     }
 }

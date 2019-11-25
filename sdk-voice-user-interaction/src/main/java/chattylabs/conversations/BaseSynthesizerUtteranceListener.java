@@ -66,13 +66,15 @@ class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceListener {
     @Override
     public void onDone(String utteranceId) {
         speechSynthesizer.setSpeaking(false);
-        logger.v(TAG, "[%s] - on done <%s> - check for Empty Queue", utteranceId, speechSynthesizer.getCurrentQueueId());
-        speechSynthesizer.poolQueueFromLast();
-        speechSynthesizer.moveToNextQueueIfNeeded();
+        if (speechSynthesizer.isOnQueue()) {
+            logger.v(TAG, "[%s] - on done <%s> - check for Empty Queue", utteranceId, speechSynthesizer.getCurrentQueueId());
+            speechSynthesizer.poolQueueFromLast();
+            speechSynthesizer.moveToNextQueueIfNeeded();
+        }
         logger.v(TAG, "[%s] - on done <%s> - execute listener.onDone", utteranceId, speechSynthesizer.getCurrentQueueId());
         speechSynthesizer.removeAndExecuteListener(utteranceId, BaseSpeechSynthesizer.ON_DONE, 0);
-        if (speechSynthesizer.isEmpty() && speechSynthesizer.hasQueue()) speechSynthesizer.shutdown();
-        else if (speechSynthesizer.hasQueue()) speechSynthesizer.resume();
+        if (speechSynthesizer.isOnQueue() && speechSynthesizer.isEmpty()) speechSynthesizer.shutdown();
+        else if (speechSynthesizer.isOnQueue()) speechSynthesizer.resume();
     }
 
     @Override

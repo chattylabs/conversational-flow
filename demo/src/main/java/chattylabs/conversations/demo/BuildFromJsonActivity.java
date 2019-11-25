@@ -84,7 +84,6 @@ public class BuildFromJsonActivity extends BaseActivity {
                                 removeLastFromAdapter();
                                 if (strings != null) {
                                     addIntoAdapter("<b>You said:</b> " + strings.get(0));
-                                    conversation.next();
                                 }
                             })
                             .build();
