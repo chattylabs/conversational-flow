@@ -109,7 +109,7 @@ class ConversationImpl extends Flow.Edge implements Conversation {
                             ComponentConsumer<VoiceCapture, String> consumer =
                                 captureAction[0].onCaptured;
                             if (consumer != null) consumer.accept(captureAction[0], result);
-                            else next();
+                            next();
                         },
                         (RecognizerListener.OnError) (error, originalError) -> {
                             logger.e(TAG, "- listening Capture error");
@@ -151,7 +151,7 @@ class ConversationImpl extends Flow.Edge implements Conversation {
         }
     }
 
-    private VoiceNode getNext() {
+    private synchronized VoiceNode getNext() {
         ArrayList<VoiceNode> outgoingEdges = getOutgoingEdges(currentNode);
         if (outgoingEdges == null || outgoingEdges.isEmpty()) {
             return null;
@@ -195,8 +195,9 @@ class ConversationImpl extends Flow.Edge implements Conversation {
                 return node;
             }
         }
-        throw new IllegalArgumentException("Node [" + id + "] does not exists in the graph. " +
-                                           "Have you forgotten to add it with addNode(Node)?");
+        throw new IllegalArgumentException("Node [" + id + "] does not exists in the graph yet! " +
+                                           "Have you forgotten to add it with addNode(" + id + ")? " +
+                                           "Have you called from(Node).to(Node) before addNode(" + id + ")?");
     }
 
     @Override
@@ -290,7 +291,8 @@ class ConversationImpl extends Flow.Edge implements Conversation {
                         currentNode = action;
                         if (action.onMatched != null) {
                             action.onMatched.accept(action, results);
-                        } else next();
+                        }
+                        next();
                         return;
                     }
                 }
@@ -298,9 +300,10 @@ class ConversationImpl extends Flow.Edge implements Conversation {
         }
         logger.w(TAG, "- not matched");
         if (!isPartial && mismatchAction[0] != null) {
-            if (mismatchAction[0].retries == 0) currentNode = mismatchAction[0];
+            //if (mismatchAction[0].retries == 0)
+                currentNode = mismatchAction[0];
             noMatch(mismatchAction[0], 0, results);
-        }
+        } else if (!isPartial) next();
     }
 
     private void noMatch(VoiceMismatch mismatchAction, int error, @Nullable List<String> results) {
@@ -308,37 +311,37 @@ class ConversationImpl extends Flow.Edge implements Conversation {
         boolean isLowSound = error == RecognizerListener.Status.LOW_SOUND_ERROR;
         boolean isNoSound = error == RecognizerListener.Status.NO_SOUND_ERROR;
 
-        if (mismatchAction.retries > 0) {
-            mismatchAction.retries--;
-            logger.v(TAG, "- pending retry: " + mismatchAction.retries);
-            if (isUnexpected && mismatchAction.unexpectedErrorMessage != null) {
-                logger.v(TAG, "- unexpected error");
-                play(mismatchAction.unexpectedErrorMessage, this::next);
-            } else if (hasFlag(FLAG_ENABLE_ERROR_MESSAGE_ON_LOW_SOUND) &&
-                    isLowSound && mismatchAction.lowSoundErrorMessage != null) {
-                logger.v(TAG, "- low sound");
-                play(mismatchAction.lowSoundErrorMessage, this::next);
-            } else if (!isNoSound && !isLowSound && mismatchAction.listeningErrorMessage != null) {
-                play(mismatchAction.listeningErrorMessage, this::next);
-            }
-            //else if (!isNoSound) {
-            //    next();
-            //}
-            else {
-                logger.v(TAG, "- no sound at all!!");
-                // No repeat
-                mismatchAction.retries = 0;
-                if (mismatchAction.onNotMatched != null) {
-                    mismatchAction.onNotMatched.accept(mismatchAction, results);
-                }
-                else next(); // TODO: throw new Missing not matched?
-            }
-        } else {
-            if (mismatchAction.onNotMatched != null) {
-                mismatchAction.onNotMatched.accept(mismatchAction, results);
-            }
-            else next(); // TODO: throw new Missing not matched?
-        }
+//        if (mismatchAction.retries > 0) {
+//            mismatchAction.retries--;
+//            logger.v(TAG, "- pending retry: " + mismatchAction.retries);
+//            if (isUnexpected && mismatchAction.unexpectedErrorMessage != null) {
+//                logger.v(TAG, "- unexpected error");
+//                play(mismatchAction.unexpectedErrorMessage, this::next);
+//            } else if (hasFlag(FLAG_ENABLE_ERROR_MESSAGE_ON_LOW_SOUND) &&
+//                    isLowSound && mismatchAction.lowSoundErrorMessage != null) {
+//                logger.v(TAG, "- low sound");
+//                play(mismatchAction.lowSoundErrorMessage, this::next);
+//            } else if (!isNoSound && !isLowSound && mismatchAction.listeningErrorMessage != null) {
+//                play(mismatchAction.listeningErrorMessage, this::next);
+//            }
+//            //else if (!isNoSound) {
+//            //    next();
+//            //}
+//            else {
+//                logger.v(TAG, "- no sound at all!!");
+//                // No repeat
+//                mismatchAction.retries = 0;
+//                if (mismatchAction.onNotMatched != null) {
+//                    mismatchAction.onNotMatched.accept(mismatchAction, results);
+//                }
+//                else next(); // TODO: throw new Missing not matched?
+//            }
+//        } else {
+        //currentNode = mismatchAction;
+        if (mismatchAction.onNotMatched != null) {
+            mismatchAction.onNotMatched.accept(mismatchAction, results);
+        } else next(); // TODO: throw new Missing not matched?
+//        }
     }
 
     private void play(String text, Runnable runnable) {

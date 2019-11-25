@@ -37,7 +37,7 @@ public interface SpeechSynthesizer {
 
     boolean isEmpty();
 
-    boolean hasQueue();
+    boolean isOnQueue();
 
     void resume();
 
@@ -49,6 +49,8 @@ public interface SpeechSynthesizer {
      * Clear and release resources without affecting current listeners and queue of messages
      */
     void prune();
+
+    boolean isLocked();
 
     void stop();
 
