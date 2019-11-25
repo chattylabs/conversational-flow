@@ -14,7 +14,6 @@ buildscript {
         classpath 'com.chattylabs:versioning:0.19.5'
         classpath 'com.novoda:bintray-release:0.9.1'
     }
-    ext.website = "https://github.com/chattylabs/android-voice-user-interaction"
 }
 allprojects {
     repositories {
