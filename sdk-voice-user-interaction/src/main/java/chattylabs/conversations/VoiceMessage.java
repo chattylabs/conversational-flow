@@ -5,10 +5,10 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
 
-public class VoiceMessage implements VoiceNode, HasId {
+public class VoiceMessage implements VoiceNode, HasId, HasText {
     public final String id;
     public final @StringRes int resId;
-    public String text;
+    public VoiceNode.Provider<String> text;
     public final OnReadyCallback onReady;
     public final Runnable onSuccess;
     public final Runnable onError;
@@ -20,7 +20,7 @@ public class VoiceMessage implements VoiceNode, HasId {
     public static final class Builder {
         private String id;
         private @StringRes int resId;
-        private String text;
+        private VoiceNode.Provider<String> text;
         private OnReadyCallback onReady;
         private Runnable onSuccess;
         private Runnable onError;
@@ -33,7 +33,7 @@ public class VoiceMessage implements VoiceNode, HasId {
             this.resId = resId;
         }
 
-        public Builder setText(String text) {
+        public Builder setText(VoiceNode.Provider<String> text) {
             this.text = text;
             return this;
         }
@@ -60,7 +60,7 @@ public class VoiceMessage implements VoiceNode, HasId {
             if (id.trim().length() == 0) {
                 throw new NullPointerException("Property \"id\" cannot be empty");
             }
-            if (text == null || text.length() == 0) {
+            if (text == null) {
                 throw new NullPointerException("Property \"text\" is required");
             }
             return new VoiceMessage(this);
@@ -92,8 +92,11 @@ public class VoiceMessage implements VoiceNode, HasId {
         return new Builder(resId);
     }
 
-    @NonNull @Override
-    public String getId() {
+    @NonNull @Override public String getId() {
         return id;
+    }
+
+    @Override public VoiceNode.Provider<String> getText() {
+        return null;
     }
 }

@@ -74,10 +74,10 @@ class ConversationImpl extends Flow.Edge implements Conversation {
             }
             if (node instanceof VoiceMessage) {
                 VoiceMessage message = (VoiceMessage) node;
-                logger.v(TAG, "- running Message: %s", message.text);
+                logger.v(TAG, "- running Message: %s", message.text.get());
                 currentNode = message;
                 speechSynthesizer.playTextNow(
-                    message.text,
+                    message.text.get(),
                     (SynthesizerListener.OnStart) utteranceId -> {
                         if (message.onReady != null) {
                             message.onReady.run(message);

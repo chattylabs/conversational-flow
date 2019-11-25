@@ -66,8 +66,8 @@ public class BuildFromJsonActivity extends BaseActivity {
 
                 String text = object.getString("message");
                 VoiceMessage message = VoiceMessage.newBuilder("message" + a)
-                        .setText(text)
-                        .setOnReady(node -> addIntoAdapter(node.text)).build();
+                        .setText(() -> text)
+                        .setOnReady(node -> addIntoAdapter(node.text.get())).build();
 
                 VoiceMatch matches = null;
                 VoiceMismatch noMatches = null;
