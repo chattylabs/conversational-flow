@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import chattylabs.android.commons.HtmlUtils;
 import chattylabs.android.commons.Tag;
@@ -21,7 +22,6 @@ import chattylabs.conversations.Conversation;
 import chattylabs.conversations.Flow;
 import chattylabs.conversations.VoiceMatch;
 import chattylabs.conversations.VoiceMessage;
-import chattylabs.conversations.VoiceMismatch;
 import chattylabs.conversations.VoiceNode;
 
 public class BuildFromJsonActivity extends BaseActivity {
@@ -43,7 +43,7 @@ public class BuildFromJsonActivity extends BaseActivity {
 
         ListView conversationListView = findViewById(R.id.conversation);
         listViewAdapter = new ArrayAdapter<>(this, R.layout.item_block,
-                R.id.conversation_item_text, new ArrayList<>());
+                                             R.id.conversation_item_text, new ArrayList<>());
         listViewAdapter.setNotifyOnChange(true);
         conversationListView.setEmptyView(findViewById(R.id.empty_text));
         conversationListView.setAdapter(listViewAdapter);
@@ -66,44 +66,42 @@ public class BuildFromJsonActivity extends BaseActivity {
 
                 String text = object.getString("message");
                 VoiceMessage message = VoiceMessage.newBuilder("message" + a)
-                        .setText(() -> text)
-                        .setOnReady(node -> addIntoAdapter(node.text.get())).build();
+                                                   .setText(() -> text)
+                                                   .setOnReady(node -> addIntoAdapter(node.text.get())).build();
 
                 VoiceMatch matches = null;
-                VoiceMismatch noMatches = null;
                 if (object.has("results")) {
                     JSONArray jsonArray = object.getJSONArray("results");
-                    String[] stringArray = new String[jsonArray.length()];
+                    String[] expected = new String[jsonArray.length()];
                     for (int i = 0; i < jsonArray.length(); i++) {
-                        stringArray[i] = jsonArray.getString(i);
+                        expected[i] = jsonArray.getString(i);
                     }
-                    matches = VoiceMatch.newBuilder("matches" + a)
-                            .setOnReady(node -> addIntoAdapter(dots))
-                            .setExpectedResults(stringArray)
-                            .setOnMatched((node, strings) -> {
-                                removeLastFromAdapter();
-                                if (strings != null) {
-                                    addIntoAdapter("<b>You said:</b> " + strings.get(0));
-                                }
-                            })
-                            .build();
-                    noMatches = VoiceMismatch.newBuilder("noMatches" + a)
-                            .setOnNotMatched((node, strings) -> {
-                                removeLastFromAdapter();
-                                addIntoAdapter("<b>You said:</b> " + strings);
-                                addIntoAdapter("I did not expect that. Please try again!");
-                            }).build();
+                    matches   = VoiceMatch.newBuilder("matches" + a)
+                                          .setOnReady(node -> addIntoAdapter(dots))
+                                          .setExpected(expected)
+                                          .setOnMatched((node, strings) -> {
+                                              removeLastFromAdapter();
+                                              if (strings != null) {
+                                                  addIntoAdapter("<b>I got:</b> " + strings.get(0));
+                                              }
+                                          })
+                                          .setOnNotMatched((node, strings, error) -> {
+                                              removeLastFromAdapter();
+                                              addIntoAdapter("<b>I got:</b> " + strings);
+                                              addIntoAdapter("I did not expect that. Please try again!" +
+                                                             "<br/>(Expected: " + Arrays.toString(expected) + ")");
+                                          })
+                                          .build();
                 }
 
                 conversation.addNode(message);
                 if (matches != null) {
                     conversation.addNode(matches);
-                    conversation.addNode(noMatches);
                 }
                 if (lastNode != null) flow.from(lastNode).to(message);
                 if (firstNode == null) firstNode = message;
                 if (matches != null) {
-                    flow.from(message).to(matches, noMatches);
+                    flow.from(message).to(matches);
                 }
                 lastNode = matches != null ? matches : message;
             }
@@ -117,8 +115,8 @@ public class BuildFromJsonActivity extends BaseActivity {
 
     private void removeLastFromAdapter() {
         runOnUiThread(() -> listViewAdapter.remove(listViewAdapter.getItem(
-                listViewAdapter.getCount() - 1
-        )));
+            listViewAdapter.getCount() - 1
+                                                                          )));
     }
 
     private void addIntoAdapter(String text) {

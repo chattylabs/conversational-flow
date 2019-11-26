@@ -7,24 +7,30 @@ import androidx.annotation.StringRes;
 
 public class VoiceCapture implements VoiceAction, HasId {
     public final String id;
-    public final @StringRes int resId;
-    public final ComponentConsumer<VoiceCapture, String> onCaptured;
+    final ComponentConsumer<VoiceCapture, String> onCaptured;
+    final ComponentConsumer<VoiceCapture, Integer> onNoCapture;
 
     public static final class Builder {
         private String id;
         private @StringRes int resId;
         private ComponentConsumer<VoiceCapture, String> onCaptured;
+        private ComponentConsumer<VoiceCapture, Integer> onNoCapture;
 
         public Builder(@NonNull String id) {
             this.id = id;
         }
 
-        public Builder(@NonNull @StringRes int resId) {
+        public Builder(@StringRes int resId) {
             this.resId = resId;
         }
 
         public Builder setOnCaptured(ComponentConsumer<VoiceCapture, String> onCaptured) {
             this.onCaptured = onCaptured;
+            return this;
+        }
+
+        public Builder setOnNoCapture(ComponentConsumer<VoiceCapture, Integer> onNoCapture) {
+            this.onNoCapture = onNoCapture;
             return this;
         }
 
@@ -35,8 +41,8 @@ public class VoiceCapture implements VoiceAction, HasId {
             if (id.trim().length() == 0) {
                 throw new NullPointerException("Property \"id\" cannot be empty");
             }
-            if (onCaptured == null) {
-                throw new NullPointerException("Property \"onCaptured\" is required");
+            if (onCaptured == null && onNoCapture == null) {
+                throw new NullPointerException("One property \"onCaptured\" or \"onNoCapture\" is required");
             }
             return new VoiceCapture(this);
         }
@@ -52,15 +58,15 @@ public class VoiceCapture implements VoiceAction, HasId {
 
     private VoiceCapture(Builder builder) {
         id = builder.id;
-        resId = builder.resId;
         onCaptured = builder.onCaptured;
+        onNoCapture = builder.onNoCapture;
     }
 
     public static Builder newBuilder(@NonNull String id) {
         return new Builder(id);
     }
 
-    public static Builder newBuilder(@NonNull @StringRes int resId) {
+    public static Builder newBuilder(@StringRes int resId) {
         return new Builder(resId);
     }
 
