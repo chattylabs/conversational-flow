@@ -33,7 +33,7 @@ public class VoiceMessage implements VoiceNode, HasId, HasText {
             this.resId = resId;
         }
 
-        public Builder setText(VoiceNode.Provider<String> text) {
+        public Builder setText(@NonNull VoiceNode.Provider<String> text) {
             this.text = text;
             return this;
         }

@@ -3,17 +3,18 @@ package chattylabs.conversations;
 import android.content.Context;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 
 import java.util.List;
 
-public class VoiceMatch implements VoiceAction, HasId {
+public class VoiceMatch implements VoiceAction, HasId, HasNotMatched<ComponentConsumer2<VoiceMatch, List<String>, Integer>> {
     public final String id;
     final OnReadyCallback onReady;
     final boolean canMatchOnPartials;
-    final String[] expectedResults;
-    final ComponentConsumer<VoiceMatch, List<String>> onMatched;
-    final ComponentConsumer2<VoiceMatch, List<String>, Integer> onNotMatched;
+    @NonNull  final String[] expected;
+    @Nullable final ComponentConsumer<VoiceMatch, List<String>> onMatched;
+    @Nullable final ComponentConsumer2<VoiceMatch, List<String>, Integer> onNotMatched;
 
     public interface OnReadyCallback {
         void run(VoiceMatch node);
@@ -46,17 +47,21 @@ public class VoiceMatch implements VoiceAction, HasId {
             return this;
         }
 
-        public Builder setExpected(String[] expectedResults) {
+        public Builder setExpected(@NonNull String[] expectedResults) {
             this.expectedResults = expectedResults;
             return this;
         }
 
-        public Builder setOnMatched(ComponentConsumer<VoiceMatch, List<String>> onMatched) {
+        public Builder setOnMatched(@NonNull ComponentConsumer<VoiceMatch, List<String>> onMatched) {
             this.onMatched = onMatched;
             return this;
         }
 
-        public Builder setOnNotMatched(ComponentConsumer2<VoiceMatch, List<String>, Integer> onNotMatched) {
+        /**
+         * The Flow won't continue automatically but this action no will be stored.
+         * <br/>You must call next() or next(Node) manually.
+         */
+        public Builder setOnNotMatched(@NonNull ComponentConsumer2<VoiceMatch, List<String>, Integer> onNotMatched) {
             this.onNotMatched = onNotMatched;
             return this;
         }
@@ -68,8 +73,8 @@ public class VoiceMatch implements VoiceAction, HasId {
             if (id.trim().length() == 0) {
                 throw new NullPointerException("Property \"id\" cannot be empty");
             }
-            if (expectedResults == null || expectedResults.length == 0) {
-                throw new NullPointerException("Property \"expectedResults\" is required");
+            if (expectedResults == null) {
+                throw new NullPointerException("Property \"expected\" is required");
             }
             if (onMatched == null && onNotMatched == null) {
                 throw new NullPointerException("One property \"onMatched\" or \"onNotMatched\" is required");
@@ -87,12 +92,12 @@ public class VoiceMatch implements VoiceAction, HasId {
     }
 
     private VoiceMatch(Builder builder) {
-        id = builder.id;
-        onReady = builder.onReady;
+        id                 = builder.id;
+        onReady            = builder.onReady;
         canMatchOnPartials = builder.canMatchOnPartials;
-        expectedResults = builder.expectedResults;
-        onMatched = builder.onMatched;
-        onNotMatched = builder.onNotMatched;
+        expected           = builder.expectedResults;
+        onMatched          = builder.onMatched;
+        onNotMatched       = builder.onNotMatched;
     }
 
     public static Builder newBuilder(@NonNull String id) {
@@ -103,8 +108,11 @@ public class VoiceMatch implements VoiceAction, HasId {
         return new Builder(resId);
     }
 
-    @NonNull @Override
-    public String getId() {
+    @NonNull @Override public String getId() {
         return id;
+    }
+
+    @Nullable @Override public ComponentConsumer2<VoiceMatch, List<String>, Integer> getOnNotMatched() {
+        return onNotMatched;
     }
 }

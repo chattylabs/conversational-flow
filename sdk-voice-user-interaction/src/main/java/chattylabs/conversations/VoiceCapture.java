@@ -3,12 +3,13 @@ package chattylabs.conversations;
 import android.content.Context;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 
-public class VoiceCapture implements VoiceAction, HasId {
+public class VoiceCapture implements VoiceAction, HasId, HasNotMatched<ComponentConsumer<VoiceCapture, Integer>> {
     public final String id;
-    final ComponentConsumer<VoiceCapture, String> onCaptured;
-    final ComponentConsumer<VoiceCapture, Integer> onNoCapture;
+    @Nullable final ComponentConsumer<VoiceCapture, String> onCaptured;
+    @Nullable final ComponentConsumer<VoiceCapture, Integer> onNoCapture;
 
     public static final class Builder {
         private String id;
@@ -24,12 +25,16 @@ public class VoiceCapture implements VoiceAction, HasId {
             this.resId = resId;
         }
 
-        public Builder setOnCaptured(ComponentConsumer<VoiceCapture, String> onCaptured) {
+        public Builder setOnCaptured(@NonNull ComponentConsumer<VoiceCapture, String> onCaptured) {
             this.onCaptured = onCaptured;
             return this;
         }
 
-        public Builder setOnNoCapture(ComponentConsumer<VoiceCapture, Integer> onNoCapture) {
+        /**
+         * The Flow won't continue automatically but this action no will be stored.
+         * <br/>You must call next() or next(Node) manually.
+         */
+        public Builder setOnNoCapture(@NonNull ComponentConsumer<VoiceCapture, Integer> onNoCapture) {
             this.onNoCapture = onNoCapture;
             return this;
         }
@@ -70,8 +75,11 @@ public class VoiceCapture implements VoiceAction, HasId {
         return new Builder(resId);
     }
 
-    @NonNull @Override
-    public String getId() {
+    @NonNull @Override public String getId() {
         return id;
+    }
+
+    @Nullable @Override public ComponentConsumer<VoiceCapture, Integer> getOnNotMatched() {
+        return onNoCapture;
     }
 }
