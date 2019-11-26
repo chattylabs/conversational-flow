@@ -116,16 +116,17 @@ public interface ConversationalFlow extends RequiredPermissions {
      * some expected strings.
      */
     static boolean anyMatch(@NonNull List<String> data, @NonNull List<String> expected) {
-        String expectedJoined = TextUtils.join("|", expected);
-        if (data.size() > 1) {
-            for (String str : data) {
-                if (matches(str, expectedJoined)) {
-                    return true;
+        if (!expected.isEmpty()) {
+            String expectedJoined = TextUtils.join("|", expected);
+            if (data.size() > 1) {
+                for (String str : data) {
+                    if (matches(str, expectedJoined)) {
+                        return true;
+                    }
                 }
+            } else {
+                return matches(data.get(0), expectedJoined);
             }
-        }
-        else {
-            return matches(data.get(0), expectedJoined);
         }
         return false;
     }
