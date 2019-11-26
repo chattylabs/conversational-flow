@@ -8,6 +8,7 @@ import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 
 import androidx.annotation.Keep;
+import androidx.annotation.MainThread;
 
 import java.util.List;
 
@@ -19,7 +20,6 @@ import chattylabs.android.commons.internal.os.AndroidHandlerImpl;
 import static chattylabs.conversations.ConversationalFlow.selectMostConfidentResult;
 import static chattylabs.conversations.RecognizerListener.OnError;
 import static chattylabs.conversations.RecognizerListener.OnMostConfidentResult;
-import static chattylabs.conversations.RecognizerListener.OnPartialResults;
 import static chattylabs.conversations.RecognizerListener.OnResults;
 import static chattylabs.conversations.RecognizerListener.OnStatusChecked;
 import static chattylabs.conversations.RecognizerListener.Status;
@@ -39,6 +39,31 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
     private final Creator<SpeechRecognizer> recognizerCreator;
     private AndroidSpeechRecognitionAdapter listener;
     private SpeechRecognizer speechRecognizer;
+
+    public static String getErrorType(int error) {
+        switch (error) {
+            case android.speech.SpeechRecognizer.ERROR_AUDIO:
+                return "ERROR_AUDIO";
+            case android.speech.SpeechRecognizer.ERROR_CLIENT:
+                return "ERROR_CLIENT";
+            case android.speech.SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS:
+                return "ERROR_INSUFFICIENT_PERMISSIONS";
+            case android.speech.SpeechRecognizer.ERROR_NETWORK:
+                return "ERROR_NETWORK";
+            case android.speech.SpeechRecognizer.ERROR_NETWORK_TIMEOUT:
+                return "ERROR_NETWORK_TIMEOUT";
+            case android.speech.SpeechRecognizer.ERROR_NO_MATCH:
+                return "ERROR_NO_MATCH";
+            case android.speech.SpeechRecognizer.ERROR_RECOGNIZER_BUSY:
+                return "ERROR_RECOGNIZER_BUSY";
+            case android.speech.SpeechRecognizer.ERROR_SERVER:
+                return "ERROR_SERVER";
+            case android.speech.SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
+                return "ERROR_SPEECH_TIMEOUT";
+            default:
+                return "ERROR_UNKNOWN";
+        }
+    }
 
     @Keep
     public AndroidSpeechRecognizer(Application application,
@@ -97,15 +122,13 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                 @Override
                 public void onReadyForSpeech(Bundle params) {
                     super.onReadyForSpeech(params);
-                    if (getConfiguration().isCustomBeepEnabled())
-                        getAudioManager().startBeep(application);
+                    if (getConfiguration().isCustomBeepEnabled()) getAudioManager().startBeep(application);
                 }
 
                 @Override
                 public void onError(int error) {
                     onEndOfSpeech();
-                    if (getConfiguration().isCustomBeepEnabled())
-                        getAudioManager().errorBeep(application);
+                    if (getConfiguration().isCustomBeepEnabled()) getAudioManager().errorBeep(application);
                     logger.e(TAG, "error: %s", AndroidSpeechRecognizer.getErrorType(error));
                     OnError errorListener = _getOnError();
                     int soundLevel = getSoundLevel();
@@ -125,9 +148,9 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                 }
 
                 private void processError(int error, OnError errorListener, int soundLevel, boolean stoppedTooEarly) {
-                    getRecognitionListener().reset();
-                    mainHandler.post(() -> {
-                        release();
+                    reset();
+                    //mainHandler.post(() -> {
+                        //release();
                         if (errorListener != null) {
                             if (needRetry(error)) {
                                 errorListener.execute(Status.UNAVAILABLE_ERROR, error);
@@ -147,14 +170,13 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                                 errorListener.execute(Status.UNKNOWN_ERROR, error);
                             }
                         }
-                    });
+                    //});
                 }
 
                 @Override
                 public void onResults(Bundle results) {
                     onEndOfSpeech();
-                    if (getConfiguration().isCustomBeepEnabled())
-                        getAudioManager().successBeep(application);
+                    if (getConfiguration().isCustomBeepEnabled()) getAudioManager().successBeep(application);
                     List<String> list;
                     OnError onError = _getOnError();
                     OnResults onResults = _getOnResults();
@@ -163,8 +185,8 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                     if (onResults == null && onMostConfidentResult == null) return;
                     list = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                     float[] confidences = results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
-                    getRecognitionListener().reset();
-                    mainHandler.post(() -> {
+                    reset();
+                    //mainHandler.post(() -> {
                         if (list != null && !list.isEmpty()) {
                             if (onResults != null) {
                                 logger.v(TAG, "- results: %s", list);
@@ -182,7 +204,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                                 onError.execute(Status.EMPTY_RESULTS_ERROR, -1);
                             }
                         }
-                    });
+                    //});
                 }
 
                 @Override
@@ -190,7 +212,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                     logger.v(TAG, "- onPartialResults");
                     List<String> list;
                     intents++;
-                    OnPartialResults onPartialResults = _getOnPartialResults();
+                    RecognizerListener.OnPartialResults onPartialResults = _getOnPartialResults();
                     // if this is not setup, we can't continue
                     if (onPartialResults == null) return;
                     list = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
@@ -217,18 +239,20 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
         return listener;
     }
 
-    @Override
+    @Override @MainThread
     void startListening() {
         logger.i(TAG, "- started listening");
         if (mainHandler != null)  {
             mainHandler.removeCallbacksAndMessages(null);
             mainHandler.post(() -> {
+                if (speechRecognizer != null) {
+                    speechRecognizer.stopListening();
+                    speechRecognizer.destroy();
+                }
                 speechRecognizer = recognizerCreator.create();
                 getRecognitionListener().setRmsDebug(rmsDebug);
-                if (noSoundThreshold > 0)
-                    getRecognitionListener().setNoSoundThreshold(noSoundThreshold);
-                if (lowSoundThreshold > 0)
-                    getRecognitionListener().setLowSoundThreshold(lowSoundThreshold);
+                if (noSoundThreshold > 0) getRecognitionListener().setNoSoundThreshold(noSoundThreshold);
+                if (lowSoundThreshold > 0) getRecognitionListener().setLowSoundThreshold(lowSoundThreshold);
                 speechRecognizer.setRecognitionListener(getRecognitionListener());
                 speechRecognizer.startListening(speechRecognizerIntent);
             });
@@ -250,57 +274,11 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
         this.lowSoundThreshold = maxValue;
     }
 
-    public static String getErrorType(int error) {
-        switch (error) {
-            case android.speech.SpeechRecognizer.ERROR_AUDIO:
-                return "ERROR_AUDIO";
-            case android.speech.SpeechRecognizer.ERROR_CLIENT:
-                return "ERROR_CLIENT";
-            case android.speech.SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS:
-                return "ERROR_INSUFFICIENT_PERMISSIONS";
-            case android.speech.SpeechRecognizer.ERROR_NETWORK:
-                return "ERROR_NETWORK";
-            case android.speech.SpeechRecognizer.ERROR_NETWORK_TIMEOUT:
-                return "ERROR_NETWORK_TIMEOUT";
-            case android.speech.SpeechRecognizer.ERROR_NO_MATCH:
-                return "ERROR_NO_MATCH";
-            case android.speech.SpeechRecognizer.ERROR_RECOGNIZER_BUSY:
-                return "ERROR_RECOGNIZER_BUSY";
-            case android.speech.SpeechRecognizer.ERROR_SERVER:
-                return "ERROR_SERVER";
-            case android.speech.SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
-                return "ERROR_SPEECH_TIMEOUT";
-            default:
-                return "ERROR_UNKNOWN";
-        }
-    }
-
     private void release() {
-        speechRecognizer = null;
+        //speechRecognizer = null;
         setRmsDebug(false);
         setNoSoundThreshold(0);
         setLowSoundThreshold(0);
         logger.i(TAG, "- released");
-    }
-
-    @Override
-    public void stop() {
-        logger.w(TAG, "- stop");
-        if (mainHandler != null) mainHandler.removeCallbacksAndMessages(null);
-        getRecognitionListener().reset();
-        super.stop();
-        if (speechRecognizer != null) {
-            speechRecognizer.setRecognitionListener(null);
-            if (mainHandler != null) mainHandler.post(() -> {
-                try {
-                    speechRecognizer.stopListening();
-                    speechRecognizer.destroy();
-                    logger.v(TAG, "- speechRecognizer stopped");
-                } catch (Exception ignored) {}
-                release();
-            });
-        } else {
-            release();
-        }
     }
 }
