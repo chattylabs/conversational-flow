@@ -92,12 +92,12 @@ class ConversationImpl extends Flow.Edge implements Conversation {
             } else if (node instanceof VoiceActionList) {
                 VoiceActionList actions = (VoiceActionList) node;
                 VoiceCapture[] captureAction = new VoiceCapture[1];
-                VoiceMismatch[] mismatchAction = new VoiceMismatch[1];
+                VoiceMatch[] matchAction = new VoiceMatch[1];
                 for (VoiceNode n : actions) {
                     if (n instanceof VoiceCapture) {
                         captureAction[0] = (VoiceCapture) n;
-                    } else if (n instanceof VoiceMismatch) {
-                        mismatchAction[0] = (VoiceMismatch) n;
+                    } else if (n instanceof VoiceMatch) {
+                        matchAction[0] = (VoiceMatch) n;
                     }
                 }
                 if (captureAction[0] != null) {
@@ -113,11 +113,10 @@ class ConversationImpl extends Flow.Edge implements Conversation {
                         },
                         (RecognizerListener.OnError) (error, originalError) -> {
                             logger.e(TAG, "- listening Capture error");
-                            if (mismatchAction[0] != null)
-                                noMatch(mismatchAction[0], error, null);
+                            noMatch(captureAction[0], null, error, originalError);
                         });
                 } else {
-                    logger.v(TAG, "- running Actions");
+                    logger.v(TAG, "- running Match");
                     speechRecognizer.listen(
                         (RecognizerListener.OnReady) params -> {
                             for (VoiceNode n : actions) {
@@ -131,16 +130,15 @@ class ConversationImpl extends Flow.Edge implements Conversation {
                         },
                         (RecognizerListener.OnResults) (results, confidences) -> {
                             String result = ConversationalFlow.selectMostConfidentResult(results, confidences);
-                            processResults(Collections.singletonList(result), actions, false);
+                            processMatchResults(Collections.singletonList(result), actions, false);
                         },
                         (RecognizerListener.OnPartialResults) (results, confidences) -> {
                             String result = ConversationalFlow.selectMostConfidentResult(results, confidences);
-                            processResults(Collections.singletonList(result), actions, true);
+                            processMatchResults(Collections.singletonList(result), actions, true);
                         },
                         (RecognizerListener.OnError) (error, originalError) -> {
-                            logger.e(TAG, "- listening Action error");
-                            if (mismatchAction[0] != null)
-                                noMatch(mismatchAction[0], error, null);
+                            logger.e(TAG, "- listening Match error");
+                            noMatch(matchAction[0], null, error, originalError);
                         });
                 }
             }
@@ -148,6 +146,47 @@ class ConversationImpl extends Flow.Edge implements Conversation {
             // Otherwise there is no more nodes
             speechSynthesizer.shutdown();
             logger.w(TAG, "- no more nodes, finished.");
+        }
+    }
+
+    private void processMatchResults(List<String> results, VoiceActionList actions, boolean isPartial) {
+        for (VoiceNode n : actions) {
+            if (n instanceof VoiceMatch) {
+                VoiceMatch action = (VoiceMatch) n;
+                if (results != null && !results.isEmpty()) {
+                    List<String> expected = Arrays.asList(action.expectedResults);
+                    boolean matches = ConversationalFlow.anyMatch(results, expected);
+                    if (matches) {
+                        logger.i(TAG, "- matched with: " + expected);
+                        if (isPartial) speechRecognizer.stop();
+                        currentNode = action;
+                        if (action.onMatched != null) {
+                            action.onMatched.accept(action, results);
+                        }
+                        next();
+                        return;
+                    } else if (!isPartial) {
+                        logger.w(TAG, "- not matched");
+                        noMatch(action, results, 0, 0);
+                    }
+                }
+            }
+        }
+    }
+
+    private void noMatch(VoiceNode node, List<String> results, int error, int originalError) {
+        boolean isUnexpected = error == RecognizerListener.Status.STOPPED_TOO_EARLY_ERROR;
+        boolean isLowSound = error == RecognizerListener.Status.LOW_SOUND_ERROR;
+        boolean isNoSound = error == RecognizerListener.Status.NO_SOUND_ERROR;
+        currentNode = node;
+        if (node instanceof VoiceMatch) {
+            ComponentConsumer2<VoiceMatch, List<String>, Integer> voiceNotMatched = ((VoiceMatch) node).onNotMatched;
+            if (voiceNotMatched != null)
+                voiceNotMatched.accept((VoiceMatch) node, results, error);
+        } else if (node instanceof VoiceCapture) {
+            ComponentConsumer<VoiceCapture, Integer> noCapture = ((VoiceCapture) node).onNoCapture;
+                if (noCapture != null)
+                    noCapture.accept((VoiceCapture) node, error);
         }
     }
 
@@ -273,75 +312,6 @@ class ConversationImpl extends Flow.Edge implements Conversation {
     @Override
     public boolean hasFlag(@Flag int flag) {
         return (this.flags > 0) && (this.flags & flag) == flag;
-    }
-
-    private void processResults(List<String> results, VoiceActionList actions, boolean isPartial) {
-        final VoiceMismatch[] mismatchAction = new VoiceMismatch[1];
-        for (VoiceNode n : actions) {
-            if (n instanceof VoiceMismatch) {
-                mismatchAction[0] = (VoiceMismatch) n;
-            } else if (n instanceof VoiceMatch) {
-                VoiceMatch action = (VoiceMatch) n;
-                if (results != null && !results.isEmpty()) {
-                    List<String> expected = Arrays.asList(action.expectedResults);
-                    boolean matches = ConversationalFlow.anyMatch(results, expected);
-                    if (matches) {
-                        logger.i(TAG, "- matched with: " + expected);
-                        speechRecognizer.stop();
-                        currentNode = action;
-                        if (action.onMatched != null) {
-                            action.onMatched.accept(action, results);
-                        }
-                        next();
-                        return;
-                    }
-                }
-            }
-        }
-        logger.w(TAG, "- not matched");
-        if (!isPartial && mismatchAction[0] != null) {
-            //if (mismatchAction[0].retries == 0)
-                currentNode = mismatchAction[0];
-            noMatch(mismatchAction[0], 0, results);
-        } else if (!isPartial) next();
-    }
-
-    private void noMatch(VoiceMismatch mismatchAction, int error, @Nullable List<String> results) {
-        boolean isUnexpected = error == RecognizerListener.Status.STOPPED_TOO_EARLY_ERROR;
-        boolean isLowSound = error == RecognizerListener.Status.LOW_SOUND_ERROR;
-        boolean isNoSound = error == RecognizerListener.Status.NO_SOUND_ERROR;
-
-//        if (mismatchAction.retries > 0) {
-//            mismatchAction.retries--;
-//            logger.v(TAG, "- pending retry: " + mismatchAction.retries);
-//            if (isUnexpected && mismatchAction.unexpectedErrorMessage != null) {
-//                logger.v(TAG, "- unexpected error");
-//                play(mismatchAction.unexpectedErrorMessage, this::next);
-//            } else if (hasFlag(FLAG_ENABLE_ERROR_MESSAGE_ON_LOW_SOUND) &&
-//                    isLowSound && mismatchAction.lowSoundErrorMessage != null) {
-//                logger.v(TAG, "- low sound");
-//                play(mismatchAction.lowSoundErrorMessage, this::next);
-//            } else if (!isNoSound && !isLowSound && mismatchAction.listeningErrorMessage != null) {
-//                play(mismatchAction.listeningErrorMessage, this::next);
-//            }
-//            //else if (!isNoSound) {
-//            //    next();
-//            //}
-//            else {
-//                logger.v(TAG, "- no sound at all!!");
-//                // No repeat
-//                mismatchAction.retries = 0;
-//                if (mismatchAction.onNotMatched != null) {
-//                    mismatchAction.onNotMatched.accept(mismatchAction, results);
-//                }
-//                else next(); // TODO: throw new Missing not matched?
-//            }
-//        } else {
-        //currentNode = mismatchAction;
-        if (mismatchAction.onNotMatched != null) {
-            mismatchAction.onNotMatched.accept(mismatchAction, results);
-        } else next(); // TODO: throw new Missing not matched?
-//        }
     }
 
     private void play(String text, Runnable runnable) {

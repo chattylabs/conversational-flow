@@ -19,6 +19,7 @@
             android:layout_height="wrap_content"
             tools:text="TextView"
             android:layout_gravity="center"
+            android:gravity="center"
             android:layout_margin="10dp"/>
 
     </androidx.cardview.widget.CardView>
