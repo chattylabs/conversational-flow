@@ -35,11 +35,13 @@ public interface SpeechSynthesizer {
 
     Set<String> getQueueSet();
 
-    boolean isEmpty();
+    boolean isQueueEmpty();
 
     boolean isOnQueue();
 
     void resume();
+
+    boolean isSpeaking();
 
     void lock();
 

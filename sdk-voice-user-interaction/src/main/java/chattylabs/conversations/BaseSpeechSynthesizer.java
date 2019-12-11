@@ -119,6 +119,8 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
     abstract boolean isTtsSpeaking();
 
+    abstract void forceDestroyTTS();
+
     private void selectListener(LinkedHashMap<Integer, SynthesizerListener> map,
                                 String utteranceId, int method, int errorCode) {
         if (map != null) {
@@ -296,7 +298,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     public synchronized void resume() {
         if (isSpeaking || isLocked) return;
         String utteranceId = null;
-        if (!isEmpty()) {
+        if (!isQueueEmpty()) {
             if (queue.containsKey(getCurrentQueueId())) {
                 ConcurrentLinkedQueue<Map<String, Object>> maps = queue.get(getCurrentQueueId());
                 if (maps != null && !maps.isEmpty()) {
@@ -324,7 +326,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     private void runOnQueue() {
         isOnQueue = true;
         moveToNextQueueIfNeeded();
-        if (!isEmpty()) {
+        if (!isQueueEmpty()) {
             // Gets and plays the current message in the queue
             play(Objects.requireNonNull(queue.get(queueId)).peek());
         }
@@ -345,11 +347,11 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     void poolQueueFromLast() {
-        if (!isEmpty()) Objects.requireNonNull(queue.get(queueId)).remove();
+        if (!isQueueEmpty()) Objects.requireNonNull(queue.get(queueId)).remove();
     }
 
     void moveToNextQueueIfNeeded() {
-        if (isEmpty()) {
+        if (isQueueEmpty()) {
             logger.v(TAG, "no more messages in the queue <%s>", queueId);
             // is empty, still contains the queue id and it's not the default one
             String oldQueueId = queueId;
@@ -505,7 +507,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     @Override
-    public synchronized boolean isEmpty() {
+    public synchronized boolean isQueueEmpty() {
         return queue.isEmpty() || (queue.containsKey(queueId) && Objects.requireNonNull(queue.get(queueId)).isEmpty());
     }
 
@@ -523,6 +525,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         isReady = ready;
     }
 
+    @Override
     public synchronized boolean isSpeaking() {
         return isSpeaking;
     }

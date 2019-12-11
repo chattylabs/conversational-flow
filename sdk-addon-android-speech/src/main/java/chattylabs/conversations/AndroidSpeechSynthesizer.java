@@ -57,7 +57,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     @Override
     public void prune() {
-        if (isEmpty() && isOnQueue()) shutdown();
+        if (isQueueEmpty() && isOnQueue()) shutdown();
         else {
             logger.w(TAG, "prune tts...");
             stop();
@@ -103,7 +103,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
                     int result = _tts.isLanguageAvailable(getLanguage());
                     _tts.shutdown();
                     if (result == TextToSpeech.LANG_AVAILABLE) {
-                        if (isEmpty() && isOnQueue()) shutdown();
+                        if (isOnQueue() && isQueueEmpty()) shutdown();
                         else getAudioManager().abandonAudioFocus(getConfiguration().isAudioExclusiveRequiredForSynthesizer());
                         listener.execute(AVAILABLE);
                     } else {
@@ -261,6 +261,11 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
                 utteranceListener.onError(utteranceId, ERROR);
             }
         });
+    }
+
+    @Override
+    void forceDestroyTTS() {
+        destroyTTS();
     }
 
     private void destroyTTS() {

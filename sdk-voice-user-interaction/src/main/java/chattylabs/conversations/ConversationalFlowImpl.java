@@ -74,6 +74,7 @@ final class ConversationalFlowImpl implements ConversationalFlow {
                     .setCustomBeepEnabled(() -> false)
                     .setAudioExclusiveRequiredForSynthesizer(() -> false)
                     .setAudioExclusiveRequiredForRecognizer(() -> true)
+                    .setForceLanguageDetection(() -> false)
                     .build();
 
             if (conversation != null && context != null) {

@@ -1,5 +1,6 @@
 package chattylabs.conversations;
 
+import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 
 public final class Peripheral {
@@ -9,8 +10,14 @@ public final class Peripheral {
         WIRED, BLUETOOTH
     }
 
+    public interface ReturnType<T> {
+        T get(AudioDeviceInfo deviceInfo);
+    }
+
     public interface Device {
         boolean isConnected();
+        int getId();
+        String getName(String defaultName);
     }
 
     public Peripheral(AudioManager audioManager) {

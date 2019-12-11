@@ -152,9 +152,7 @@ class ConversationImpl extends Flow.Edge implements Conversation {
             }
         } else {
             // Otherwise there is no more nodes
-            logger.w(TAG, "- no more nodes, finished.");
-            if (speechSynthesizer.isEmpty())
-                speechSynthesizer.shutdown();
+            logger.w(TAG, "- no more nodes");
         }
     }
 
@@ -349,11 +347,6 @@ class ConversationImpl extends Flow.Edge implements Conversation {
     @Override
     public boolean hasFlag(@Flag int flag) {
         return (this.flags > 0) && (this.flags & flag) == flag;
-    }
-
-    private void play(String text, Runnable runnable) {
-        // TODO: implement onError
-        speechSynthesizer.playTextNow(text, (SynthesizerListener.OnDone) utteranceId -> runnable.run());
     }
 
     void resetSpeechSynthesizer(SpeechSynthesizer speechSynthesizer) {
