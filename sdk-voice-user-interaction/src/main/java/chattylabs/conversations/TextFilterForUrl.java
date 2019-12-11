@@ -1,6 +1,7 @@
 package chattylabs.conversations;
 
 import android.net.Uri;
+import android.util.Log;
 import android.util.Patterns;
 
 import java.util.List;
@@ -15,13 +16,12 @@ public class TextFilterForUrl implements TextFilter {
     public String apply(String message) {
         return StringUtils.replace(Patterns.WEB_URL, message, match -> {
             String urlString = match.group();
+            Log.w("TextFilterForUrl", "Matched group: " + urlString);
             Uri uri = Uri.parse(urlString);
-            List<String> pathsSegments = uri.getPathSegments();
-            if (pathsSegments != null && !pathsSegments.isEmpty()) {
-                return uri.getHost() + "/" + pathsSegments.get(0);
-            } else {
+            //List<String> pathsSegments = uri.getPathSegments();
+            if (uri.getHost() != null) {
                 return uri.getHost();
-            }
+            } else return message;
         });
     }
 }

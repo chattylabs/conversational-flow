@@ -81,7 +81,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     @Override
     public void prune() {
-        if (isEmpty()) shutdown();
+        if (isQueueEmpty()) shutdown();
         else {
             logger.w(TAG, "prune tts...");
             stop();
@@ -106,12 +106,17 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
                 .setCredentialsProvider(() -> GoogleCredentials.fromStream(stream)).build());
     }
 
+    @Override
+    void forceDestroyTTS() {
+        destroyTTS();
+    }
+
     private void destroyTTS() {
         if (!isTtsNull()) {
             try {
                 tts.close();
                 tts.shutdown();
-                tts.awaitTermination(2, TimeUnit.SECONDS);
+                //tts.awaitTermination(1, TimeUnit.SECONDS);
                 logger.v(TAG, "destroyed");
             } catch (Exception ignored) {
             }

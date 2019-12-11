@@ -15,7 +15,15 @@ public class ComponentConfig {
     private LazyProvider<Class<? extends SpeechRecognizer>> recognizerServiceType;
     private LazyProvider<Class<? extends SpeechSynthesizer>> synthesizerServiceType;
     private RawResourceLazyProvider googleCredentialsResourceFile;
+    /**
+     * Only for Google Speech addon to allow more time to record audio as on a dictation.
+     */
     private LazyProvider<Boolean> speechDictation;
+    /**
+     * If enabled, it destroys the TTS every time an utterance has finished.
+     * This allows the Engine to cleanly reset and detect language of next utterance.
+     */
+    private LazyProvider<Boolean> forceLanguageDetection;
 
     private ComponentConfig(Builder builder) {
         speechLanguage = builder.speechLanguage;
@@ -28,6 +36,7 @@ public class ComponentConfig {
         synthesizerServiceType = builder.synthesizerServiceType;
         googleCredentialsResourceFile = builder.googleCredentialsResourceFile;
         speechDictation = builder.speechDictation;
+        forceLanguageDetection = builder.forceLanguageDetection;
     }
 
     public Locale getSpeechLanguage() {
@@ -71,6 +80,10 @@ public class ComponentConfig {
         return speechDictation.get();
     }
 
+    public boolean isForceLanguageDetection() {
+        return forceLanguageDetection.get();
+    }
+
     void update(ComponentConfig config) {
         speechLanguage = config.speechLanguage;
         customBeepEnabled = config.customBeepEnabled;
@@ -82,6 +95,7 @@ public class ComponentConfig {
         synthesizerServiceType = config.synthesizerServiceType;
         googleCredentialsResourceFile = config.googleCredentialsResourceFile;
         speechDictation = config.speechDictation;
+        forceLanguageDetection = config.forceLanguageDetection;
     }
 
     public static final class Builder {
@@ -95,6 +109,7 @@ public class ComponentConfig {
         private LazyProvider<Class<? extends SpeechSynthesizer>> synthesizerServiceType;
         private RawResourceLazyProvider googleCredentialsResourceFile;
         private LazyProvider<Boolean> speechDictation;
+        private LazyProvider<Boolean> forceLanguageDetection;
 
         public Builder() {
         }
@@ -110,6 +125,7 @@ public class ComponentConfig {
             synthesizerServiceType = copy.synthesizerServiceType;
             googleCredentialsResourceFile = copy.googleCredentialsResourceFile;
             speechDictation = copy.speechDictation;
+            forceLanguageDetection = copy.forceLanguageDetection;
         }
 
         public Builder setSpeechLanguage(LazyProvider<Locale> speechLanguage) {
@@ -165,6 +181,11 @@ public class ComponentConfig {
 
         public Builder setSpeechDictation(LazyProvider<Boolean> lazyProvider) {
             this.speechDictation = lazyProvider;
+            return this;
+        }
+
+        public Builder setForceLanguageDetection(LazyProvider<Boolean> forceLanguageDetection) {
+            this.forceLanguageDetection = forceLanguageDetection;
             return this;
         }
 

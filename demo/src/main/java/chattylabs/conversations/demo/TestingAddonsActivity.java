@@ -128,7 +128,7 @@ public class TestingAddonsActivity extends BaseActivity {
                         synthesizer.lock();
                         listen(index);
                     } else {
-                        if (synthesizer.isEmpty()) {
+                        if (synthesizer.isQueueEmpty()) {
                             component.shutdown();
                         } else {
                             synthesizer.unlock();
@@ -136,7 +136,7 @@ public class TestingAddonsActivity extends BaseActivity {
                     }
                 },
                 (SynthesizerListener.OnError) (utteranceId, errorCode) -> {
-                    if (synthesizer.isEmpty()) {
+                    if (synthesizer.isQueueEmpty()) {
                         component.shutdown();
                     } else {
                         synthesizer.unlock();
@@ -160,7 +160,7 @@ public class TestingAddonsActivity extends BaseActivity {
                         }
                     }
                     new Handler().postDelayed(() -> {
-                        if (synthesizer.isEmpty()) {
+                        if (synthesizer.isQueueEmpty()) {
                             component.shutdown();
                         } else {
                             synthesizer.unlock();
@@ -169,7 +169,7 @@ public class TestingAddonsActivity extends BaseActivity {
                 }, (RecognizerListener.OnError) (i, i1) -> {
                     Log.e(TAG, "Error " + i);
 
-                    if (synthesizer.isEmpty()) {
+                    if (synthesizer.isQueueEmpty()) {
                         component.shutdown();
                     } else {
                         synthesizer.unlock();
@@ -216,6 +216,7 @@ public class TestingAddonsActivity extends BaseActivity {
         add = findViewById(R.id.add);
         clear = findViewById(R.id.clear);
         CheckBox scoCheck = findViewById(R.id.bluetooth_sco);
+        CheckBox languageDetectionCheck = findViewById(R.id.force_language_detection);
 
         execution.setMovementMethod(new ScrollingMovementMethod());
 
@@ -233,6 +234,14 @@ public class TestingAddonsActivity extends BaseActivity {
                     builder -> {
                         builder.setBluetoothScoRequired(() ->
                                 peripheral.get(Peripheral.Type.BLUETOOTH).isConnected() && isChecked);
+                        return builder.build();
+                    });
+        });
+
+        languageDetectionCheck.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            component.updateConfiguration(
+                    builder -> {
+                        builder.setForceLanguageDetection(() ->  isChecked);
                         return builder.build();
                     });
         });

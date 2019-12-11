@@ -134,6 +134,11 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
         closeMediaPlayer();
     }
 
+    @Override
+    void forceDestroyTTS() {
+        // no implementation
+    }
+
     private void onListenersAvailable(String utteranceId,
                                       Operation operation,
                                       OnUtteranceListenerAvailable callback) {

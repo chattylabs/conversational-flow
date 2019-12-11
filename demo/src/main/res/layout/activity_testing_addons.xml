@@ -59,18 +59,20 @@
         android:id="@+id/audio_mode"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="30dp"
+        android:layout_marginStart="20dp"
         app:layout_constraintBottom_toBottomOf="@id/bluetooth_sco"
         app:layout_constraintEnd_toStartOf="@+id/guidelineRight"
         app:layout_constraintStart_toEndOf="@id/bluetooth_sco"
         app:layout_constraintTop_toTopOf="@+id/bluetooth_sco" />
 
-    <Spinner
-        android:id="@+id/action"
+    <CheckBox
+        android:id="@+id/force_language_detection"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        app:layout_constraintEnd_toStartOf="@+id/addon"
+        android:layout_marginTop="10dp"
+        android:text="Force language detection"
+        app:layout_constraintEnd_toEndOf="@+id/guidelineRight"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="@id/guidelineLeft"
         app:layout_constraintTop_toBottomOf="@+id/bluetooth_sco" />
 
@@ -78,11 +80,19 @@
         android:id="@+id/addon"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        app:layout_constraintBottom_toBottomOf="@id/action"
+        android:layout_marginTop="10dp"
         app:layout_constraintEnd_toStartOf="@+id/guidelineRight"
-        app:layout_constraintStart_toEndOf="@id/action"
-        app:layout_constraintTop_toTopOf="@+id/action" />
+        app:layout_constraintStart_toStartOf="@id/guidelineLeft"
+        app:layout_constraintTop_toBottomOf="@+id/force_language_detection" />
+
+    <Spinner
+        android:id="@+id/action"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        app:layout_constraintEnd_toStartOf="@+id/guidelineRight"
+        app:layout_constraintStart_toStartOf="@id/guidelineLeft"
+        app:layout_constraintTop_toBottomOf="@+id/addon" />
 
     <EditText
         android:id="@+id/text"

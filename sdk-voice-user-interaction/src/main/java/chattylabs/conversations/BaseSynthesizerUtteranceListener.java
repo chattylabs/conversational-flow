@@ -36,6 +36,8 @@ class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceListener {
 
             @Override
             public void onDone(String utteranceId) {
+                if (speechSynthesizer.getConfiguration().isForceLanguageDetection())
+                    speechSynthesizer.forceDestroyTTS();
                 speechSynthesizer.handleSynthesizedFile(context, BaseSynthesizerUtteranceListener.this, utteranceId);
             }
 
@@ -46,6 +48,8 @@ class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceListener {
 
             @Override
             public void onError(String utteranceId, int errorCode) {
+                if (speechSynthesizer.getConfiguration().isForceLanguageDetection())
+                    speechSynthesizer.forceDestroyTTS();
                 BaseSynthesizerUtteranceListener.this.onError(utteranceId, errorCode);
             }
         };
@@ -73,7 +77,7 @@ class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceListener {
         }
         logger.v(TAG, "[%s] - on done <%s> - execute listener.onDone", utteranceId, speechSynthesizer.getCurrentQueueId());
         speechSynthesizer.removeAndExecuteListener(utteranceId, BaseSpeechSynthesizer.ON_DONE, 0);
-        if (speechSynthesizer.isOnQueue() && speechSynthesizer.isEmpty()) speechSynthesizer.shutdown();
+        if (speechSynthesizer.isOnQueue() && speechSynthesizer.isQueueEmpty()) speechSynthesizer.shutdown();
         else if (speechSynthesizer.isOnQueue()) speechSynthesizer.resume();
     }
 
