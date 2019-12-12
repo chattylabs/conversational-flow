@@ -19,9 +19,6 @@ import java.util.List;
 import chattylabs.android.commons.Tag;
 import chattylabs.android.commons.internal.ILogger;
 import kotlin.collections.CollectionsKt;
-import kotlin.collections.UCollectionsKt;
-import kotlin.text.CharsKt;
-import kotlin.text.StringsKt;
 
 class ConversationImpl extends Flow.Edge implements Conversation {
     private final String TAG = Tag.make("Conversation");

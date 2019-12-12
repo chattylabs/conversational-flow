@@ -4,8 +4,6 @@ import android.net.Uri;
 import android.util.Log;
 import android.util.Patterns;
 
-import java.util.List;
-
 import chattylabs.android.commons.StringUtils;
 
 /**
