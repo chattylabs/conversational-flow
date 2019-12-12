@@ -363,12 +363,18 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
     }
 
     @Override
+    public void stopListening() {
+        // Stop recording
+        if (audioEmitter != null) audioEmitter.stop();
+    }
+
+    @Override
     public void stop() {
         logger.w(TAG, "stop");
         // Cancel timeout
         stopElapsedTime();
-        // Stop recording
-        if (audioEmitter != null) audioEmitter.stop();
+
+        stopListening();
         // Close Streaming
         if (requestClientStream != null && requestClientStream.isSendReady()) {
             requestClientStream.closeSend();

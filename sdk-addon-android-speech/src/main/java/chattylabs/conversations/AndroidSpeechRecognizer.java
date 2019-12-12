@@ -209,7 +209,6 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
 
                 @Override
                 public void onPartialResults(Bundle partialResults) {
-                    logger.v(TAG, "- onPartialResults");
                     List<String> list;
                     intents++;
                     RecognizerListener.OnPartialResults onPartialResults = _getOnPartialResults();
@@ -272,6 +271,18 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
     @Override
     public void setLowSoundThreshold(float maxValue) {
         this.lowSoundThreshold = maxValue;
+    }
+
+    @Override
+    public void stopListening() {
+        if (speechRecognizer != null) {
+            if (mainHandler != null) mainHandler.post(() -> {
+                try {
+                    speechRecognizer.stopListening();
+                    logger.v(TAG, "- speechRecognizer listening stopped");
+                } catch (Exception ignored) {}
+            });
+        }
     }
 
     private void release() {
