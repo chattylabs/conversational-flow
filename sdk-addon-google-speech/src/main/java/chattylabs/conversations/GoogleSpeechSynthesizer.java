@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Locale;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import chattylabs.android.commons.HtmlUtils;
 import chattylabs.android.commons.StringUtils;
