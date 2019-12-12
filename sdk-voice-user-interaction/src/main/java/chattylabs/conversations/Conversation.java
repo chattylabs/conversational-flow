@@ -5,6 +5,7 @@ import androidx.annotation.StringRes;
 
 public interface Conversation {
     int FLAG_ENABLE_ERROR_MESSAGE_ON_LOW_SOUND = 1;
+    int MINIMUM_WORDS_TO_DISCARD_RECOGNITION = 3;
 
     void addFlag(@Flag int flag);
 

@@ -3,6 +3,7 @@ package chattylabs.conversations;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -12,10 +13,15 @@ import androidx.core.util.Pools;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import chattylabs.android.commons.Tag;
 import chattylabs.android.commons.internal.ILogger;
+import kotlin.collections.CollectionsKt;
+import kotlin.collections.UCollectionsKt;
+import kotlin.text.CharsKt;
+import kotlin.text.StringsKt;
 
 class ConversationImpl extends Flow.Edge implements Conversation {
     private final String TAG = Tag.make("Conversation");
@@ -134,11 +140,12 @@ class ConversationImpl extends Flow.Edge implements Conversation {
                             //},
                             (RecognizerListener.OnResults) (results, confidences) -> {
                                 //String result = ConversationalFlow.selectMostConfidentResult(results, confidences);
-                                processMatchResults(results, actions, false);
+                                processMatchResults(results, actions);
                             },
-                            //(RecognizerListener.OnPartialResults) (results, confidences) -> {
-                            //    processMatchResults(results, actions, true);
-                            //},
+                            (RecognizerListener.OnPartialResults) (results, confidences) -> {
+                                String result = ConversationalFlow.selectMostConfidentResult(results, confidences);
+                                processPartialMatchResults(Collections.singletonList(result), actions);
+                            },
                             (RecognizerListener.OnError) (error, originalError) -> {
                                 logger.e(TAG, "- listening Match error");
                                 for (VoiceNode n : actions) {
@@ -156,7 +163,29 @@ class ConversationImpl extends Flow.Edge implements Conversation {
         }
     }
 
-    private void processMatchResults(@NonNull List<String> results, VoiceActionList actions, boolean isPartial) {
+    /**
+     * This process tries to skip listening for a command if the user is on an active speech,
+     * like speaking with somebody else or on a call.
+     * We understand in these cases, the user isn't intending to say a command.
+     * <p/>
+     * We observe whether the amount of words recognized are over {@link #MINIMUM_WORDS_TO_DISCARD_RECOGNITION},
+     * if so and none of the words match with {@link VoiceMatch#expected}, we stop listening.
+     * <p/>
+     * This will fire the {@link RecognizerListener.OnResults} callback
+     * and will call {@link #processMatchResults(List, VoiceActionList)} which <i>potentially</i> will not match
+     * either with any of the {@link VoiceMatch#expected} and will fallback to {@link VoiceMatch#onNotMatched}.
+     */
+    private void processPartialMatchResults(@NonNull List<String> results, VoiceActionList actions) {
+        if (!results.isEmpty() && !TextUtils.isEmpty(results.get(0)) // we receive here a unique most confident result
+            && results.get(0).split("\\s+").length > MINIMUM_WORDS_TO_DISCARD_RECOGNITION)
+            if (CollectionsKt.none(CollectionsKt.filterIsInstance(actions, VoiceMatch.class), voiceMatch ->
+                    ConversationalFlow.anyMatch(results, Arrays.asList(voiceMatch.expected)))) {
+                logger.i(TAG, "- partial didn't match: " + results);
+                speechRecognizer.stopListening();
+            }
+    }
+
+    private void processMatchResults(@NonNull List<String> results, VoiceActionList actions) {
         for (VoiceNode node : actions) {
             if (node instanceof VoiceMatch) {
                 VoiceMatch action = (VoiceMatch) node;

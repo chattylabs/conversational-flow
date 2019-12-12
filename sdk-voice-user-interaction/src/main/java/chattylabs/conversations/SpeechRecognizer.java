@@ -9,6 +9,8 @@ public interface SpeechRecognizer {
 
     void listen(RecognizerListener... listeners);
 
+    void stopListening();
+
     void stop();
 
     void setRmsDebug(boolean debug);

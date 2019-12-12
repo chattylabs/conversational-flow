@@ -135,9 +135,8 @@ public interface ConversationalFlow extends RequiredPermissions {
      * Check if a specific string pattern interpreted as a whole word matches with a string.
      */
     static boolean matches(@NonNull String str, @NonNull String patternStr) {
-        Pattern pattern = Pattern.compile("\\b(" + patternStr + ")\\b", Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(str);
-        return matcher.find();
+        return Pattern.compile("\\b(" + patternStr + ")\\b", Pattern.CASE_INSENSITIVE)
+                      .matcher(str).find();
     }
 
     /**
