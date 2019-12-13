@@ -568,6 +568,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     public void stop() {
         setSpeaking(false);
         unlock();
+        forceDestroyTTS();
         finishPlayer();
     }
 
