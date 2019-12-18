@@ -26,6 +26,7 @@ import android.util.Log
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
+import kotlin.math.abs
 
 private const val TAG = "Audio"
 private const val AMPLITUDE_THRESHOLD = 1500
@@ -98,7 +99,7 @@ class AudioEmitter {
             var s = buffer[i + 1].toInt()
             if (s < 0) s *= -1
             s = s shl 8
-            s += Math.abs(buffer[i].toInt())
+            s += abs(buffer[i].toInt())
             if (s > AMPLITUDE_THRESHOLD) {
                 return true
             }

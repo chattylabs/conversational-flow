@@ -2,6 +2,7 @@ package chattylabs.conversations;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.media.AudioManager;
@@ -61,21 +62,15 @@ final class ConversationalFlowImpl implements ConversationalFlow {
         shutdown(() -> {
             reset();
             this.configuration = new ComponentConfig.Builder()
-                    .setSynthesizerServiceType(() ->
-                            this.configuration.getSynthesizerServiceType())
-                    .setRecognizerServiceType(() ->
-                            this.configuration.getRecognizerServiceType())
-                    .setGoogleCredentialsResourceFile(() ->
-                            this.configuration.getGoogleCredentialsResourceFile())
-                    .setSpeechLanguage(Locale::getDefault)
-                    .setSpeechDictation(() -> false)
-                    .setBluetoothScoRequired(() -> false)
-                    .setBluetoothScoAudioMode(() -> AudioManager.MODE_IN_COMMUNICATION)
-                    .setCustomBeepEnabled(() -> false)
-                    .setAudioExclusiveRequiredForSynthesizer(() -> false)
-                    .setAudioExclusiveRequiredForRecognizer(() -> true)
-                    .setForceLanguageDetection(() -> false)
-                    .build();
+                                     .setSpeechLanguage(Locale::getDefault)
+                                     .setSpeechDictation(() -> false)
+                                     .setBluetoothScoRequired(() -> false)
+                                     .setBluetoothScoAudioMode(() -> AudioManager.MODE_IN_COMMUNICATION)
+                                     .setCustomBeepEnabled(() -> false)
+                                     .setAudioExclusiveRequiredForSynthesizer(() -> false)
+                                     .setAudioExclusiveRequiredForRecognizer(() -> true)
+                                     .setForceLanguageDetection(() -> false)
+                                     .build();
 
             if (conversation != null && context != null) {
                 ((ConversationImpl) conversation).resetSpeechSynthesizer(getSpeechSynthesizer(context));
@@ -184,6 +179,14 @@ final class ConversationalFlowImpl implements ConversationalFlow {
         return speechRecognizer;
     }
 
+    @Override
+    public void loadSynthesizerInstallation(Activity activity, SynthesizerListener.OnStatusChecked listener) {
+        final Application application = (Application) activity.getApplicationContext();
+        initDependencies(application);
+        createSpeechSynthesizerInstance(application);
+        speechSynthesizer.loadInstallation(activity, listener);
+    }
+
     @SuppressLint("MissingPermission")
     @Override @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     public Conversation create(Context context) {
@@ -225,5 +228,9 @@ final class ConversationalFlowImpl implements ConversationalFlow {
             }
             if (onBluetoothScoDisconnected != null) onBluetoothScoDisconnected.run();
         }
+    }
+
+    @Override public void showVolumeControls() {
+        audioManager.showVolumeControls();
     }
 }

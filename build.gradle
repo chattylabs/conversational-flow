@@ -1,6 +1,8 @@
 buildscript {
     ext.kotlin_version = '1.3.50'
     ext.android_commons = '0.8.0'
+    ext.voice_user_interaction = "0.25.14"
+    ext.voice_user_interaction_internal = ":sdk-voice-user-interaction"
     repositories {
         mavenLocal()
         google()

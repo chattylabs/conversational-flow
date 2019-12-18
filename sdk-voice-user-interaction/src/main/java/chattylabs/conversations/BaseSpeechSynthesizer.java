@@ -521,7 +521,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     void setReady(boolean ready) {
-        logger.w(TAG, "ready set to " + Boolean.toString(ready));
+        logger.w(TAG, "ready set to " + ready);
         isReady = ready;
     }
 
@@ -531,7 +531,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     void setSpeaking(boolean speaking) {
-        logger.w(TAG, "speaking set to " + Boolean.toString(speaking));
+        logger.w(TAG, "speaking set to " + speaking);
         isSpeaking = speaking;
     }
 
