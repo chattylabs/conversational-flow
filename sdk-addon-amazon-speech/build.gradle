@@ -27,7 +27,7 @@ dependencies {
 
     // Dependencies
     implementation "chattylabs.android:commons:$android_commons"
-    compileOnly project(':sdk-voice-user-interaction')
+    compileOnly elastic("chattylabs.android:voice-user-interaction:$voice_user_interaction", "$voice_user_interaction_internal")
 
     // AmazonSpeechSynthesizerAdapter mobile client and polly
     implementation('com.amazonaws:aws-android-sdk-mobile-client:2.6.31@aar') { transitive = true }

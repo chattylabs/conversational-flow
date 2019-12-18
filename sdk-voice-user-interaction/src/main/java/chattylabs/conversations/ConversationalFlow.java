@@ -1,6 +1,7 @@
 package chattylabs.conversations;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.text.TextUtils;
 
@@ -87,6 +88,8 @@ public interface ConversationalFlow extends RequiredPermissions {
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     SpeechRecognizer getSpeechRecognizer(Context context);
 
+    void loadSynthesizerInstallation(Activity activity, SynthesizerListener.OnStatusChecked listener);
+
     /**
      * Returns a new instance of {@link Conversation}
      */
@@ -166,4 +169,6 @@ public interface ConversationalFlow extends RequiredPermissions {
     }
 
     void shutdown(Runnable onBluetoothScoDisconnected);
+
+    void showVolumeControls();
 }

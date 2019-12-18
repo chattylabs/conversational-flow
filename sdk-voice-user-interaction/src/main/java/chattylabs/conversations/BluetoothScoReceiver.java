@@ -39,8 +39,8 @@ public class BluetoothScoReceiver extends BroadcastReceiver {
             int state = intent.getIntExtra(AudioManager.EXTRA_SCO_AUDIO_STATE,
                                            AudioManager.SCO_AUDIO_STATE_ERROR);
             logger.i(TAG, "state: " + state);
-            logger.i(TAG, "isAlreadyConnected: " + Boolean.toString(isAlreadyConnected));
-            logger.i(TAG, "isAlreadyDisconnected: " + Boolean.toString(isAlreadyDisconnected));
+            logger.i(TAG, "isAlreadyConnected: " + isAlreadyConnected);
+            logger.i(TAG, "isAlreadyDisconnected: " + isAlreadyDisconnected);
             if (state == AudioManager.SCO_AUDIO_STATE_CONNECTED) {
                 if (!isAlreadyConnected) {
                     // TODO: check on analytics how many times this is called

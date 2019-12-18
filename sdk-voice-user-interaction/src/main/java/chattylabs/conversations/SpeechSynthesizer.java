@@ -1,5 +1,7 @@
 package chattylabs.conversations;
 
+import android.app.Activity;
+
 import androidx.annotation.Nullable;
 
 import java.util.List;
@@ -11,6 +13,8 @@ import java.util.Set;
 public interface SpeechSynthesizer {
 
     void checkStatus(SynthesizerListener.OnStatusChecked listener);
+
+    void loadInstallation(Activity activity, SynthesizerListener.OnStatusChecked listener);
 
     void playText(String text, String queueId, SynthesizerListener... listeners);
 

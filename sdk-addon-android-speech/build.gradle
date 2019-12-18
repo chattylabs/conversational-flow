@@ -1,3 +1,12 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.novoda:bintray-release:0.9.1'
+    }
+}
+
 apply plugin: 'com.android.library'
 apply plugin: 'com.chattylabs.versioning'
 apply from: '../android-buildsystem/android.gradle'
@@ -28,7 +37,7 @@ dependencies {
 
     // Dependencies
     implementation "chattylabs.android:commons:$android_commons"
-    compileOnly project(':sdk-voice-user-interaction')
+    compileOnly elastic("chattylabs.android:voice-user-interaction:$voice_user_interaction", "$voice_user_interaction_internal")
 }
 
 description = 'Android Speech Addon'

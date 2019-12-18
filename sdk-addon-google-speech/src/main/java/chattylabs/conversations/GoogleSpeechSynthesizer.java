@@ -1,5 +1,6 @@
 package chattylabs.conversations;
 
+import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.media.MediaPlayer;
@@ -76,6 +77,10 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
             shutdown();
             listener.execute(SynthesizerListener.Status.NOT_AVAILABLE_ERROR);
         }
+    }
+
+    @Override public void loadInstallation(Activity activity, SynthesizerListener.OnStatusChecked listener) {
+
     }
 
     @Override

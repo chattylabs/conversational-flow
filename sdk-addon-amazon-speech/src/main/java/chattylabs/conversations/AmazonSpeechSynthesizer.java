@@ -1,5 +1,6 @@
 package chattylabs.conversations;
 
+import android.app.Activity;
 import android.app.Application;
 import android.media.MediaPlayer;
 import android.os.ConditionVariable;
@@ -172,6 +173,10 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
                 listener.execute(SynthesizerListener.Status.LANGUAGE_NOT_SUPPORTED_ERROR);
             }
         });
+    }
+
+    @Override public void loadInstallation(Activity activity, SynthesizerListener.OnStatusChecked listener) {
+
     }
 
     @Override

@@ -51,6 +51,10 @@ public class AndroidAudioManager {
         return  audioManager;
     }
 
+    public void showVolumeControls() {
+        audioManager.adjustStreamVolume(getMainStreamType(), AudioManager.ADJUST_SAME, AudioManager.FLAG_SHOW_UI);
+    }
+
     public int getMainStreamType() {
         return configuration.isBluetoothScoRequired()
                 && configuration.getBluetoothScoAudioMode() == AudioManager.MODE_IN_CALL ?
