@@ -292,4 +292,12 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
         setLowSoundThreshold(0);
         logger.i(TAG, "- released");
     }
+
+    @Override
+    public void stop() {
+        if (speechRecognizer != null) {
+            speechRecognizer.destroy();
+        }
+        super.stop();
+    }
 }
