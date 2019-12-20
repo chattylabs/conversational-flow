@@ -24,11 +24,11 @@ public interface SpeechSynthesizer {
 
     void playSilenceNow(long durationInMillis, SynthesizerListener... listeners);
 
-    void addFilter(TextFilter filter);
+    void addFilter(Filter filter);
 
     void clearFilters();
 
-    List<TextFilter> getFilters();
+    List<Filter> getFilters();
 
     String getLastQueueId();
 

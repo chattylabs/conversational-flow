@@ -192,7 +192,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
         if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
             finalText = " ";
         } else {
-            for (TextFilter filter : getFilters()) {
+            for (Filter filter : getFilters()) {
                 logger.v(TAG, "[%s] - apply filter: %s", utteranceId, filter);
                 finalText = filter.apply(finalText);
             }

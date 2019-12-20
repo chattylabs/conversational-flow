@@ -52,7 +52,7 @@ import chattylabs.android.commons.internal.ILogger;
  * <br/>This method should check whether the current client instance is available or create a new one.
  * <p/>
  * - You must implement {@link #executeOnEngineReady(String, String)} where you can apply any
- * {@link TextFilter}, escape HTML entities, split a string into chunks if needed or any other treatment
+ * {@link Filter}, escape HTML entities, split a string into chunks if needed or any other treatment
  * on the message to be played and ultimately to play the message through your implemented Speech Provider.
  *
  * @see SynthesizerListener
@@ -80,7 +80,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     // Data
     private final LinkedHashMap<String, LinkedHashMap<Integer, SynthesizerListener>> listeners; //released
     private final LinkedHashMap<String, ConcurrentLinkedQueue<Map<String, Object>>> queue; //released
-    private final List<TextFilter> filters;
+    private final List<Filter> filters;
     private final Object lock = new Object();
     // Resources
     private final ComponentConfig configuration;
@@ -466,7 +466,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     @Override
-    public void addFilter(TextFilter filter) {
+    public void addFilter(Filter filter) {
         filters.add(filter);
     }
 
@@ -476,7 +476,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     @Override
-    public List<TextFilter> getFilters() {
+    public List<Filter> getFilters() {
         return filters;
     }
 

@@ -12,7 +12,7 @@ public class TextFilterForUrlTest {
 //        String pathLink = "http://example.com/any/path/";
 //        String textAndLink = "A text with a http://www.example.com/link/that should be shortened";
 //        String fullLink = "http://www.example.com/any/path/intex.html?parameter=value%20random&another=#even";
-//        TextFilter filter = new TextFilterForUrl();
+//        Filter filter = new FilterForUrl();
 //
 //        Assert.assertEquals(filter.apply(empty), "");
 //        Assert.assertEquals(filter.apply(httpLink), "example.com");
