@@ -90,6 +90,8 @@ public interface ConversationalFlow extends RequiredPermissions {
 
     void loadSynthesizerInstallation(Activity activity, SynthesizerListener.OnStatusChecked listener);
 
+    AndroidAudioManager getAudioManager(Context context);
+
     /**
      * Returns a new instance of {@link Conversation}
      */

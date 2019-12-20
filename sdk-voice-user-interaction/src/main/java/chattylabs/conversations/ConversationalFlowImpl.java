@@ -108,18 +108,20 @@ final class ConversationalFlowImpl implements ConversationalFlow {
             this.audioManager = new AndroidAudioManager(systemAudioManager, configuration, logger);
         }
         if (bluetooth == null) bluetooth = new AndroidBluetooth(application, audioManager, configuration, logger);
-        if (phoneStateHandler == null) phoneStateHandler = new PhoneStateHandler(application, logger);
-        phoneStateHandler.register(new PhoneStateListenerAdapter() {
-            @Override
-            public void onOutgoingCallStarts() {
-                shutdown();
-            }
+        if (phoneStateHandler == null) {
+            phoneStateHandler = new PhoneStateHandler(application, logger);
+            phoneStateHandler.register(new PhoneStateListenerAdapter() {
+                @Override
+                public void onOutgoingCallStarts() {
+                    shutdown();
+                }
 
-            @Override
-            public void onIncomingCallRinging() {
-                shutdown();
-            }
-        });
+                @Override
+                public void onIncomingCallRinging() {
+                    shutdown();
+                }
+            });
+        }
     }
 
     @Override
@@ -185,6 +187,12 @@ final class ConversationalFlowImpl implements ConversationalFlow {
         initDependencies(application);
         createSpeechSynthesizerInstance(application);
         speechSynthesizer.loadInstallation(activity, listener);
+    }
+
+    @Override public AndroidAudioManager getAudioManager(Context context) {
+        final Application application = (Application) context.getApplicationContext();
+        initDependencies(application);
+        return audioManager;
     }
 
     @SuppressLint("MissingPermission")
