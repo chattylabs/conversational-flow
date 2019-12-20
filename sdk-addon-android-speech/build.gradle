@@ -3,7 +3,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.novoda:bintray-release:0.9.1'
+        classpath "com.novoda:bintray-release:$bintray"
     }
 }
 
@@ -18,7 +18,7 @@ versioning {
 
     keywords {
         minor "[addon-android-feature]", "[feature]"
-        patch "[addon-android-bug]", "[addon-android-patch]", "[patch]"
+        patch "[addon-android-bug]", "[addon-android-patch]", "[bug]", "[patch]"
     }
 }
 

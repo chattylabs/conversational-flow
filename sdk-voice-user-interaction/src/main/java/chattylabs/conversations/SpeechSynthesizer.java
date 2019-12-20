@@ -11,6 +11,12 @@ import java.util.Set;
  * Instead of inheriting from this Interface you should extend {@link BaseSpeechSynthesizer}
  */
 public interface SpeechSynthesizer {
+    String VOICE_MALE = "#male";
+    String VOICE_FEMALE = "#female";
+
+    void setVoice(String gender);
+
+    void setDefaultVoice();
 
     void checkStatus(SynthesizerListener.OnStatusChecked listener);
 

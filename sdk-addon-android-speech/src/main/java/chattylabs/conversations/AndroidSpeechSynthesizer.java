@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Intent;
 import android.speech.tts.TextToSpeech;
+import android.speech.tts.Voice;
 
 import androidx.annotation.Keep;
 
@@ -14,6 +15,7 @@ import chattylabs.android.commons.StringUtils;
 import chattylabs.android.commons.Tag;
 import chattylabs.android.commons.internal.ILogger;
 import kotlin.collections.ArraysKt;
+import kotlin.collections.CollectionsKt;
 
 import static chattylabs.conversations.SynthesizerListener.Status.AVAILABLE;
 import static chattylabs.conversations.SynthesizerListener.Status.ERROR;
@@ -229,6 +231,21 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
     @Override
     boolean isTtsSpeaking() {
         return !isTtsNull() && tts.isSpeaking();
+    }
+
+    @Override
+    public void setVoice(String gender) {
+        Voice localeVoice = CollectionsKt.first(
+            tts.getVoices(),
+            voice -> !voice.getFeatures().contains("notInstalled")
+                     && voice.getLocale().equals(getConfiguration().getSpeechLanguage())
+                     && voice.getName().contains(gender));
+        tts.setVoice(localeVoice);
+    }
+
+    @Override
+    public void setDefaultVoice() {
+        tts.setVoice(tts.getDefaultVoice());
     }
 
     @Override

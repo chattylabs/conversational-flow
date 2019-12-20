@@ -74,7 +74,7 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
 
             String finalText = HtmlUtils.from(text).toString();
 
-            for (TextFilter filter : getFilters()) {
+            for (Filter filter : getFilters()) {
                 logger.v(TAG, "[%s] - apply filter: %s", utteranceId, filter);
                 finalText = filter.apply(finalText);
             }
@@ -159,6 +159,14 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
             mMediaPlayer.release();
         }
         mMediaPlayer = null;
+    }
+
+    @Override public void setVoice(String gender) {
+
+    }
+
+    @Override public void setDefaultVoice() {
+
     }
 
     @Override

@@ -28,13 +28,13 @@ import chattylabs.conversations.AmazonSpeechSynthesizer;
 import chattylabs.conversations.AndroidSpeechRecognizer;
 import chattylabs.conversations.AndroidSpeechSynthesizer;
 import chattylabs.conversations.ConversationalFlow;
+import chattylabs.conversations.FilterForUrl;
 import chattylabs.conversations.GoogleSpeechRecognizer;
 import chattylabs.conversations.GoogleSpeechSynthesizer;
 import chattylabs.conversations.RecognizerListener;
 import chattylabs.conversations.SpeechRecognizer;
 import chattylabs.conversations.SpeechSynthesizer;
 import chattylabs.conversations.SynthesizerListener;
-import chattylabs.conversations.TextFilterForUrl;
 import dagger.android.support.DaggerAppCompatActivity;
 
 abstract class BaseActivity extends DaggerAppCompatActivity
@@ -143,7 +143,7 @@ abstract class BaseActivity extends DaggerAppCompatActivity
 
                     if (synthesizerStatus == SynthesizerListener.Status.AVAILABLE) {
                         synthesizer = component.getSpeechSynthesizer(this);
-                        synthesizer.addFilter(new TextFilterForUrl());
+                        synthesizer.addFilter(new FilterForUrl());
 
                         component.checkSpeechRecognizerStatus(this, recognizerStatus -> {
 

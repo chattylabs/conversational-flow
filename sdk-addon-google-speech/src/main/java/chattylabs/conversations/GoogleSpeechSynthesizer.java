@@ -58,6 +58,14 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
         this.application = application;
     }
 
+    @Override public void setVoice(String gender) {
+
+    }
+
+    @Override public void setDefaultVoice() {
+
+    }
+
     @WorkerThread
     @Override
     public void checkStatus(SynthesizerListener.OnStatusChecked listener) {
@@ -157,7 +165,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
     void executeOnEngineReady(String utteranceId, String text) {
         String finalText = HtmlUtils.from(text).toString();
 
-        for (TextFilter filter : getFilters()) {
+        for (Filter filter : getFilters()) {
             logger.v(TAG, "[%s] - apply filter: %s", utteranceId, filter);
             finalText = filter.apply(finalText);
         }

@@ -1,3 +1,12 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath "com.novoda:bintray-release:$bintray"
+    }
+}
+
 apply plugin: 'com.android.library'
 apply plugin: 'com.chattylabs.versioning'
 apply from: '../android-buildsystem/android.gradle'
@@ -9,7 +18,7 @@ versioning {
 
     keywords {
         minor "[addon-google-feature]", "[feature]"
-        patch "[addon-google-bug]", "[addon-google-patch]", "[patch]"
+        patch "[addon-google-bug]", "[addon-google-patch]", "[bug]", "[patch]"
     }
 }
 
