@@ -12,6 +12,6 @@ import chattylabs.android.commons.StringUtils;
 public class FilterForBrackets implements Filter {
     @Override
     public String apply(String text) {
-        return StringUtils.replace(Pattern.compile("\\([^)]*\\)\\s"), text, match -> "");
+        return StringUtils.replace(Pattern.compile("\\([^)]*\\)\\s*"), text, match -> "");
     }
 }
