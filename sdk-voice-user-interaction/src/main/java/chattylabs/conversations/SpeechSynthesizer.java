@@ -1,16 +1,22 @@
 package chattylabs.conversations;
 
 import android.app.Activity;
+import android.content.Context;
 
 import androidx.annotation.Nullable;
 
 import java.util.List;
 import java.util.Set;
 
+import kotlin.jvm.functions.Function1;
+
 /**
  * Instead of inheriting from this Interface you should extend {@link BaseSpeechSynthesizer}
  */
 public interface SpeechSynthesizer {
+
+    String EMPTY = "<EMPTY>";
+
     String VOICE_MALE = "#male";
     String VOICE_FEMALE = "#female";
 
@@ -44,6 +50,8 @@ public interface SpeechSynthesizer {
     String getCurrentQueueId();
 
     Set<String> getQueueSet();
+
+    void getSpeechDuration(Context context, String text, Function1<Integer, Void> callback);
 
     boolean isQueueEmpty();
 

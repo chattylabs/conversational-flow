@@ -71,21 +71,21 @@ class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceListener {
     public void onDone(String utteranceId) {
         speechSynthesizer.setSpeaking(false);
         if (speechSynthesizer.isOnQueue()) {
-            logger.v(TAG, "[%s] - on done <%s> - check for Empty Queue", utteranceId, speechSynthesizer.getCurrentQueueId());
-            speechSynthesizer.poolQueueFromLast();
+            speechSynthesizer.removeFromQueue(utteranceId);
             speechSynthesizer.moveToNextQueueIfNeeded();
         }
-        logger.v(TAG, "[%s] - on done <%s> - execute listener.onDone", utteranceId, speechSynthesizer.getCurrentQueueId());
+        logger.v(TAG, "[%s] - on done <%s>", utteranceId, speechSynthesizer.getCurrentQueueId());
         speechSynthesizer.removeAndExecuteListener(utteranceId, BaseSpeechSynthesizer.ON_DONE, 0);
-        if (speechSynthesizer.isOnQueue() && speechSynthesizer.isQueueEmpty()) speechSynthesizer.shutdown();
-        else if (speechSynthesizer.isOnQueue()) speechSynthesizer.resume();
+        if (! speechSynthesizer.isLocked() && speechSynthesizer.isOnQueue()) {
+            speechSynthesizer.resume();
+        }
     }
 
     @Override
     public void onError(String utteranceId, int errorCode) {
         speechSynthesizer.setSpeaking(false);
         logger.e(TAG, "[%s] - error <%s> - code: %s", utteranceId, speechSynthesizer.getCurrentQueueId(), getErrorType(errorCode));
-        speechSynthesizer.poolQueueFromLast();
+        speechSynthesizer.removeFromQueue(utteranceId);
         speechSynthesizer.moveToNextQueueIfNeeded();
         speechSynthesizer.prune();
         speechSynthesizer.removeAndExecuteListener(utteranceId, BaseSpeechSynthesizer.ON_DONE, 0);

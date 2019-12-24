@@ -2,6 +2,7 @@ package chattylabs.conversations;
 
 import android.app.Activity;
 import android.app.Application;
+import android.content.Context;
 import android.media.MediaPlayer;
 import android.os.ConditionVariable;
 
@@ -19,9 +20,9 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Map;
 
-import chattylabs.android.commons.HtmlUtils;
 import chattylabs.android.commons.Tag;
 import chattylabs.android.commons.internal.ILogger;
+import kotlin.jvm.functions.Function1;
 
 public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
     private static final String TAG = Tag.make("AmazonSpeechSynthesizer");
@@ -42,6 +43,11 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
         super(configuration, audioManager, bluetooth, logger);
         mApplication = application;
         mLanguageCode = LanguageUtil.getDeviceLanguageCode(configuration.getSpeechLanguage());
+    }
+
+    @Override
+    public void getSpeechDuration(Context context, String text, Function1<Integer, Void> callback) {
+
     }
 
     @Override
@@ -72,7 +78,7 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
                 return;
             }
 
-            String finalText = HtmlUtils.from(text).toString();
+            String finalText = text;
 
             for (Filter filter : getFilters()) {
                 logger.v(TAG, "[%s] - apply filter: %s", utteranceId, filter);

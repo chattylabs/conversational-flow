@@ -11,6 +11,7 @@ import androidx.annotation.Keep;
 import androidx.annotation.MainThread;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import chattylabs.android.commons.Tag;
 import chattylabs.android.commons.internal.ILogger;
@@ -81,6 +82,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
         this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE,
                 application.getPackageName());
         this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
+        this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, TimeUnit.SECONDS.toMillis(3));
         this.recognizerCreator = () -> SpeechRecognizer.createSpeechRecognizer(application);
     }
 

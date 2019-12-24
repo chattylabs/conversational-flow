@@ -25,16 +25,17 @@ import com.google.cloud.texttospeech.v1beta1.TextToSpeechSettings;
 import com.google.cloud.texttospeech.v1beta1.VoiceSelectionParams;
 import com.google.protobuf.ByteString;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Locale;
 import java.util.concurrent.Executors;
 
-import chattylabs.android.commons.HtmlUtils;
 import chattylabs.android.commons.StringUtils;
 import chattylabs.android.commons.Tag;
 import chattylabs.android.commons.internal.ILogger;
+import kotlin.jvm.functions.Function1;
 
 public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
     private static final String TAG = Tag.make("GoogleSpeechSynthesizer");
@@ -56,6 +57,10 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
         super(configuration, audioManager, bluetooth, logger);
         this.release();
         this.application = application;
+    }
+
+    @Override public void getSpeechDuration(Context context, String text, Function1<Integer, Void> callback) {
+
     }
 
     @Override public void setVoice(String gender) {
@@ -163,7 +168,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     @Override
     void executeOnEngineReady(String utteranceId, String text) {
-        String finalText = HtmlUtils.from(text).toString();
+        String finalText = text;
 
         for (Filter filter : getFilters()) {
             logger.v(TAG, "[%s] - apply filter: %s", utteranceId, filter);
@@ -263,7 +268,9 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
                 logger.d(TAG, "audio: %s", audioContents);
 
                 try {
-                    FileOutputStream fos = new FileOutputStream(createTempFile(application));
+                    File file = createTempFile(application, String.valueOf(System.currentTimeMillis()));
+                    setSynthesizedFile(file);
+                    FileOutputStream fos = new FileOutputStream(file);
                     fos.write(audioContents.toByteArray());
                     fos.close();
                     handleSynthesizedFile(application, utteranceListener, utteranceId);

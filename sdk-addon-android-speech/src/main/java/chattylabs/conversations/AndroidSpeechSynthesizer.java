@@ -2,20 +2,25 @@ package chattylabs.conversations;
 
 import android.app.Activity;
 import android.app.Application;
+import android.content.Context;
 import android.content.Intent;
+import android.media.MediaMetadataRetriever;
+import android.net.Uri;
 import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 import android.speech.tts.Voice;
 
 import androidx.annotation.Keep;
 
+import java.io.File;
 import java.util.Locale;
 
-import chattylabs.android.commons.HtmlUtils;
 import chattylabs.android.commons.StringUtils;
 import chattylabs.android.commons.Tag;
 import chattylabs.android.commons.internal.ILogger;
 import kotlin.collections.ArraysKt;
 import kotlin.collections.CollectionsKt;
+import kotlin.jvm.functions.Function1;
 
 import static chattylabs.conversations.SynthesizerListener.Status.AVAILABLE;
 import static chattylabs.conversations.SynthesizerListener.Status.ERROR;
@@ -72,7 +77,6 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
     public void shutdown() {
         logger.w(TAG, "shutting down");
         stop();
-        destroyTTS();
         release();
     }
 
@@ -189,24 +193,18 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     @Override
     void executeOnEngineReady(String utteranceId, String text) {
-        String finalText = HtmlUtils.from(text).toString();
 
         if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
-            finalText = " ";
-        } else {
-            for (Filter filter : getFilters()) {
-                logger.v(TAG, "[%s] - apply filter: %s", utteranceId, filter);
-                finalText = filter.apply(finalText);
-            }
+            text = " ";
         }
 
-        if (finalText.length() > TextToSpeech.getMaxSpeechInputLength()) {
-            String[] split = StringUtils.split(finalText, TextToSpeech.getMaxSpeechInputLength());
+        if (text.length() > TextToSpeech.getMaxSpeechInputLength()) {
+            String[] split = StringUtils.split(text, TextToSpeech.getMaxSpeechInputLength());
             for (String item : split) {
                 play(utteranceId, item);
             }
         } else {
-            play(utteranceId, finalText);
+            play(utteranceId, text);
         }
     }
 
@@ -235,12 +233,15 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     @Override
     public void setVoice(String gender) {
-        Voice localeVoice = CollectionsKt.first(
+        Voice localeVoice = CollectionsKt.firstOrNull(
             tts.getVoices(),
             voice -> !voice.getFeatures().contains("notInstalled")
                      && voice.getLocale().equals(getConfiguration().getSpeechLanguage())
-                     && voice.getName().contains(gender));
-        tts.setVoice(localeVoice);
+                     && (voice.getName().contains(gender)
+                         || voice.getFeatures().contains(gender.replace("#", ""))
+                         || voice.getFeatures().contains("gender=" + gender.replace("#", ""))));
+        if (localeVoice != null) tts.setVoice(localeVoice);
+        else logger.e(TAG, "Cannot find \"%1$s\" gender in Voice list [%1$d]", gender, tts.getVoices().size());
     }
 
     @Override
@@ -259,9 +260,9 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
             } catch (Exception ignored) {
             }
         }
-        getAudioManager().abandonAudioFocus(getConfiguration().isAudioExclusiveRequiredForSynthesizer());
     }
 
+    @Override
     protected void release() {
         super.release();
         utteranceListener = null;
@@ -287,11 +288,50 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
         logger.i(TAG, "[%s] - reading out loud: \"%s\"", utteranceId, text);
         prepare(status -> {
             if (status == SUCCESS) {
-                tts.synthesizeToFile(text, null, createTempFile(application), utteranceId);
+                File file = createTempFile(application, String.valueOf(System.currentTimeMillis()));
+                setSynthesizedFile(file);
+                tts.synthesizeToFile(text, null, file, utteranceId);
                 //tts.speak(text, TextToSpeech.QUEUE_ADD, null, utteranceId);
             } else {
                 logger.e(TAG, "[%s] - internal playTextNow status ERROR ", utteranceId);
                 utteranceListener.onError(utteranceId, ERROR);
+            }
+        });
+    }
+
+    @Override
+    public void getSpeechDuration(Context context, String text, Function1<Integer, Void> callback) {
+        File temp = createTempFile(application, "duration");
+        TextToSpeech[] _tts = new TextToSpeech[1];
+        _tts[0] = createTextToSpeech((Application) context.getApplicationContext(), status -> {
+            if (status == TextToSpeech.SUCCESS) {
+                _tts[0].synthesizeToFile(text, null, temp, "get_duration");
+            } else {
+                callback.invoke(0);
+            }
+        });
+        _tts[0].setOnUtteranceProgressListener(new UtteranceProgressListener() {
+            @Override public void onStart(String utteranceId) {}
+
+            @Override public void onDone(String utteranceId) {
+                if (utteranceId.equals("get_duration")) {
+                    Uri uri = Uri.parse(temp.getPath());
+                    MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+                    mmr.setDataSource(context.getApplicationContext(), uri);
+                    String durationStr = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+                    int millSecond = Integer.parseInt(durationStr);
+                    callback.invoke(millSecond);
+                }
+                try {
+                    _tts[0].shutdown();
+                } catch (Exception ignore) {}
+            }
+
+            @Override public void onError(String utteranceId) {
+                callback.invoke(0);
+                try {
+                    _tts[0].shutdown();
+                } catch (Exception ignore) {}
             }
         });
     }
