@@ -32,9 +32,6 @@ import static chattylabs.conversations.SynthesizerListener.Status.UNKNOWN_ERROR;
 public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
     private static final String TAG = Tag.make("AndroidSpeechSynthesizer");
 
-    private static final String CHECKING_UTTERANCE_ID = "<CHECKING_UTTERANCE_ID>";
-    private static final String TESTING_STRING = "%%TESTING_STRING%%";
-
     // Resources
     private Application application;
     private TextToSpeech tts; // released
@@ -91,7 +88,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
             SynthesizerListener onError = (SynthesizerListener.OnError) (utteranceId, errorCode) -> {
                 determineError(listener, errorCode);
             };
-            super.playText(TESTING_STRING, DEFAULT_QUEUE_ID, CHECKING_UTTERANCE_ID, onDone, onError);
+            super.playTextNow(SpeechSynthesizer.EMPTY, onDone, onError);
         } catch (Exception e) {
             logger.e(TAG, "error when checking TTS: %s", e.getMessage());
             // Otherwise it reports the TextToSpeechStatus to the Callback
@@ -193,10 +190,6 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     @Override
     void executeOnEngineReady(String utteranceId, String text) {
-
-        if (utteranceId.equals(CHECKING_UTTERANCE_ID)) {
-            text = " ";
-        }
 
         if (text.length() > TextToSpeech.getMaxSpeechInputLength()) {
             String[] split = StringUtils.split(text, TextToSpeech.getMaxSpeechInputLength());

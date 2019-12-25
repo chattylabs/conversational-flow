@@ -3,14 +3,8 @@ package chattylabs.conversations;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
-import android.text.TextUtils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresPermission;
-
-import java.util.List;
-import java.util.regex.Pattern;
 
 import chattylabs.android.commons.RequiredPermissions;
 import chattylabs.android.commons.Tag;
@@ -112,58 +106,6 @@ public interface ConversationalFlow extends RequiredPermissions {
         ConversationalFlow component = ConversationalFlowImpl.Instance.get();
         ((ConversationalFlowImpl)component).setLogger(logger);
         return component;
-    }
-
-    /**
-     * Helper that checks if a string on a list matches with another list of strings.
-     * <br/>This is normally used internally to see if the text said by a user matches with
-     * some expected strings.
-     */
-    static boolean anyMatch(@NonNull List<String> data, @NonNull List<String> expected) {
-        if (!expected.isEmpty()) {
-            String expectedJoined = TextUtils.join("|", expected);
-            if (data.size() > 1) {
-                for (String str : data) {
-                    if (matches(str, expectedJoined)) {
-                        return true;
-                    }
-                }
-            } else {
-                return matches(data.get(0), expectedJoined);
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Check if a specific string pattern interpreted as a whole word matches with a string.
-     */
-    static boolean matches(@NonNull String str, @NonNull String patternStr) {
-        return Pattern.compile("\\b(" + patternStr + ")\\b", Pattern.CASE_INSENSITIVE)
-                      .matcher(str).find();
-    }
-
-    /**
-     * It returns the string result that satisfies the higher confidence, otherwise null.
-     */
-    @Nullable
-    static String selectMostConfidentResult(List<String> results, float[] confidences) {
-        String message = null;
-        if (results != null && !results.isEmpty()) {
-            float last = 0;
-            if (confidences != null && confidences.length > 0) {
-                for (int a = 0; a < confidences.length; a++) {
-                    if (confidences[a] >= last) {
-                        last = confidences[a];
-                        message = results.get(a);
-                    }
-                }
-            }
-            else {
-                message = results.get(0);
-            }
-        }
-        return message;
     }
 
     static boolean isStatus(int code, int status) {

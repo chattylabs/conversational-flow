@@ -4,7 +4,7 @@ import android.os.Bundle;
 
 import androidx.annotation.RestrictTo;
 
-import java.util.List;
+import java.util.ArrayList;
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public interface RecognizerListener {
@@ -22,11 +22,11 @@ public interface RecognizerListener {
     }
 
     interface OnResults extends RecognizerListener {
-        void execute(List<String> results, float[] confidences);
+        void execute(ArrayList<String> results, float[] confidences);
     }
 
     interface OnPartialResults extends RecognizerListener {
-        void execute(List<String> results, float[] confidences);
+        void execute(ArrayList<String> results, float[] confidences);
     }
 
     interface OnMostConfidentResult extends RecognizerListener {

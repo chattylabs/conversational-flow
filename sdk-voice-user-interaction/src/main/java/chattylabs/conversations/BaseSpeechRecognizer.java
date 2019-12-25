@@ -1,6 +1,13 @@
 package chattylabs.conversations;
 
+import android.text.TextUtils;
+
 import androidx.annotation.CallSuper;
+import androidx.annotation.NonNull;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
 
 import chattylabs.android.commons.Tag;
 import chattylabs.android.commons.internal.ILogger;
@@ -67,6 +74,51 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
      */
     public void setTryAgain(boolean tryAgain) {
         getRecognitionListener().setTryAgain(tryAgain);
+    }
+
+    @Override
+    public String selectMostConfidentResult(@NonNull ArrayList<String> results, float[] confidences) {
+        String message = null;
+        if (!results.isEmpty()) {
+            float last = 0;
+            if (confidences != null && confidences.length > 0) {
+                for (int a = 0; a < confidences.length; a++) {
+                    if (confidences[a] >= last) {
+                        last = confidences[a];
+                        message = results.get(a);
+                    }
+                }
+            }
+            else {
+                message = results.get(0);
+            }
+        } else {
+            throw new NullPointerException("results can't be empty");
+        }
+        return message;
+    }
+
+    @Override
+    public boolean anyMatch(@NonNull List<String> data, @NonNull List<String> expected) {
+        if (!expected.isEmpty()) {
+            String expectedJoined = TextUtils.join("|", expected);
+            if (data.size() > 1) {
+                for (String str : data) {
+                    if (matches(str, expectedJoined)) {
+                        return true;
+                    }
+                }
+            } else {
+                return matches(data.get(0), expectedJoined);
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean matches(@NonNull String str, @NonNull String patternStr) {
+        return Pattern.compile("\\b(" + patternStr + ")\\b", Pattern.CASE_INSENSITIVE)
+                      .matcher(str).find();
     }
 
     @CallSuper

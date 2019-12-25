@@ -146,7 +146,7 @@ class ConversationImpl extends Flow.Edge implements Conversation {
                                 processMatchResults(results, actions);
                             },
                             (RecognizerListener.OnPartialResults) (results, confidences) -> {
-                                String result = ConversationalFlow.selectMostConfidentResult(results, confidences);
+                                String result = speechRecognizer.selectMostConfidentResult(results, confidences);
                                 processPartialMatchResults(Collections.singletonList(result), actions);
                             },
                             (RecognizerListener.OnError) (error, originalError) -> {
@@ -184,8 +184,8 @@ class ConversationImpl extends Flow.Edge implements Conversation {
     private void processPartialMatchResults(@NonNull List<String> results, VoiceActionList actions) {
         if (!results.isEmpty() && !TextUtils.isEmpty(results.get(0)) // we receive here a unique most confident result
             && results.get(0).split("\\s+").length > MINIMUM_WORDS_TO_DISCARD_RECOGNITION)
-            if (CollectionsKt.none(CollectionsKt.filterIsInstance(actions, VoiceMatch.class), voiceMatch ->
-                    ConversationalFlow.anyMatch(results, Arrays.asList(voiceMatch.expected)))) {
+            if (CollectionsKt.none(CollectionsKt.filterIsInstance(actions, VoiceMatch.class),
+                                   voiceMatch -> speechRecognizer.anyMatch(results, Arrays.asList(voiceMatch.expected)))) {
                 logger.i(TAG, "- partial didn't match: " + results);
                 speechRecognizer.stopListening();
             }
@@ -196,7 +196,7 @@ class ConversationImpl extends Flow.Edge implements Conversation {
             if (node instanceof VoiceMatch) {
                 VoiceMatch action = (VoiceMatch) node;
                 List<String> expected = Arrays.asList(action.expected);
-                boolean matches = ConversationalFlow.anyMatch(results, expected);
+                boolean matches = speechRecognizer.anyMatch(results, expected);
                 if (matches) {
                     logger.i(TAG, "- matched with: " + expected);
                     currentNode = action;

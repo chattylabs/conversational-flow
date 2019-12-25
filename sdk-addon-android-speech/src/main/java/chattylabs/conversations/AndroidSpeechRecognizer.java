@@ -10,7 +10,7 @@ import android.speech.SpeechRecognizer;
 import androidx.annotation.Keep;
 import androidx.annotation.MainThread;
 
-import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import chattylabs.android.commons.Tag;
@@ -18,7 +18,6 @@ import chattylabs.android.commons.internal.ILogger;
 import chattylabs.android.commons.internal.os.AndroidHandler;
 import chattylabs.android.commons.internal.os.AndroidHandlerImpl;
 
-import static chattylabs.conversations.ConversationalFlow.selectMostConfidentResult;
 import static chattylabs.conversations.RecognizerListener.OnError;
 import static chattylabs.conversations.RecognizerListener.OnMostConfidentResult;
 import static chattylabs.conversations.RecognizerListener.OnResults;
@@ -181,7 +180,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                 public void onResults(Bundle results) {
                     onEndOfSpeech();
                     if (getConfiguration().isCustomBeepEnabled()) getAudioManager().successBeep(application);
-                    List<String> list;
+                    ArrayList<String> list;
                     OnError onError = _getOnError();
                     OnResults onResults = _getOnResults();
                     OnMostConfidentResult onMostConfidentResult = _getOnMostConfidentResult();
@@ -213,7 +212,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
 
                 @Override
                 public void onPartialResults(Bundle partialResults) {
-                    List<String> list;
+                    ArrayList<String> list;
                     intents++;
                     RecognizerListener.OnPartialResults onPartialResults = _getOnPartialResults();
                     // if this is not setup, we can't continue
