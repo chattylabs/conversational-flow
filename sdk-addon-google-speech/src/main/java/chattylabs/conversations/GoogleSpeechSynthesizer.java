@@ -199,7 +199,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     @Override
     boolean isTtsSpeaking() {
-        return mediaPlayer != null && mediaPlayer.isPlaying();
+        return getMediaPlayer() != null && getMediaPlayer().isPlaying();
     }
 
     @Override

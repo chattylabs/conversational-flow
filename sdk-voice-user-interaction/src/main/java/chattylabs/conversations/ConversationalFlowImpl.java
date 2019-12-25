@@ -224,15 +224,15 @@ final class ConversationalFlowImpl implements ConversationalFlow {
         if (bluetooth != null) {
             bluetooth.stopSco(() -> {
                 if (audioManager != null) {
-                    audioManager.abandonAudioFocus(configuration.isAudioExclusiveRequiredForSynthesizer());
                     audioManager.abandonAudioFocus(configuration.isAudioExclusiveRequiredForRecognizer());
+                    audioManager.abandonAudioFocus(configuration.isAudioExclusiveRequiredForSynthesizer());
                 }
                 if (onBluetoothScoDisconnected != null) onBluetoothScoDisconnected.run();
             });
         } else {
             if (audioManager != null) {
-                audioManager.abandonAudioFocus(configuration.isAudioExclusiveRequiredForSynthesizer());
                 audioManager.abandonAudioFocus(configuration.isAudioExclusiveRequiredForRecognizer());
+                audioManager.abandonAudioFocus(configuration.isAudioExclusiveRequiredForSynthesizer());
             }
             if (onBluetoothScoDisconnected != null) onBluetoothScoDisconnected.run();
         }

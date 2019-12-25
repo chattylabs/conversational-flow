@@ -87,7 +87,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     private final ComponentConfig configuration;
     private final AndroidAudioManager audioManager;
     private final AndroidBluetooth bluetooth;
-    protected MediaPlayer mediaPlayer; //released
+    private MediaPlayer mediaPlayer; //released
     private String queueId = DEFAULT_QUEUE_ID; //reset
     private String lastQueueId; //reset
     // States
@@ -584,6 +584,10 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
     public AndroidAudioManager getAudioManager() {
         return audioManager;
+    }
+
+    MediaPlayer getMediaPlayer() {
+        return mediaPlayer;
     }
 
     @Override

@@ -135,6 +135,8 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
         return mMediaPlayer != null && mMediaPlayer.isPlaying();
     }
 
+
+
     @Override
     public void stop() {
         super.stop();

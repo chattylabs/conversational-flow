@@ -9,7 +9,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.collection.SimpleArrayMap;
-import androidx.core.util.Pools;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,7 +28,6 @@ class ConversationImpl extends Flow.Edge implements Conversation {
     private Context context;
 
     // Data
-    private final Pools.Pool<ArrayList<VoiceNode>> mListPool = new Pools.SimplePool<>(10);
     private final SimpleArrayMap<VoiceNode, ArrayList<VoiceNode>> graph = new SimpleArrayMap<>();
 
     // Resources
@@ -38,6 +36,7 @@ class ConversationImpl extends Flow.Edge implements Conversation {
     private Flow flow;
     private VoiceNode currentNode;
 
+    private Runnable onCompleteListener;
     private int flags;
 
     ConversationImpl(Context context,
@@ -56,9 +55,15 @@ class ConversationImpl extends Flow.Edge implements Conversation {
     }
 
     @Override
-    public Flow prepare() {
+    public Flow prepare(@NonNull Runnable onCompleteListener) {
+        this.onCompleteListener = onCompleteListener;
         if (flow == null) flow = new Flow(this);
         return flow;
+    }
+
+    @Override
+    public Flow prepare() {
+        return prepare(() -> {});
     }
 
     @Override
@@ -70,6 +75,7 @@ class ConversationImpl extends Flow.Edge implements Conversation {
     public synchronized void next(VoiceNode node) {
         if (currentNode == null)
             throw new IllegalStateException("You must run start(Node)");
+        //speechSynthesizer.lock();
         if (node != null) {
             if (node instanceof VoiceAction) {
                 ArrayList<VoiceNode> nodes = new ArrayList<>(1);
@@ -157,6 +163,9 @@ class ConversationImpl extends Flow.Edge implements Conversation {
         } else {
             // Otherwise there is no more nodes
             logger.w(TAG, "- no more nodes");
+            //speechSynthesizer.unlock();
+            onCompleteListener.run();
+            release();
         }
     }
 
@@ -259,8 +268,8 @@ class ConversationImpl extends Flow.Edge implements Conversation {
 
         ArrayList<VoiceNode> edges = graph.get(node);
         if (edges == null) {
-            // If edges is null, we should try and get one from the pool and add it to the graph
-            edges = getEmptyList();
+            // If edges is null, we should try and get one and add it to the graph
+            edges = new ArrayList<>();
             graph.put(node, edges);
         }
 
@@ -327,15 +336,6 @@ class ConversationImpl extends Flow.Edge implements Conversation {
         }
     }
 
-    @NonNull
-    private ArrayList<VoiceNode> getEmptyList() {
-        ArrayList<VoiceNode> list = mListPool.acquire();
-        if (list == null) {
-            list = new ArrayList<>();
-        }
-        return list;
-    }
-
     @Nullable
     private ArrayList<VoiceNode> getIncomingEdges(@NonNull VoiceNode node) {
         return graph.get(node);
@@ -381,5 +381,17 @@ class ConversationImpl extends Flow.Edge implements Conversation {
 
     void resetSpeechRecognizer(SpeechRecognizer speechRecognizer) {
         this.speechRecognizer = speechRecognizer;
+    }
+
+    private void release() {
+        onCompleteListener = null;
+        logger             = null;
+        context            = null;
+        speechSynthesizer  = null;
+        speechRecognizer   = null;
+        flow               = null;
+        currentNode        = null;
+        flags              = 0;
+        graph.clear();
     }
 }

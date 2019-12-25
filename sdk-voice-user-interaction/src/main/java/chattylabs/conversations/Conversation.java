@@ -19,6 +19,8 @@ public interface Conversation {
 
     VoiceNode getNode(@StringRes int id);
 
+    Flow prepare(@NonNull Runnable onCompleteListener);
+
     Flow prepare();
 
     void next();
