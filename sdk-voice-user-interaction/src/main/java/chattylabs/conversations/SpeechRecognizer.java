@@ -19,6 +19,8 @@ public interface SpeechRecognizer {
 
     void setLowSoundThreshold(float maxValue);
 
+    boolean isListening();
+
     interface Creator<T> {
         T create();
     }

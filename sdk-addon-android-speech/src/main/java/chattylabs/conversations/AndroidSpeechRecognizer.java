@@ -32,6 +32,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
     private boolean rmsDebug; // released
     private float noSoundThreshold; // released
     private float lowSoundThreshold; // released
+    private boolean isListening;
 
     // Resources
     private final Application application;
@@ -39,7 +40,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
     private final Intent speechRecognizerIntent;
     private final Creator<SpeechRecognizer> recognizerCreator;
     private AndroidSpeechRecognitionAdapter listener;
-    private SpeechRecognizer speechRecognizer;
+    private SpeechRecognizer androidSpeechRecognizer;
 
     public static String getErrorType(int error) {
         switch (error) {
@@ -88,10 +89,10 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
 
     @Override
     public void checkStatus(OnStatusChecked listener) {
-        int androidRecognizerStatus =
+        int recognizerStatus =
                 android.speech.SpeechRecognizer.isRecognitionAvailable(application) ?
                 Status.AVAILABLE : Status.NOT_AVAILABLE;
-        listener.execute(androidRecognizerStatus);
+        listener.execute(recognizerStatus);
     }
 
     @Override
@@ -119,6 +120,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                     _setOnMostConfidentResult(null);
                     _setOnReady(null);
                     setSoundLevel(UNKNOWN);
+                    isListening = false;
                 }
 
                 @Override
@@ -142,7 +144,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                     if (stoppedTooEarly && !retried) {
                         retried = true;
                         elapsedTime = System.currentTimeMillis();
-                        if (speechRecognizer != null) speechRecognizer.startListening(speechRecognizerIntent);
+                        if (androidSpeechRecognizer != null) androidSpeechRecognizer.startListening(speechRecognizerIntent);
                         else processError(error, errorListener, soundLevel, true);
                     } else {
                         processError(error, errorListener, soundLevel, stoppedTooEarly);
@@ -246,18 +248,24 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
         if (mainHandler != null)  {
             mainHandler.removeCallbacksAndMessages(null);
             mainHandler.post(() -> {
-                if (speechRecognizer != null) {
-                    speechRecognizer.stopListening();
-                    speechRecognizer.destroy();
+                if (androidSpeechRecognizer != null) {
+                    androidSpeechRecognizer.stopListening();
+                    androidSpeechRecognizer.destroy();
                 }
-                speechRecognizer = recognizerCreator.create();
+                isListening = true;
+                androidSpeechRecognizer = recognizerCreator.create();
                 getRecognitionListener().setRmsDebug(rmsDebug);
                 if (noSoundThreshold > 0) getRecognitionListener().setNoSoundThreshold(noSoundThreshold);
                 if (lowSoundThreshold > 0) getRecognitionListener().setLowSoundThreshold(lowSoundThreshold);
-                speechRecognizer.setRecognitionListener(getRecognitionListener());
-                speechRecognizer.startListening(speechRecognizerIntent);
+                androidSpeechRecognizer.setRecognitionListener(getRecognitionListener());
+                androidSpeechRecognizer.startListening(speechRecognizerIntent);
             });
         }
+    }
+
+    @Override
+    public boolean isListening() {
+        return isListening;
     }
 
     @Override
@@ -277,18 +285,20 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
 
     @Override
     public void stopListening() {
-        if (speechRecognizer != null) {
+        if (androidSpeechRecognizer != null) {
             if (mainHandler != null) mainHandler.post(() -> {
+                isListening = false;
                 try {
-                    speechRecognizer.stopListening();
-                    logger.v(TAG, "- speechRecognizer listening stopped");
+                    androidSpeechRecognizer.stopListening();
+                    logger.v(TAG, "- androidSpeechRecognizer listening stopped");
                 } catch (Exception ignored) {}
             });
         }
+        super.stop();
     }
 
     private void release() {
-        //speechRecognizer = null;
+        //androidSpeechRecognizer = null;
         setRmsDebug(false);
         setNoSoundThreshold(0);
         setLowSoundThreshold(0);
@@ -297,8 +307,9 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
 
     @Override
     public void stop() {
-        if (speechRecognizer != null) {
-            speechRecognizer.destroy();
+        isListening = false;
+        if (androidSpeechRecognizer != null) {
+            androidSpeechRecognizer.destroy();
         }
         super.stop();
     }

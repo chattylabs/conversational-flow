@@ -130,6 +130,6 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
     @CallSuper
     @Override
     public void stop() {
-        audioManager.abandonAudioFocus(configuration.isAudioExclusiveRequiredForRecognizer());
+        getAudioManager().abandonAudioFocus(getConfiguration().isAudioExclusiveRequiredForRecognizer());
     }
 }

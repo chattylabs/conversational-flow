@@ -82,6 +82,10 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
         return stt == null;
     }
 
+    @Override public boolean isListening() {
+        return false; //TODO
+    }
+
     private void prepare(OnPrepared onPrepared) {
         if (isSttNull() || stt.isShutdown() || stt.isTerminated()) {
             RecognitionConfig.AudioEncoding encoding =
