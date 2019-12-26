@@ -430,6 +430,8 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
                     logger.v(TAG, "[%s] apply filter: %s", utteranceId, filter);
                     text = filter.apply(text);
                 }
+                if (Objects.equals(text, EMPTY))
+                    text = " ";
             }
             executeOnEngineReady(utteranceId, text);
         } else if (map.containsKey(MAP_SILENCE)) {

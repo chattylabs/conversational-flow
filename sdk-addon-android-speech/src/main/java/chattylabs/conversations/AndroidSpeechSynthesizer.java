@@ -234,7 +234,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
                          || voice.getFeatures().contains(gender.replace("#", ""))
                          || voice.getFeatures().contains("gender=" + gender.replace("#", ""))));
         if (localeVoice != null) tts.setVoice(localeVoice);
-        else logger.e(TAG, "Cannot find \"%1$s\" gender in Voice list [%1$d]", gender, tts.getVoices().size());
+        else logger.e(TAG, "Cannot find \"%1$s\" gender in Voice list [%1$s]", gender, tts.getVoices().size());
     }
 
     @Override

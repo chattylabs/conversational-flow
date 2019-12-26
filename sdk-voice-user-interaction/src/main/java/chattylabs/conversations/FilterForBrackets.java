@@ -1,5 +1,7 @@
 package chattylabs.conversations;
 
+import android.text.TextUtils;
+
 import java.util.regex.Pattern;
 
 import chattylabs.android.commons.StringUtils;
@@ -12,6 +14,9 @@ import chattylabs.android.commons.StringUtils;
 public class FilterForBrackets implements Filter {
     @Override
     public String apply(String text) {
-        return StringUtils.replace(Pattern.compile("\\([^)]*\\)\\s*"), text, match -> "");
+        String replace = StringUtils.replace(Pattern.compile("\\([^)]*\\)\\s*"), text, match -> "");
+        if (TextUtils.isEmpty(replace))
+            replace = SpeechSynthesizer.EMPTY;
+        return replace;
     }
 }
