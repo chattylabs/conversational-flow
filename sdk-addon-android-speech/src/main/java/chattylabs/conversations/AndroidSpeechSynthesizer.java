@@ -193,9 +193,11 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
 
         if (text.length() > TextToSpeech.getMaxSpeechInputLength()) {
             String[] split = StringUtils.split(text, TextToSpeech.getMaxSpeechInputLength());
-            for (String item : split) {
-                play(utteranceId, item);
-            }
+            //for (String item : split) {
+            //    play(utteranceId, item);
+            //}
+            // TODO: add synthesized files into a pool
+            play(utteranceId, split[0]);
         } else {
             play(utteranceId, text);
         }
