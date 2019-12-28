@@ -188,11 +188,8 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
     @Override
     public synchronized void playText(String text, String queueId, SynthesizerListener... listeners) {
-        playText(text, queueId, DEFAULT_UTTERANCE_ID + System.nanoTime(), listeners);
-    }
 
-    void playText(String text, String queueId, String utteranceId,
-                  @Nullable SynthesizerListener... listeners) {
+        final String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
 
         final String uId = handleListener(utteranceId, listeners);
 
@@ -201,6 +198,11 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         addToQueue(uId, text, -1, queueId);
 
         log_Status(uId);
+
+        if (getConfiguration().isForceLanguageDetection()) {
+            logger.v(TAG, "[%s] - force language detection", utteranceId);
+            forceDestroyTTS();
+        }
 
         if (isTtsNull() && !isSpeaking && !isLocked) {
 
@@ -226,7 +228,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     @Override
     public synchronized void playTextNow(String text, SynthesizerListener... listeners) {
 
-        String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
+        final String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
 
         final String uId = handleListener(utteranceId, listeners);
 
@@ -237,6 +239,11 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         map.put(MAP_MESSAGE, text);
 
         log_StatusNow(uId);
+
+        if (getConfiguration().isForceLanguageDetection()) {
+            logger.v(TAG, "[%s] - force language detection", utteranceId);
+            forceDestroyTTS();
+        }
 
         prepare(status -> {
             if (status == SynthesizerListener.Status.SUCCESS) {

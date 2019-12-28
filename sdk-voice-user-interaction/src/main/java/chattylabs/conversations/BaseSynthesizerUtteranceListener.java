@@ -36,8 +36,6 @@ class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceListener {
 
             @Override
             public void onDone(String utteranceId) {
-                if (speechSynthesizer.getConfiguration().isForceLanguageDetection())
-                    speechSynthesizer.forceDestroyTTS();
                 speechSynthesizer.handleSynthesizedFile(context, BaseSynthesizerUtteranceListener.this, utteranceId);
             }
 
@@ -48,8 +46,6 @@ class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceListener {
 
             @Override
             public void onError(String utteranceId, int errorCode) {
-                if (speechSynthesizer.getConfiguration().isForceLanguageDetection())
-                    speechSynthesizer.forceDestroyTTS();
                 BaseSynthesizerUtteranceListener.this.onError(utteranceId, errorCode);
             }
         };
