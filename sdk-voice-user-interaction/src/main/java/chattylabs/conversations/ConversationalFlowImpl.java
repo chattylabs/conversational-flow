@@ -7,8 +7,6 @@ import android.app.Application;
 import android.content.Context;
 import android.media.AudioManager;
 
-import androidx.annotation.RequiresPermission;
-
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -174,7 +172,7 @@ final class ConversationalFlowImpl implements ConversationalFlow {
     }
 
     @SuppressLint("MissingPermission")
-    @Override @RequiresPermission(Manifest.permission.RECORD_AUDIO)
+    @Override
     public SpeechRecognizer getSpeechRecognizer(Context context) {
         initDependencies((Application) context.getApplicationContext());
         createSpeechRecognizerInstance(context);
@@ -195,8 +193,6 @@ final class ConversationalFlowImpl implements ConversationalFlow {
         return audioManager;
     }
 
-    @SuppressLint("MissingPermission")
-    @Override @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     public Conversation create(Context context) {
         logger.i(TAG, "----- Create");
         conversation = new ConversationImpl(context.getApplicationContext(),

@@ -4,8 +4,6 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 
-import androidx.annotation.RequiresPermission;
-
 import chattylabs.android.commons.RequiredPermissions;
 import chattylabs.android.commons.Tag;
 import chattylabs.android.commons.internal.ILogger;
@@ -79,7 +77,6 @@ public interface ConversationalFlow extends RequiredPermissions {
      * <br/>You can use this component alone.
      * <br/>Requires {@link Manifest.permission#RECORD_AUDIO}
      */
-    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     SpeechRecognizer getSpeechRecognizer(Context context);
 
     void loadSynthesizerInstallation(Activity activity, SynthesizerListener.OnStatusChecked listener);
@@ -89,7 +86,6 @@ public interface ConversationalFlow extends RequiredPermissions {
     /**
      * Returns a new instance of {@link Conversation}
      */
-    @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     Conversation create(Context context);
 
     /**

@@ -95,6 +95,11 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
     }
 
     @Override
+    public boolean isAvailable() {
+        return android.speech.SpeechRecognizer.isRecognitionAvailable(application);
+    }
+
+    @Override
     AndroidSpeechRecognitionAdapter getRecognitionListener() {
         if (listener == null) {
             listener = new AndroidSpeechRecognitionAdapter() {
