@@ -50,8 +50,7 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     }
 
-    @Override
-    void prepare(SynthesizerListener.OnPrepared onSynthesizerPrepared) {
+    private void prepare(SynthesizerListener.OnPrepared onSynthesizerPrepared) {
         if (isTtsNull()) {
 //            final AWSConfiguration configuration = AWSConfiguration.getConfiguration(mApplication.getResources()
 //                    .openRawResource(R.raw.aws_configuration));
@@ -125,8 +124,7 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
         utteranceListener.onDone(utteranceId);
     }
 
-    @Override
-    boolean isTtsNull() {
+    private boolean isTtsNull() {
         return mAmazonSpeechClient == null;
     }
 

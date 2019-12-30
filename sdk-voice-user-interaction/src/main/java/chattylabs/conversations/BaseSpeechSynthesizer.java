@@ -25,7 +25,7 @@ import chattylabs.android.commons.internal.ILogger;
 
 /**
  * This is the base class that handles internally and holds a queue of messages to be played out.
- * <br/>You only need to implement the contract of {@link SpeechSynthesizer} and extend to this
+ * <br/>You only need to implement the contract of {@link SpeechSynthesizer} and inherit from this
  * class.
  * <p/>
  * The technical requirements while implementing the {@link SpeechSynthesizer} through
@@ -41,20 +41,12 @@ import chattylabs.android.commons.internal.ILogger;
  * If the parameters are not in the same order the addon initialization will throw an Exception.
  * <p/>
  * - You must implement {@link #checkStatus(SynthesizerListener.OnStatusChecked)} which is
- * in charge of testing whether the client provider works and to check whether the required language
+ * in charge of testing whether the TTS engine works and to check whether the required language
  * is available.
  * <p/>
- * - You must implement {@link #prepare(SynthesizerListener.OnPrepared)} which is the entry point
- * for any call to {@link #playTextNow(String, SynthesizerListener[])} or
- * {@link #playSilenceNow(long, SynthesizerListener[])} and its variations.
- * <br/>This method behaves like {@link #checkStatus(SynthesizerListener.OnStatusChecked)} but it stores the current
- * Text To Speech client, sets up the current required language, and initializes a
- * {@link SynthesizerUtteranceListener}.
- * <br/>This method should check whether the current client instance is available or create a new one.
- * <p/>
- * - You must implement {@link #executeOnEngineReady(String, String)} where you can apply any
- * {@link Filter}, escape HTML entities, split a string into chunks if needed or any other treatment
- * on the message to be played and ultimately to play the message through your implemented Speech Provider.
+ * - You must implement {@link #executeOnEngineReady(String, String)} which is where you initialize your TTS engine.
+ * You can also apply any {@link Filter}, escape HTML entities, split a string into chunks if needed or any other treatment
+ * upon the message to be played aloud and ultimately to play the message via your implemented TTS engine.
  *
  * @see SynthesizerListener
  * @see SpeechSynthesizer
@@ -110,18 +102,14 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         this.logger = logger;
     }
 
-    abstract void prepare(SynthesizerListener.OnPrepared onSynthesizerPrepared);
 
     abstract void executeOnEngineReady(String utteranceId, String text);
 
     abstract void playSilence(String utteranceId, long durationInMillis);
 
-    abstract boolean isTtsNull();
-
     abstract boolean isTtsSpeaking();
 
     abstract void forceDestroyTTS();
-
 
 
     private void selectListener(LinkedHashMap<Integer, SynthesizerListener> map,
@@ -199,28 +187,10 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
         log_Status(uId);
 
-        if (getConfiguration().isForceLanguageDetection()) {
-            logger.v(TAG, "[%s] - force language detection", utteranceId);
-            forceDestroyTTS();
-        }
-
-        if (isTtsNull() && !isSpeaking && !isLocked) {
-
-            setSpeaking(true);
-            prepare(status -> {
-                if (status == SynthesizerListener.Status.SUCCESS) {
-                    runOnQueue();
-                } else {
-                    logger.e(TAG, "[%s] - status ERROR with queue <%s>", uId, queueId);
-                    removeAndExecuteListener(uId, ON_ERROR, SynthesizerListener.Status.ERROR);
-                }
-            });
-        } else if (isReady && !isSpeaking && !isLocked) {
-
+        if (!isSpeaking && !isLocked) {
             setSpeaking(true);
             runOnQueue();
         } else {
-
             moveToNextQueueIfNeeded();
         }
     }
@@ -240,20 +210,8 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
         log_StatusNow(uId);
 
-        if (getConfiguration().isForceLanguageDetection()) {
-            logger.v(TAG, "[%s] - force language detection", utteranceId);
-            forceDestroyTTS();
-        }
-
-        prepare(status -> {
-            if (status == SynthesizerListener.Status.SUCCESS) {
-                isOnQueue = false;
-                play(map);
-            } else {
-                logger.e(TAG, "[%s] - no queue status ERROR", uId);
-                removeAndExecuteListener(uId, ON_ERROR, SynthesizerListener.Status.ERROR);
-            }
-        });
+        isOnQueue = false;
+        play(map);
     }
 
     @Override
@@ -271,23 +229,10 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
         log_Status(uId);
 
-        if (isTtsNull() && !isSpeaking && !isLocked) {
-
-            setSpeaking(true);
-            prepare(status -> {
-                if (status == SynthesizerListener.Status.SUCCESS) {
-                    runOnQueue();
-                } else {
-                    logger.e(TAG, "[%s] - silence status ERROR with queue <%s>", uId, queueId);
-                    removeAndExecuteListener(uId, ON_ERROR, SynthesizerListener.Status.ERROR);
-                }
-            });
-        } else if (isReady && !isSpeaking && !isLocked) {
-
+        if (!isSpeaking && !isLocked) {
             setSpeaking(true);
             runOnQueue();
         } else {
-
             moveToNextQueueIfNeeded();
         }
     }
@@ -308,15 +253,8 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
         log_StatusNow(uId);
 
-        prepare(status -> {
-            if (status == SynthesizerListener.Status.SUCCESS) {
-                isOnQueue = false;
-                play(map);
-            } else {
-                logger.e(TAG, "[%s] - no queue silence status ERROR", uId);
-                removeAndExecuteListener(uId, ON_ERROR, SynthesizerListener.Status.ERROR);
-            }
-        });
+        isOnQueue = false;
+        play(map);
     }
 
     private void checkSilenceDuration(long durationInMillis) {
@@ -341,16 +279,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         }
         final String uId = utteranceId;
         logger.i(TAG, "[%s] - resume <%s>", uId, queueId);
-        prepare(status -> {
-            if (status == SynthesizerListener.Status.SUCCESS) {
-                runOnQueue();
-            } else {
-                logger.e(TAG, "status ERROR");
-                if (uId != null) {
-                    removeAndExecuteListener(uId, ON_ERROR, SynthesizerListener.Status.ERROR);
-                }
-            }
-        });
+        runOnQueue();
     }
 
     private void runOnQueue() {
@@ -358,7 +287,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         if (!isQueueEmpty()) {
             isOnQueue = true;
             // Gets and plays the current message in the queue
-            play(Objects.requireNonNull(queue.get(queueId)).peek());
+            play(Objects.requireNonNull(queue.get(queueId)).poll());
         } else shutdown();
     }
 
@@ -426,7 +355,14 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     private void chooseFromMapToPlay(Map<String, Object> map) {
+
         String utteranceId = (String) map.get(MAP_UTTERANCE_ID);
+
+        if (getConfiguration().isForceLanguageDetection()) {
+            logger.v(TAG, "[%s] - force language detection", utteranceId);
+            forceDestroyTTS();
+        }
+
         if (map.containsKey(MAP_MESSAGE)) {
             String text = (String) map.get(MAP_MESSAGE);
             if (Objects.equals(text, EMPTY)) {
@@ -623,7 +559,6 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     @Override
     public void stop() {
         setSpeaking(false);
-        unlock();
         forceDestroyTTS();
         finishPlayer();
         getAudioManager().abandonAudioFocus(getConfiguration().isAudioExclusiveRequiredForSynthesizer());

@@ -67,6 +67,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
         else {
             logger.w(TAG, "prune tts...");
             stop();
+            unlock();
             destroyTTS();
         }
     }
@@ -75,6 +76,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
     public void shutdown() {
         logger.w(TAG, "shutting down");
         stop();
+        unlock();
         release();
     }
 
@@ -168,8 +170,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
         }
     }
 
-    @Override
-    void prepare(SynthesizerListener.OnPrepared onSynthesizerPrepared) {
+    private void prepare(SynthesizerListener.OnPrepared onSynthesizerPrepared) {
         if (isTtsNull()) {
             setReady(false);
             logger.i(TAG, "- new instance of Android TextToSpeech.class");
@@ -185,7 +186,8 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
             utteranceListener = new BaseSynthesizerUtteranceListener(application, this);
             tts.setOnUtteranceProgressListener(utteranceListener.getUtteranceProgressListener());
         } else if (isReady()) {
-            //setupLanguage();
+            setupLanguage();
+            updateVoice();
             onSynthesizerPrepared.execute(SUCCESS);
         }
     }
@@ -205,6 +207,21 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
         }
     }
 
+    private void play(String utteranceId, String text) {
+        logger.i(TAG, "[%s] - reading out loud: \"%s\"", utteranceId, text);
+        prepare(status -> {
+            if (status == SUCCESS) {
+                File file = createTempFile(application, String.valueOf(System.currentTimeMillis()));
+                setSynthesizedFile(file);
+                tts.synthesizeToFile(text, null, file, utteranceId);
+                //tts.speak(text, TextToSpeech.QUEUE_ADD, null, utteranceId);
+            } else {
+                logger.e(TAG, "[%s] - internal playTextNow status ERROR ", utteranceId);
+                utteranceListener.onError(utteranceId, ERROR);
+            }
+        });
+    }
+
     @Override
     void playSilence(String utteranceId, long durationInMillis) {
         logger.i(TAG, "[%s] - play internal silence", utteranceId);
@@ -218,8 +235,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
         });
     }
 
-    @Override
-    boolean isTtsNull() {
+    private boolean isTtsNull() {
         return tts == null;
     }
 
@@ -254,25 +270,6 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
         }
     }
 
-    @Override
-    public void stop() {
-        logger.w(TAG, "stopping");
-        super.stop();
-        if (!isTtsNull()) {
-            logger.v(TAG, "stopped");
-            try {
-                tts.stop();
-            } catch (Exception ignored) {
-            }
-        }
-    }
-
-    @Override
-    protected void release() {
-        super.release();
-        utteranceListener = null;
-    }
-
     private void setupLanguage() {
         // setLanguage might throw an IllegalArgumentException: Invalid int: "OS" - Samsung Android 6
         try {
@@ -287,21 +284,6 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     private TextToSpeech createTextToSpeech(Application application, TextToSpeech.OnInitListener listener) {
         return new TextToSpeech(application, listener);
-    }
-
-    private void play(String utteranceId, String text) {
-        logger.i(TAG, "[%s] - reading out loud: \"%s\"", utteranceId, text);
-        prepare(status -> {
-            if (status == SUCCESS) {
-                File file = createTempFile(application, String.valueOf(System.currentTimeMillis()));
-                setSynthesizedFile(file);
-                tts.synthesizeToFile(text, null, file, utteranceId);
-                //tts.speak(text, TextToSpeech.QUEUE_ADD, null, utteranceId);
-            } else {
-                logger.e(TAG, "[%s] - internal playTextNow status ERROR ", utteranceId);
-                utteranceListener.onError(utteranceId, ERROR);
-            }
-        });
     }
 
     @Override
@@ -350,11 +332,28 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
         if (!isTtsNull()) {
             try {
                 tts.shutdown();
-            } catch (Exception ignored) {
-            }
+            } catch (Exception ignored) {}
             logger.v(TAG, "destroyed");
             tts = null;
             setReady(false);
         }
+    }
+
+    @Override
+    public void stop() {
+        logger.w(TAG, "stopping");
+        super.stop();
+        if (!isTtsNull()) {
+            try {
+                tts.stop();
+            } catch (Exception ignored) {}
+            logger.v(TAG, "stopped");
+        }
+    }
+
+    @Override
+    protected void release() {
+        super.release();
+        utteranceListener = null;
     }
 }

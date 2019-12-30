@@ -66,11 +66,11 @@ class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceListener {
     @Override
     public void onDone(String utteranceId) {
         speechSynthesizer.setSpeaking(false);
+        logger.v(TAG, "[%s] - on done <%s>", utteranceId, speechSynthesizer.getCurrentQueueId());
         if (speechSynthesizer.isOnQueue()) {
-            speechSynthesizer.removeFromQueue(utteranceId);
+            //speechSynthesizer.removeFromQueue(utteranceId);
             speechSynthesizer.moveToNextQueueIfNeeded();
         }
-        logger.v(TAG, "[%s] - on done <%s>", utteranceId, speechSynthesizer.getCurrentQueueId());
         speechSynthesizer.removeAndExecuteListener(utteranceId, BaseSpeechSynthesizer.ON_DONE, 0);
         if (! speechSynthesizer.isLocked() && speechSynthesizer.isOnQueue()) {
             speechSynthesizer.resume();
@@ -81,10 +81,12 @@ class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceListener {
     public void onError(String utteranceId, int errorCode) {
         speechSynthesizer.setSpeaking(false);
         logger.e(TAG, "[%s] - error <%s> - code: %s", utteranceId, speechSynthesizer.getCurrentQueueId(), getErrorType(errorCode));
-        speechSynthesizer.removeFromQueue(utteranceId);
-        speechSynthesizer.moveToNextQueueIfNeeded();
-        speechSynthesizer.prune();
+        if (speechSynthesizer.isOnQueue()) {
+            //speechSynthesizer.removeFromQueue(utteranceId);
+            speechSynthesizer.moveToNextQueueIfNeeded();
+        }
         speechSynthesizer.removeAndExecuteListener(utteranceId, BaseSpeechSynthesizer.ON_DONE, 0);
+        speechSynthesizer.prune();
     }
 
     protected String getErrorType(int error) {

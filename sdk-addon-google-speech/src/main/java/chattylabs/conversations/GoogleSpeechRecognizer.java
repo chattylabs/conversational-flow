@@ -27,7 +27,6 @@ import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -40,7 +39,6 @@ import chattylabs.android.commons.internal.ILogger;
 import chattylabs.conversations.RecognizerListener.Status;
 import kotlin.Unit;
 
-import static chattylabs.conversations.ConversationalFlow.selectMostConfidentResult;
 import static chattylabs.conversations.RecognizerListener.OnError;
 import static chattylabs.conversations.RecognizerListener.OnMostConfidentResult;
 import static chattylabs.conversations.RecognizerListener.OnPartialResults;
@@ -115,6 +113,10 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
     @Override
     public void checkStatus(OnStatusChecked onStatusChecked) {
         onStatusChecked.execute(Status.AVAILABLE);
+    }
+
+    @Override public boolean isAvailable() {
+        return true;
     }
 
     private final ResponseObserver<StreamingRecognizeResponse> observer =
@@ -219,10 +221,9 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
 
                 @Override
                 public void onResults(Bundle results) {
-                    logger.v(TAG, "onResults");
                     onEndOfSpeech();
                     getAudioManager().successBeep(application);
-                    List<String> list;
+                    ArrayList<String> list;
                     OnResults onResults = _getOnResults();
                     OnMostConfidentResult onMostConfidentResult = _getOnMostConfidentResult();
                     // if none of both are setup, we can't continue
@@ -252,8 +253,7 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
 
                 @Override
                 public void onPartialResults(Bundle results) {
-                    logger.v(TAG, "onPartialResults");
-                    List<String> list;
+                    ArrayList<String> list;
                     intents++;
                     OnPartialResults onPartialResults = _getOnPartialResults();
                     // if this is not setup, we can't continue

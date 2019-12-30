@@ -141,8 +141,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
         }
     }
 
-    @Override
-    void prepare(SynthesizerListener.OnPrepared onPrepared) {
+    private void prepare(SynthesizerListener.OnPrepared onPrepared) {
         if (isTtsNull()) {
             setReady(false);
             logger.i(TAG, "creating new instance of Google TextToSpeechClient.class");
@@ -192,8 +191,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
         utteranceListener.onDone(utteranceId);
     }
 
-    @Override
-    boolean isTtsNull() {
+    private boolean isTtsNull() {
         return tts == null;
     }
 

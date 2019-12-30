@@ -23,8 +23,6 @@ import chattylabs.conversations.Peripheral;
 import chattylabs.conversations.RecognizerListener;
 import chattylabs.conversations.SynthesizerListener;
 
-import static chattylabs.conversations.ConversationalFlow.matches;
-
 
 public class TestingAddonsActivity extends BaseActivity {
     private static final String TAG = Tag.make(TestingAddonsActivity.class);
@@ -153,7 +151,7 @@ public class TestingAddonsActivity extends BaseActivity {
                     SparseArray<String> news = getChecks(new SparseArray<>(), index + 1);
                     if (news.size() > 0) {
                         for (int a = 0; a < news.size(); a++) {
-                            if (matches(news.valueAt(a), o)) {
+                            if (recognizer.matches(news.valueAt(a), o)) {
                                 representQueue(news.keyAt(a));
                                 break;
                             }
