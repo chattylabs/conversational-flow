@@ -24,6 +24,7 @@ public class ComponentConfig {
      * This allows the Engine to cleanly reset and detect language of next utterance.
      */
     private LazyProvider<Boolean> forceLanguageDetection;
+    private LazyProvider<Integer> customVolume;
 
     private ComponentConfig(Builder builder) {
         speechLanguage = builder.speechLanguage;
@@ -37,6 +38,11 @@ public class ComponentConfig {
         googleCredentialsResourceFile = builder.googleCredentialsResourceFile;
         speechDictation = builder.speechDictation;
         forceLanguageDetection = builder.forceLanguageDetection;
+        customVolume = builder.customVolume;
+    }
+
+    public Integer getCustomVolume() {
+        return customVolume.get();
     }
 
     public Locale getSpeechLanguage() {
@@ -96,6 +102,7 @@ public class ComponentConfig {
         googleCredentialsResourceFile = config.googleCredentialsResourceFile;
         speechDictation = config.speechDictation;
         forceLanguageDetection = config.forceLanguageDetection;
+        customVolume = config.customVolume;
     }
 
     public static final class Builder {
@@ -110,6 +117,7 @@ public class ComponentConfig {
         private RawResourceLazyProvider googleCredentialsResourceFile;
         private LazyProvider<Boolean> speechDictation;
         private LazyProvider<Boolean> forceLanguageDetection;
+        private LazyProvider<Integer> customVolume;
 
         public Builder() {
         }
@@ -130,6 +138,11 @@ public class ComponentConfig {
 
         public Builder setSpeechLanguage(LazyProvider<Locale> speechLanguage) {
             this.speechLanguage = speechLanguage;
+            return this;
+        }
+
+        public Builder setCustomVolume(LazyProvider<Integer> volume) {
+            this.customVolume = volume;
             return this;
         }
 

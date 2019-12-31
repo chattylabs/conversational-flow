@@ -421,6 +421,15 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             try {
                 mediaPlayer = MediaPlayer.create(context, Uri.fromFile(tempFile), null,
                         audioManager.getAudioAttributes().build(), AudioManager.AUDIO_SESSION_ID_GENERATE);
+
+                //mediaPlayer.setVolume(configuration.getCustomVolume() / 100f, configuration.getCustomVolume() / 100f);
+
+                int currentVolume = audioManager.getDefaultAudioManager().getStreamVolume(audioManager.getMainStreamType());
+                int maxVolume = audioManager.getDefaultAudioManager().getStreamMaxVolume(audioManager.getMainStreamType());
+                float percent = configuration.getCustomVolume() / 100f;
+                int finalVolume = (int) (maxVolume * percent);
+                audioManager.getDefaultAudioManager().setStreamVolume(audioManager.getMainStreamType(), finalVolume, 0);
+
                 if (mediaPlayer == null) {
                     prune();
                     listener.onError(utterance, SynthesizerListener.Status.UNKNOWN_ERROR);
@@ -429,12 +438,14 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
                 mediaPlayer.setOnCompletionListener(mediaPlayer -> {
                     logger.i(TAG, "MediaPlayer complete");
+                    audioManager.getDefaultAudioManager().setStreamVolume(audioManager.getMainStreamType(), currentVolume, 0);
                     finishPlayer();
                     tempFile = null;
                     listener.onDone(utterance);
                 });
                 mediaPlayer.setOnErrorListener((mp, what, extra) -> {
                     logger.e(TAG, "MediaPlayer error");
+                    audioManager.getDefaultAudioManager().setStreamVolume(audioManager.getMainStreamType(), currentVolume, 0);
                     prune();
                     listener.onError(utterance, extra);
                     return true;
