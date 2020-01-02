@@ -255,18 +255,22 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
     }
 
     private void updateVoice() {
-        if (this.voiceGender == null) {
-            tts.setVoice(tts.getDefaultVoice());
-        } else {
-            Voice localeVoice = CollectionsKt.firstOrNull(
-                tts.getVoices(),
-                voice -> ! voice.getFeatures().contains("notInstalled")
-                         && voice.getLocale().equals(getConfiguration().getSpeechLanguage())
-                         && (voice.getName().contains(this.voiceGender)
-                             || voice.getFeatures().contains(this.voiceGender.replace("#", ""))
-                             || voice.getFeatures().contains("gender=" + this.voiceGender.replace("#", ""))));
-            if (localeVoice != null) tts.setVoice(localeVoice);
-            else logger.e(TAG, "Cannot find \"%1$s\" gender in Voice list [%1$s]", this.voiceGender, tts.getVoices().size());
+        try {
+            if (this.voiceGender == null) {
+                tts.setVoice(tts.getDefaultVoice());
+            } else {
+                Voice localeVoice = CollectionsKt.firstOrNull(
+                    tts.getVoices(),
+                    voice -> ! voice.getFeatures().contains("notInstalled")
+                             && voice.getLocale().equals(getConfiguration().getSpeechLanguage())
+                             && (voice.getName().contains(this.voiceGender)
+                                 || voice.getFeatures().contains(this.voiceGender.replace("#", ""))
+                                 || voice.getFeatures().contains("gender=" + this.voiceGender.replace("#", ""))));
+                if (localeVoice != null) tts.setVoice(localeVoice);
+                else logger.e(TAG, "Cannot find \"%1$s\" gender in Voice list [%1$s]", this.voiceGender, tts.getVoices().size());
+            }
+        } catch (Exception ex) {
+            logger.logException(ex);
         }
     }
 
