@@ -422,13 +422,14 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
                 mediaPlayer = MediaPlayer.create(context, Uri.fromFile(tempFile), null,
                         audioManager.getAudioAttributes().build(), AudioManager.AUDIO_SESSION_ID_GENERATE);
 
-                //mediaPlayer.setVolume(configuration.getCustomVolume() / 100f, configuration.getCustomVolume() / 100f);
+                mediaPlayer.setVolume(1.0f, 1.0f);
 
-                int currentVolume = audioManager.getDefaultAudioManager().getStreamVolume(audioManager.getMainStreamType());
-                int maxVolume = audioManager.getDefaultAudioManager().getStreamMaxVolume(audioManager.getMainStreamType());
-                float percent = configuration.getCustomVolume() / 100f;
-                int finalVolume = (int) (maxVolume * percent);
-                audioManager.getDefaultAudioManager().setStreamVolume(audioManager.getMainStreamType(), finalVolume, 0);
+                // This is too risky - we keep it for the record
+                //int currentVolume = audioManager.getDefaultAudioManager().getStreamVolume(audioManager.getMainStreamType());
+                //int maxVolume = audioManager.getDefaultAudioManager().getStreamMaxVolume(audioManager.getMainStreamType());
+                //float percent = configuration.getCustomVolume() / 100f;
+                //int finalVolume = (int) (maxVolume * percent);
+                //audioManager.getDefaultAudioManager().setStreamVolume(audioManager.getMainStreamType(), finalVolume, 0);
 
                 if (mediaPlayer == null) {
                     prune();
@@ -438,14 +439,14 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
                 mediaPlayer.setOnCompletionListener(mediaPlayer -> {
                     logger.i(TAG, "MediaPlayer complete");
-                    audioManager.getDefaultAudioManager().setStreamVolume(audioManager.getMainStreamType(), currentVolume, 0);
+                    //audioManager.getDefaultAudioManager().setStreamVolume(audioManager.getMainStreamType(), currentVolume, 0);
                     finishPlayer();
                     tempFile = null;
                     listener.onDone(utterance);
                 });
                 mediaPlayer.setOnErrorListener((mp, what, extra) -> {
                     logger.e(TAG, "MediaPlayer error");
-                    audioManager.getDefaultAudioManager().setStreamVolume(audioManager.getMainStreamType(), currentVolume, 0);
+                    //audioManager.getDefaultAudioManager().setStreamVolume(audioManager.getMainStreamType(), currentVolume, 0);
                     prune();
                     listener.onError(utterance, extra);
                     return true;

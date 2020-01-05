@@ -195,7 +195,7 @@ public class AndroidAudioManager {
         float maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         float leftVolume = curVolume / maxVolume;
         float rightVolume = curVolume / maxVolume;
-        soundPool.play(soundId, leftVolume, rightVolume, priority, no_loop, normal_playback_rate);
+        soundPool.play(soundId, 1.0f, 1.0f, priority, no_loop, normal_playback_rate);
     }
 
     public void startBeep(Context context) {
