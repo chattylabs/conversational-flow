@@ -177,6 +177,8 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     @Override
     public synchronized void playText(String text, String queueId, SynthesizerListener... listeners) {
 
+        if (! requestAudioFocus()) return;
+
         final String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
 
         final String uId = handleListener(utteranceId, listeners);
@@ -198,6 +200,8 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     @Override
     public synchronized void playTextNow(String text, SynthesizerListener... listeners) {
 
+        if (! requestAudioFocus()) return;
+
         final String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
 
         final String uId = handleListener(utteranceId, listeners);
@@ -211,12 +215,16 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         log_StatusNow(uId);
 
         isOnQueue = false;
+
         play(map);
     }
 
     @Override
     public synchronized void playSilence(long durationInMillis, String queueId,
                             SynthesizerListener... listeners) {
+
+        if (! requestAudioFocus()) return;
+
         checkSilenceDuration(durationInMillis);
 
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
@@ -239,6 +247,9 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
     @Override
     public synchronized void playSilenceNow(long durationInMillis, SynthesizerListener... listeners) {
+
+        if (! requestAudioFocus()) return;
+
         checkSilenceDuration(durationInMillis);
 
         String utteranceId = DEFAULT_UTTERANCE_ID + System.nanoTime();
@@ -303,6 +314,28 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         } else {
             chooseFromMapToPlay(map);
         }
+    }
+
+    private boolean requestAudioFocus() {
+        return getAudioManager().requestAudioFocus(focusChange -> {
+            switch (focusChange) {
+                case AudioManager.AUDIOFOCUS_GAIN:
+                    logger.v(TAG, "AUDIOFOCUS_GAIN");
+                    if (mediaPlayer != null)
+                        mediaPlayer.setVolume(1.0f, 1.0f);
+                    break;
+                case AudioManager.AUDIOFOCUS_LOSS:
+                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                    logger.w(TAG, "AUDIOFOCUS_LOSS " + focusChange);
+                    //shutdown();
+                    break;
+                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                    logger.i(TAG, "AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK");
+                    if (mediaPlayer != null)
+                        mediaPlayer.setVolume(0.6f, 0.6f);
+                    break;
+            }
+        }, getConfiguration().isAudioExclusiveRequiredForSynthesizer());
     }
 
     void removeFromQueue(String utteranceId) {

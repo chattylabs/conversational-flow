@@ -125,8 +125,11 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
     @Override
     public void listen(RecognizerListener... listeners) {
         logger.i(TAG, "- start listening");
-        handleListeners(listeners);
-        checkForBluetoothScoRequired(this::startListening);
+        boolean granted = getAudioManager().requestAudioFocus(focusChange -> {}, getConfiguration().isAudioExclusiveRequiredForRecognizer());
+        if (granted) {
+            handleListeners(listeners);
+            checkForBluetoothScoRequired(this::startListening);
+        }
     }
 
     private void handleListeners(RecognizerListener... listeners) {
@@ -134,32 +137,19 @@ abstract class BaseSpeechRecognizer implements SpeechRecognizer {
         if (listeners != null && listeners.length > 0) {
             for (RecognizerListener item : listeners) {
                 if (item instanceof RecognizerListener.OnReady) {
-                    getRecognitionListener()._setOnReady(
-                            params -> {
-                                audioManager.requestAudioFocus(null, configuration.isAudioExclusiveRequiredForRecognizer());
-                                ((RecognizerListener.OnReady) item).execute(params);
-                            });
+                    getRecognitionListener()._setOnReady((RecognizerListener.OnReady) item);
                 }
                 else if (item instanceof RecognizerListener.OnResults) {
-                    getRecognitionListener()._setOnResults((results, confidences) -> {
-                        stop();
-                        ((RecognizerListener.OnResults) item).execute(results, confidences);
-                    });
+                    getRecognitionListener()._setOnResults(((RecognizerListener.OnResults) item));
                 }
                 else if (item instanceof RecognizerListener.OnMostConfidentResult) {
-                    getRecognitionListener()._setOnMostConfidentResult(result -> {
-                        stop();
-                        ((RecognizerListener.OnMostConfidentResult) item).execute(result);
-                    });
+                    getRecognitionListener()._setOnMostConfidentResult(((RecognizerListener.OnMostConfidentResult) item));
                 }
                 else if (item instanceof RecognizerListener.OnPartialResults) {
                     getRecognitionListener()._setOnPartialResults((RecognizerListener.OnPartialResults) item);
                 }
                 else if (item instanceof RecognizerListener.OnError) {
-                    getRecognitionListener()._setOnError((error, originalError) -> {
-                        stop();
-                        ((RecognizerListener.OnError) item).execute(error, originalError);
-                    });
+                    getRecognitionListener()._setOnError(((RecognizerListener.OnError) item));
                 }
             }
         }

@@ -58,8 +58,6 @@ class BaseSynthesizerUtteranceListener implements SynthesizerUtteranceListener {
     @Override
     public void onStart(String utteranceId) {
         logger.v(TAG, "[%s] - on start", utteranceId);
-        speechSynthesizer.getAudioManager().requestAudioFocus(null,
-                speechSynthesizer.getConfiguration().isAudioExclusiveRequiredForSynthesizer());
         speechSynthesizer.executeListener(utteranceId, BaseSpeechSynthesizer.ON_START, 0);
     }
 

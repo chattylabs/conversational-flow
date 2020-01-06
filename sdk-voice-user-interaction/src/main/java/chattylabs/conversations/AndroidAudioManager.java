@@ -7,6 +7,8 @@ import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.Build;
 
+import androidx.annotation.NonNull;
+
 import chattylabs.android.commons.Tag;
 import chattylabs.android.commons.internal.ILogger;
 
@@ -29,6 +31,7 @@ public class AndroidAudioManager {
     private int callVolume;
 
     // Resources
+    private AudioManager.OnAudioFocusChangeListener focusChangeListener;
     private AudioFocusRequest focusRequestMayDuck;
     private AudioFocusRequest focusRequestExclusive;
     private final AudioManager audioManager;
@@ -62,9 +65,9 @@ public class AndroidAudioManager {
                 AudioManager.STREAM_MUSIC;
     }
 
-    public void requestAudioFocus(AudioManager.OnAudioFocusChangeListener listener, boolean exclusive) {
-        if (exclusive) requestAudioFocusExclusive(listener);
-        else requestAudioFocusMayDuck(listener);
+    public boolean requestAudioFocus(@NonNull AudioManager.OnAudioFocusChangeListener listener, boolean exclusive) {
+        if (exclusive) return requestAudioFocusExclusive(listener);
+        else return requestAudioFocusMayDuck(listener);
     }
 
     public void abandonAudioFocus(boolean exclusive) {
@@ -72,54 +75,62 @@ public class AndroidAudioManager {
         else abandonAudioFocusMayDuck();
     }
 
-    private void requestAudioFocusMayDuck(AudioManager.OnAudioFocusChangeListener listener) {
-        if (!requestAudioFocusMayDuck) {
+    private boolean requestAudioFocusMayDuck(@NonNull AudioManager.OnAudioFocusChangeListener listener) {
+        if (requestAudioFocusExclusive) abandonAudioFocusExclusive();
+        if (! requestAudioFocusMayDuck) {
+            focusChangeListener = listener;
             requestAudioFocusExclusive = false;
             logger.v(TAG, "AUDIO - request Audio Focus May Duck");
+            int res;
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
-                requestAudioFocusMayDuck = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(
-                        listener, getMainStreamType(),
-                        AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
+                res = audioManager.requestAudioFocus(listener, getMainStreamType(), AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
             } else {
                 AudioFocusRequest.Builder builder = new AudioFocusRequest
                         .Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
-                        .setAudioAttributes(getAudioAttributes().build());
-                if (listener != null) builder.setOnAudioFocusChangeListener(listener);
+                            .setAcceptsDelayedFocusGain(true)
+                            .setAudioAttributes(getAudioAttributes().build());
+                builder.setOnAudioFocusChangeListener(listener);
                 focusRequestMayDuck = builder.build();
-                requestAudioFocusMayDuck = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(focusRequestMayDuck);
+                res = audioManager.requestAudioFocus(focusRequestMayDuck);
             }
-        }
+
+            return requestAudioFocusMayDuck = res == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+        } else return true;
+    }
+
+    private boolean requestAudioFocusExclusive(@NonNull AudioManager.OnAudioFocusChangeListener listener) {
+        if (requestAudioFocusMayDuck) abandonAudioFocusMayDuck();
+        if (! requestAudioFocusExclusive) {
+            focusChangeListener = listener;
+            requestAudioFocusMayDuck = false;
+            logger.v(TAG, "AUDIO - request Audio Focus Exclusive");
+            int res;
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
+                res = audioManager.requestAudioFocus(listener, getMainStreamType(), AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE);
+            } else {
+                AudioFocusRequest.Builder builder = new AudioFocusRequest
+                        .Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
+                            .setAudioAttributes(getAudioAttributes().build());
+                builder.setOnAudioFocusChangeListener(listener);
+                focusRequestExclusive = builder.build();
+                res = audioManager.requestAudioFocus(focusRequestExclusive);
+            }
+
+            return requestAudioFocusExclusive = res == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+        } else return true;
     }
 
     private void abandonAudioFocusMayDuck() {
         if (requestAudioFocusMayDuck) {
             logger.v(TAG, "AUDIO - abandon Audio Focus May Duck");
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
-                audioManager.abandonAudioFocus(null);
+                if (focusChangeListener != null)
+                    audioManager.abandonAudioFocus(focusChangeListener);
             } else {
-                audioManager.abandonAudioFocusRequest(focusRequestMayDuck);
+                if (focusRequestMayDuck != null)
+                    audioManager.abandonAudioFocusRequest(focusRequestMayDuck);
             }
             requestAudioFocusMayDuck = false;
-        }
-    }
-
-    private void requestAudioFocusExclusive(AudioManager.OnAudioFocusChangeListener listener) {
-        if (!requestAudioFocusExclusive) {
-            requestAudioFocusMayDuck = false;
-            logger.v(TAG, "AUDIO - request Audio Focus Exclusive");
-            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
-                requestAudioFocusExclusive = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(
-                        listener, getMainStreamType(),
-                        AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE);
-
-            } else {
-                AudioFocusRequest.Builder builder = new AudioFocusRequest
-                        .Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE)
-                        .setAudioAttributes(getAudioAttributes().build());
-                if (listener != null) builder.setOnAudioFocusChangeListener(listener);
-                focusRequestExclusive = builder.build();
-                requestAudioFocusExclusive = AudioManager.AUDIOFOCUS_REQUEST_GRANTED == audioManager.requestAudioFocus(focusRequestExclusive);
-            }
         }
     }
 
@@ -127,9 +138,11 @@ public class AndroidAudioManager {
         if (requestAudioFocusExclusive) {
             logger.v(TAG, "AUDIO - abandon Audio Focus Exclusive");
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.N_MR1) {
-                audioManager.abandonAudioFocus(null);
+                if (focusChangeListener != null)
+                    audioManager.abandonAudioFocus(focusChangeListener);
             } else {
-                audioManager.abandonAudioFocusRequest(focusRequestExclusive);
+                if (focusRequestExclusive != null)
+                    audioManager.abandonAudioFocusRequest(focusRequestExclusive);
             }
             requestAudioFocusExclusive = false;
         }
@@ -162,7 +175,7 @@ public class AndroidAudioManager {
     }
 
     public AudioAttributes.Builder getAudioAttributes() {
-        return new AudioAttributes.Builder().setLegacyStreamType(getMainStreamType());
+        return new AudioAttributes.Builder().setLegacyStreamType(getMainStreamType()).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH);
     }
 
     public boolean isBluetoothScoAvailableOffCall() {

@@ -1,6 +1,5 @@
 package chattylabs.conversations;
 
-import android.annotation.SuppressLint;
 import android.app.Application;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothHeadset;
@@ -74,9 +73,8 @@ public class AndroidBluetooth {
     }
 
     private void registerScoReceiver(Runnable onScoConnected) {
-        BluetoothScoListener helper = new BluetoothScoListener() {
+        BluetoothScoListenerAdapter helper = new BluetoothScoListenerAdapter() {
             @Override
-            @SuppressLint("NewApi")
             public void onConnected() {
                 logger.i(TAG, "Sco connected");
 
@@ -95,6 +93,8 @@ public class AndroidBluetooth {
                 }
                 audioManager.unsetAudioMode();
                 unregisterScoReceiver();
+                audioManager.setBluetoothScoOn(false);
+                isScoOn = false;
                 if (onScoDisconnected != null) onScoDisconnected.run();
                 serialThread.release();
             }
@@ -121,7 +121,7 @@ public class AndroidBluetooth {
     }
 
     private void registerBluetoothProxy(Runnable runnable) {
-        getProfileProxy(application, new BluetoothProfileListener() {
+        getProfileProxy(application, new BluetoothProfileListenerAdapter() {
             @Override public void onServiceConnected(int profile, BluetoothProfile proxy) {
 
                 runnable.run();
@@ -136,7 +136,7 @@ public class AndroidBluetooth {
     }
 
     private void unRegisterBluetoothProxy(Runnable runnable) {
-        getProfileProxy(application, new BluetoothProfileListener() {
+        getProfileProxy(application, new BluetoothProfileListenerAdapter() {
             @Override public void onServiceConnected(int profile, BluetoothProfile proxy) {
 
                 runnable.run();
@@ -150,7 +150,8 @@ public class AndroidBluetooth {
         }, isBluetoothHeadset() ? BluetoothProfile.HEADSET : BluetoothProfile.A2DP);
     }
 
-    public void startSco(Runnable onScoConnected) {
+    public void startSco(Runnable onScoConnected/*, Runnable onScoDisconnected*/) {
+        //this.onScoDisconnected = onScoDisconnected; //TODO this is useful to stop everything if the user closed the sco call
         if (audioManager.isBluetoothScoAvailableOffCall() && !isScoOn) {
             isScoOn = true;
             serialThread.addTaskBlocking(() -> {
@@ -177,26 +178,28 @@ public class AndroidBluetooth {
         } else onScoConnected.run();
     }
 
-    public void stopSco(Runnable runnable) {
+    public void stopSco(Runnable onScoDisconnected) {
         if (audioManager.isBluetoothScoAvailableOffCall() && isScoOn) {
             if (mainHandler != null) {
                 mainHandler.removeCallbacksAndMessages(null);
                 serialThread.release();
             }
             serialThread.addTaskBlocking(() -> {
-                this.onScoDisconnected = runnable;
+                this.onScoDisconnected = onScoDisconnected;
                 logger.i(TAG, "Stop Sco");
                 unRegisterBluetoothProxy(() -> {
                     mainHandler.postDelayed(() -> {
+                        // We have to call this twice
                         audioManager.stopBluetoothSco();
                         audioManager.stopBluetoothSco();
+                        // TODO: Maybe not needed here
                         audioManager.setBluetoothScoOn(false);
                         isScoOn = false;
                         // TODO: There are still race conditions here
                     }, 1150);
                 });
             }, 10, TimeUnit.SECONDS);
-        } else runnable.run();
+        } else onScoDisconnected.run();
     }
 
     public boolean isScoOn() {

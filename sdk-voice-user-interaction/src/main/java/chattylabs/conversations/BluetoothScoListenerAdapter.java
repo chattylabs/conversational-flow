@@ -1,6 +1,6 @@
 package chattylabs.conversations;
 
-public class BluetoothScoListener {
+public class BluetoothScoListenerAdapter {
     public void onConnected() {
 
     }

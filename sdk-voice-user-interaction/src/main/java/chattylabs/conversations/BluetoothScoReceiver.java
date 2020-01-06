@@ -13,16 +13,16 @@ public class BluetoothScoReceiver extends BroadcastReceiver {
 
     private boolean isAlreadyConnected = false;
     private boolean isAlreadyDisconnected = false;
-    protected BluetoothScoListener listener;
+    protected BluetoothScoListenerAdapter listener;
 
     // Log stuff
     private ILogger logger;
 
-    public void setListener(BluetoothScoListener listener) {
+    public void setListener(BluetoothScoListenerAdapter listener) {
         this.listener = listener;
     }
 
-    public BluetoothScoListener getListener() {
+    public BluetoothScoListenerAdapter getListener() {
         return listener;
     }
 

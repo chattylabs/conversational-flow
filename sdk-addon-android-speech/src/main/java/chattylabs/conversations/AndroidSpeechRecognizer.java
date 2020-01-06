@@ -141,9 +141,11 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                     OnError errorListener = _getOnError();
                     int soundLevel = getSoundLevel();
                     logger.v(TAG, "- sound level: %s", getSoundLevelAsString(soundLevel));
-                    // We consider 3 sec as the minimum to record audio
-                    // If it last less than that, there was an audio issue
-                    // So potentially we retry listening again
+                    /*
+                     * We consider 3 sec as the minimum to record audio
+                     * If it last less than that, there was an audio issue
+                     * So potentially we retry listening again
+                     */
                     boolean stoppedTooEarly = (System.currentTimeMillis() - elapsedTime) < MIN_VOICE_RECOGNITION_TIME_LISTENING;
                     if (stoppedTooEarly && !retried) {
                         retried = true;
@@ -156,29 +158,27 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                 }
 
                 private void processError(int error, OnError errorListener, int soundLevel, boolean stoppedTooEarly) {
+                    stop();
                     reset();
-                    //mainHandler.post(() -> {
-                        //release();
-                        if (errorListener != null) {
-                            if (needRetry(error)) {
-                                errorListener.execute(Status.UNAVAILABLE_ERROR, error);
-                            } else if (stoppedTooEarly) {
-                                errorListener.execute(Status.STOPPED_TOO_EARLY_ERROR, error);
-                            } else if (soundLevel == NO_SOUND) {
-                                errorListener.execute(Status.NO_SOUND_ERROR, error);
-                            } else if (soundLevel == LOW_SOUND) {
-                                errorListener.execute(Status.LOW_SOUND_ERROR, error);
-                            } else if (intents > 0) {
-                                errorListener.execute(Status.AFTER_PARTIAL_RESULTS_ERROR, error);
-                            } else if (this.tryAgainRequired()) {
-                                errorListener.execute(error == SpeechRecognizer.ERROR_NO_MATCH ?
-                                        Status.UNKNOWN_ERROR :
-                                        Status.RETRY_ERROR, error);
-                            } else { // Restore ANDROID SPEECH
-                                errorListener.execute(Status.UNKNOWN_ERROR, error);
-                            }
+                    if (errorListener != null) {
+                        if (needRetry(error)) {
+                            errorListener.execute(Status.UNAVAILABLE_ERROR, error);
+                        } else if (stoppedTooEarly) {
+                            errorListener.execute(Status.STOPPED_TOO_EARLY_ERROR, error);
+                        } else if (soundLevel == NO_SOUND) {
+                            errorListener.execute(Status.NO_SOUND_ERROR, error);
+                        } else if (soundLevel == LOW_SOUND) {
+                            errorListener.execute(Status.LOW_SOUND_ERROR, error);
+                        } else if (intents > 0) {
+                            errorListener.execute(Status.AFTER_PARTIAL_RESULTS_ERROR, error);
+                        } else if (this.tryAgainRequired()) {
+                            errorListener.execute(error == SpeechRecognizer.ERROR_NO_MATCH ?
+                                    Status.UNKNOWN_ERROR :
+                                    Status.RETRY_ERROR, error);
+                        } else { // Restore ANDROID SPEECH
+                            errorListener.execute(Status.UNKNOWN_ERROR, error);
                         }
-                    //});
+                    }
                 }
 
                 @Override
@@ -193,26 +193,25 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                     if (onResults == null && onMostConfidentResult == null) return;
                     list = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                     float[] confidences = results.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES);
+                    stop();
                     reset();
-                    //mainHandler.post(() -> {
-                        if (list != null && !list.isEmpty()) {
-                            if (onResults != null) {
-                                logger.v(TAG, "- results: %s", list);
-                                onResults.execute(list, confidences);
-                            }
-                            if (onMostConfidentResult != null) {
-                                String result = selectMostConfidentResult(list, confidences);
-                                logger.v(TAG, "- confident result: %s", result);
-                                onMostConfidentResult.execute(result);
-                            }
+                    if (list != null && !list.isEmpty()) {
+                        if (onResults != null) {
+                            logger.v(TAG, "- results: %s", list);
+                            onResults.execute(list, confidences);
                         }
-                        else {
-                            logger.e(TAG, "- No results > onError");
-                            if (onError != null) {
-                                onError.execute(Status.EMPTY_RESULTS_ERROR, -1);
-                            }
+                        if (onMostConfidentResult != null) {
+                            String result = selectMostConfidentResult(list, confidences);
+                            logger.v(TAG, "- confident result: %s", result);
+                            onMostConfidentResult.execute(result);
                         }
-                    //});
+                    }
+                    else {
+                        logger.e(TAG, "- No results > onError");
+                        if (onError != null) {
+                            onError.execute(Status.EMPTY_RESULTS_ERROR, -1);
+                        }
+                    }
                 }
 
                 @Override
@@ -302,7 +301,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
     }
 
     private void release() {
-        //androidSpeechRecognizer = null;
+        androidSpeechRecognizer = null;
         setRmsDebug(false);
         setNoSoundThreshold(0);
         setLowSoundThreshold(0);
@@ -315,6 +314,7 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
         if (androidSpeechRecognizer != null) {
             androidSpeechRecognizer.destroy();
         }
+        release();
         super.stop();
     }
 }
