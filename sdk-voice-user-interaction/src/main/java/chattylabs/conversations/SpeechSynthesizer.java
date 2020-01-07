@@ -28,7 +28,11 @@ public interface SpeechSynthesizer {
 
     void loadInstallation(Activity activity, SynthesizerListener.OnStatusChecked listener);
 
+    void playAudioFile(String audioPath, String queueId, SynthesizerListener... listeners);
+
     void playText(String text, String queueId, SynthesizerListener... listeners);
+
+    void playAudioFileNow(String text, SynthesizerListener... listeners);
 
     void playTextNow(String text, SynthesizerListener... listeners);
 

@@ -63,6 +63,14 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     }
 
+    @Override Application getApplication() {
+        return application;
+    }
+
+    @Override SynthesizerUtteranceListener getSynthesizerUtteranceListener() {
+        return utteranceListener;
+    }
+
     @Override public void setVoice(String gender) {
 
     }

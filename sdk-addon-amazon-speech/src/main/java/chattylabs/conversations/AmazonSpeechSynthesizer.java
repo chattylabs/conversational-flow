@@ -50,6 +50,14 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     }
 
+    @Override Application getApplication() {
+        return mApplication;
+    }
+
+    @Override SynthesizerUtteranceListener getSynthesizerUtteranceListener() {
+        return utteranceListener;
+    }
+
     private void prepare(SynthesizerListener.OnPrepared onSynthesizerPrepared) {
         if (isTtsNull()) {
 //            final AWSConfiguration configuration = AWSConfiguration.getConfiguration(mApplication.getResources()

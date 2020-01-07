@@ -49,6 +49,14 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
         this.application = application;
     }
 
+    @Override Application getApplication() {
+        return application;
+    }
+
+    @Override SynthesizerUtteranceListener getSynthesizerUtteranceListener() {
+        return utteranceListener;
+    }
+
     @Override
     public void checkStatus(SynthesizerListener.OnStatusChecked listener) {
         logger.i(TAG, "check TTS status");

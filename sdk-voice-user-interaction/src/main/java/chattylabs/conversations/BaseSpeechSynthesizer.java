@@ -1,5 +1,6 @@
 package chattylabs.conversations;
 
+import android.app.Application;
 import android.content.Context;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
@@ -68,6 +69,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     private static final String MAP_UTTERANCE_ID = "utteranceId";
     private static final String MAP_SILENCE = "silence";
     private static final String MAP_MESSAGE = "message";
+    private static final String MAP_AUDIO = "audio";
     // Log stuff
     protected final ILogger logger;
     // Data
@@ -110,6 +112,10 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     abstract boolean isTtsSpeaking();
 
     abstract void forceDestroyTTS();
+
+    abstract Application getApplication();
+
+    abstract SynthesizerUtteranceListener getSynthesizerUtteranceListener();
 
 
     private void selectListener(LinkedHashMap<Integer, SynthesizerListener> map,
@@ -175,7 +181,18 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     @Override
+    public synchronized void playAudioFile(String audioPath, String queueId, SynthesizerListener... listeners) {
+
+        play(audioPath, queueId, true, listeners);
+    }
+
+    @Override
     public synchronized void playText(String text, String queueId, SynthesizerListener... listeners) {
+
+        play(text, queueId, false, listeners);
+    }
+
+    private void play(String text, String queueId, boolean isAudioFile, SynthesizerListener... listeners) {
 
         if (! requestAudioFocus()) return;
 
@@ -185,7 +202,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
         log_MessageOnQueue(text, queueId, uId);
 
-        addToQueue(uId, text, -1, queueId);
+        addToQueue(uId, isAudioFile ? null : text, isAudioFile ? text : null, -1, queueId);
 
         log_Status(uId);
 
@@ -198,7 +215,18 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
     }
 
     @Override
+    public synchronized void playAudioFileNow(String text, SynthesizerListener... listeners) {
+
+        playNow(text, true, listeners);
+    }
+
+    @Override
     public synchronized void playTextNow(String text, SynthesizerListener... listeners) {
+
+        playNow(text, false, listeners);
+    }
+
+    private void playNow(String text, boolean isAudioFile, SynthesizerListener... listeners) {
 
         if (! requestAudioFocus()) return;
 
@@ -210,7 +238,8 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
         Map<String, Object> map = new HashMap<>();
         map.put(MAP_UTTERANCE_ID, uId);
-        map.put(MAP_MESSAGE, text);
+        if (! isAudioFile) map.put(MAP_MESSAGE, text);
+        else map.put(MAP_AUDIO, text);
 
         log_StatusNow(uId);
 
@@ -233,7 +262,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
         log_Silence(uId);
 
-        addToQueue(uId, null, durationInMillis, queueId);
+        addToQueue(uId, null, null, durationInMillis, queueId);
 
         log_Status(uId);
 
@@ -367,11 +396,12 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         }
     }
 
-    private void addToQueue(@NonNull String utteranceId, String message,
+    private void addToQueue(@NonNull String utteranceId, String message, String audioPath,
                             long duration, @NonNull String queueId) {
         Map<String, Object> map = new HashMap<>();
         map.put(MAP_UTTERANCE_ID, utteranceId);
         if (message != null) map.put(MAP_MESSAGE, message);
+        if (audioPath != null) map.put(MAP_AUDIO, audioPath);
         if (duration > 0) map.put(MAP_SILENCE, duration);
         if (!queue.containsKey(queueId)) {
             logger.v(TAG, "[%s] - added new queue <%s>", utteranceId, queueId);
@@ -412,8 +442,16 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
             executeOnEngineReady(utteranceId, text);
         } else if (map.containsKey(MAP_SILENCE)) {
             playSilence(utteranceId, (long) map.get(MAP_SILENCE));
+        } else if (map.containsKey(MAP_AUDIO)) {
+            playAudioFile(utteranceId, (String) map.get(MAP_AUDIO));
         } else
             throw new RuntimeException("No message or silence item to play");
+    }
+
+    private void playAudioFile(String utteranceId, String audioPath) {
+        tempFile = new File(audioPath);
+        executeListener(utteranceId, ON_START, 0);
+        handleSynthesizedFile(getApplication(), getSynthesizerUtteranceListener(), utteranceId);
     }
 
     void setSynthesizedFile(File file) {
@@ -447,7 +485,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         mediaPlayer = null;
     }
 
-    void handleSynthesizedFile(Context context, SynthesizerUtteranceListener listener, String utterance) {
+    void handleSynthesizedFile(Context context, SynthesizerUtteranceListener listener, String utteranceId) {
         finishPlayer();
         logger.v(TAG, "start MediaPlayer");
         if (tempFile != null) {
@@ -466,7 +504,7 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
 
                 if (mediaPlayer == null) {
                     prune();
-                    listener.onError(utterance, SynthesizerListener.Status.UNKNOWN_ERROR);
+                    listener.onError(utteranceId, SynthesizerListener.Status.UNKNOWN_ERROR);
                     return;
                 }
 
@@ -475,24 +513,24 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
                     //audioManager.getDefaultAudioManager().setStreamVolume(audioManager.getMainStreamType(), currentVolume, 0);
                     finishPlayer();
                     tempFile = null;
-                    listener.onDone(utterance);
+                    listener.onDone(utteranceId);
                 });
                 mediaPlayer.setOnErrorListener((mp, what, extra) -> {
                     logger.e(TAG, "MediaPlayer error");
                     //audioManager.getDefaultAudioManager().setStreamVolume(audioManager.getMainStreamType(), currentVolume, 0);
                     prune();
-                    listener.onError(utterance, extra);
+                    listener.onError(utteranceId, extra);
                     return true;
                 });
                 mediaPlayer.start();
             } catch (Exception ex) {
                 logger.logException(ex);
                 prune();
-                listener.onError(utterance, SynthesizerListener.Status.UNKNOWN_ERROR);
+                listener.onError(utteranceId, SynthesizerListener.Status.UNKNOWN_ERROR);
             }
         } else {
             logger.w(TAG, "no media file to play, maybe silence?");
-            listener.onDone(utterance);
+            listener.onDone(utteranceId);
         }
     }
 
