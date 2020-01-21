@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Instead of inheriting from this Interface you should extend {@link BaseSpeechRecognizer}
@@ -28,6 +29,8 @@ public interface SpeechRecognizer {
      * Check if a specific string pattern interpreted as a whole word matches with a string.
      */
     boolean matches(@NonNull String str, @NonNull String patternStr);
+
+    void setLanguage(Locale locale);
 
     void listen(RecognizerListener... listeners);
 

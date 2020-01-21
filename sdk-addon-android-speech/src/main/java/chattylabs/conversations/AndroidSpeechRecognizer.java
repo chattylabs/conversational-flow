@@ -11,6 +11,7 @@ import androidx.annotation.Keep;
 import androidx.annotation.MainThread;
 
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import chattylabs.android.commons.Tag;
@@ -264,6 +265,10 @@ public final class AndroidSpeechRecognizer extends BaseSpeechRecognizer {
                 androidSpeechRecognizer.startListening(speechRecognizerIntent);
             });
         }
+    }
+
+    @Override public void setLanguage(Locale locale) {
+        this.speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, locale.toLanguageTag());
     }
 
     @Override

@@ -260,13 +260,12 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
     @Override
     public void setDefaultVoice() {
         this.voiceGender = null;
+        tts.setVoice(tts.getDefaultVoice());
     }
 
     private void updateVoice() {
         try {
-            if (this.voiceGender == null) {
-                tts.setVoice(tts.getDefaultVoice());
-            } else {
+            if (this.voiceGender != null) {
                 Voice localeVoice = CollectionsKt.firstOrNull(
                     tts.getVoices(),
                     voice -> ! voice.getFeatures().contains("notInstalled")
@@ -286,7 +285,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
         // setLanguage might throw an IllegalArgumentException: Invalid int: "OS" - Samsung Android 6
         try {
             Locale speechLanguage = getConfiguration().getSpeechLanguage();
-            if (tts != null && ! getConfiguration().isForceLanguageDetection()) {
+            if (tts != null && (! getConfiguration().isForceLanguageDetection() || speechLanguage != Locale.getDefault())) {
                 tts.setLanguage(speechLanguage);
             }
         } catch (Exception e) {
