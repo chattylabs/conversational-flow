@@ -114,6 +114,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
         TextToSpeech.OnInitListener ttsListener = status -> {
                 int result = _tts[0].isLanguageAvailable(speechLanguage);
                 _tts[0].shutdown();
+                _tts[0] = null;
                 if (ArraysKt.contains(new int[] {TextToSpeech.LANG_AVAILABLE,
                                                  TextToSpeech.LANG_COUNTRY_AVAILABLE,
                                                  TextToSpeech.LANG_COUNTRY_VAR_AVAILABLE}, result)) {
@@ -322,6 +323,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
                 }
                 try {
                     _tts[0].shutdown();
+                    _tts[0] = null;
                 } catch (Exception ignore) {}
             }
 
@@ -329,6 +331,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
                 callback.invoke(0);
                 try {
                     _tts[0].shutdown();
+                    _tts[0] = null;
                 } catch (Exception ignore) {}
             }
         });
