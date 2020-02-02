@@ -73,7 +73,7 @@ class ConversationImpl extends Flow.Edge implements Conversation {
 
     @Override
     public synchronized void next(VoiceNode node) {
-        if (currentNode == null)
+        if (currentNode == null && node != null)
             throw new IllegalStateException("You must run start(Node)");
         //speechSynthesizer.lock();
         if (node != null) {
