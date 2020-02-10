@@ -261,7 +261,8 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
     @Override
     public void setDefaultVoice() {
         this.voiceGender = null;
-        tts.setVoice(tts.getDefaultVoice());
+        if (tts != null)
+            tts.setVoice(tts.getDefaultVoice());
     }
 
     private void updateVoice() {
