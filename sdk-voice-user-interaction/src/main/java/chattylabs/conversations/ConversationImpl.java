@@ -162,9 +162,11 @@ class ConversationImpl extends Flow.Edge implements Conversation {
             }
         } else {
             // Otherwise there is no more nodes
-            logger.w(TAG, "- no more nodes");
+            if (logger != null)
+                logger.w(TAG, "- no more nodes");
             //speechSynthesizer.unlock();
-            onCompleteListener.run();
+            if (logger != null)
+                onCompleteListener.run();
             release();
         }
     }
