@@ -197,7 +197,8 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
         } else if (isReady()) {
             setupLanguage();
             updateVoice();
-            onSynthesizerPrepared.execute(SUCCESS);
+            if (isTtsNull()) prepare(onSynthesizerPrepared);
+            else onSynthesizerPrepared.execute(SUCCESS);
         }
     }
 
