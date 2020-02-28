@@ -366,6 +366,10 @@ public final class GoogleSpeechRecognizer extends BaseSpeechRecognizer {
         this.lowSoundThreshold = maxValue;
     }
 
+    @Override public void setLanguage(Locale locale) {
+
+    }
+
     @Override
     public void stopListening() {
         // Stop recording
