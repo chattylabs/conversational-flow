@@ -37,10 +37,6 @@ task clean(type: Delete) {
 }
 
 exec {
-    def sh = "./android-buildsystem/submodule.sh"
-    if (file(sh).exists()) {
-        executable "sh"
-        args sh
-    } else
-        commandLine "git", "submodule", "update", "--init", "--remote", "--rebase"
+    executable "sh"
+    args "install-buildsystem.sh"
 }
