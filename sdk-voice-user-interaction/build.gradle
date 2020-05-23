@@ -47,6 +47,7 @@ dependencies {
     testImplementation 'org.robolectric:robolectric:3.8'
 }
 
+group = 'chattylabs.android'
 description = 'Android Voice User Interaction'
 ext.website = "https://github.com/chattylabs/android-voice-user-interaction"
 apply from: rootDir.toString() + '/android-buildsystem/publish.gradle'

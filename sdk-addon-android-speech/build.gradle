@@ -41,6 +41,7 @@ dependencies {
     compileOnly elastic("chattylabs.android:voice-user-interaction:$voice_user_interaction", "$voice_user_interaction_internal")
 }
 
+group = 'chattylabs.android'
 description = 'Android Speech Addon'
 ext.website = "https://github.com/chattylabs/android-voice-user-interaction"
 apply from: rootDir.toString() + '/android-buildsystem/publish.gradle'
