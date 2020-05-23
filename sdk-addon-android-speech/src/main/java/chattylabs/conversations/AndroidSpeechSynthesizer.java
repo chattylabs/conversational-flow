@@ -2,7 +2,6 @@ package chattylabs.conversations;
 
 import android.app.Activity;
 import android.app.Application;
-import android.content.Context;
 import android.content.Intent;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
@@ -11,6 +10,7 @@ import android.speech.tts.UtteranceProgressListener;
 import android.speech.tts.Voice;
 
 import androidx.annotation.Keep;
+import androidx.core.util.Consumer;
 
 import java.io.File;
 import java.util.Locale;
@@ -20,7 +20,6 @@ import chattylabs.android.commons.Tag;
 import chattylabs.android.commons.internal.ILogger;
 import kotlin.collections.ArraysKt;
 import kotlin.collections.CollectionsKt;
-import kotlin.jvm.functions.Function1;
 
 import static chattylabs.conversations.SynthesizerListener.Status.AVAILABLE;
 import static chattylabs.conversations.SynthesizerListener.Status.ERROR;
@@ -301,14 +300,14 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
     }
 
     @Override
-    public void getSpeechDuration(Context context, String text, Function1<Integer, Void> callback) {
+    public void getSpeechDuration(String text, Consumer<Integer> callback) {
         File temp = createTempFile(application, "duration");
         TextToSpeech[] _tts = new TextToSpeech[1];
-        _tts[0] = createTextToSpeech((Application) context.getApplicationContext(), status -> {
+        _tts[0] = createTextToSpeech(application, status -> {
             if (status == TextToSpeech.SUCCESS) {
                 _tts[0].synthesizeToFile(text, null, temp, "get_duration");
             } else {
-                callback.invoke(0);
+                callback.accept(0);
             }
         });
         _tts[0].setOnUtteranceProgressListener(new UtteranceProgressListener() {
@@ -318,10 +317,10 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
                 if (utteranceId.equals("get_duration")) {
                     Uri uri = Uri.parse(temp.getPath());
                     MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-                    mmr.setDataSource(context.getApplicationContext(), uri);
+                    mmr.setDataSource(application, uri);
                     String durationStr = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
                     int millSecond = Integer.parseInt(durationStr);
-                    callback.invoke(millSecond);
+                    callback.accept(millSecond);
                 }
                 try {
                     _tts[0].shutdown();
@@ -330,7 +329,7 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
             }
 
             @Override public void onError(String utteranceId) {
-                callback.invoke(0);
+                callback.accept(0);
                 try {
                     _tts[0].shutdown();
                     _tts[0] = null;

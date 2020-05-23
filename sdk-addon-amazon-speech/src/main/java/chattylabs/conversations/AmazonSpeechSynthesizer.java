@@ -2,11 +2,11 @@ package chattylabs.conversations;
 
 import android.app.Activity;
 import android.app.Application;
-import android.content.Context;
 import android.media.MediaPlayer;
 import android.os.ConditionVariable;
 
 import androidx.annotation.NonNull;
+import androidx.core.util.Consumer;
 
 import com.amazonaws.services.polly.AmazonPollyPresigningClient;
 import com.amazonaws.services.polly.model.DescribeVoicesRequest;
@@ -22,7 +22,6 @@ import java.util.Map;
 
 import chattylabs.android.commons.Tag;
 import chattylabs.android.commons.internal.ILogger;
-import kotlin.jvm.functions.Function1;
 
 public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
     private static final String TAG = Tag.make("AmazonSpeechSynthesizer");
@@ -46,7 +45,7 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
     }
 
     @Override
-    public void getSpeechDuration(Context context, String text, Function1<Integer, Void> callback) {
+    public void getSpeechDuration(String text, Consumer<Integer> callback) {
 
     }
 

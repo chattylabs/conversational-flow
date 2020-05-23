@@ -11,6 +11,7 @@ import android.text.TextUtils;
 import androidx.annotation.Keep;
 import androidx.annotation.RawRes;
 import androidx.annotation.WorkerThread;
+import androidx.core.util.Consumer;
 
 import com.google.api.gax.core.FixedExecutorProvider;
 import com.google.auth.oauth2.GoogleCredentials;
@@ -35,7 +36,6 @@ import java.util.concurrent.Executors;
 import chattylabs.android.commons.StringUtils;
 import chattylabs.android.commons.Tag;
 import chattylabs.android.commons.internal.ILogger;
-import kotlin.jvm.functions.Function1;
 
 public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
     private static final String TAG = Tag.make("GoogleSpeechSynthesizer");
@@ -59,7 +59,7 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
         this.application = application;
     }
 
-    @Override public void getSpeechDuration(Context context, String text, Function1<Integer, Void> callback) {
+    @Override public void getSpeechDuration(String text, Consumer<Integer> callback) {
 
     }
 

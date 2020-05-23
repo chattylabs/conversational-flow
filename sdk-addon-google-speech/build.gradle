@@ -51,4 +51,4 @@ dependencies {
 
 description = 'Google Speech Addon'
 ext.website = "https://github.com/chattylabs/android-voice-user-interaction"
-apply from: '../android-buildsystem/publish.gradle'
+apply from: rootDir.toString() + '/android-buildsystem/publish.gradle'
