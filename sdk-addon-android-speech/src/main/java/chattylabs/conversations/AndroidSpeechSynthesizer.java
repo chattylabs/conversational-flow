@@ -133,14 +133,27 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
                 _tts[0] = new TextToSpeech(application, ttsListener);
             }
         });
-        Intent newIntent = new Intent(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
-        activity.startActivity(newIntent);
+        Intent checkData = new Intent(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
+        boolean checkDataExists = checkData.resolveActivityInfo(activity.getPackageManager(), 0) != null;
+        if (checkDataExists)
+            activity.startActivity(checkData);
+        Intent installData = new Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA);
+        boolean installDataExists = installData.resolveActivityInfo(activity.getPackageManager(), 0) != null;
+        if (installDataExists)
+            activity.startActivity(checkData);
+        else {
+            shutdown();
+            logger.e(TAG, "NOT_AVAILABLE_ERROR");
+            listener.execute(NOT_AVAILABLE_ERROR);
+        }
     }
 
     private void determineError(SynthesizerListener.OnStatusChecked listener, int errorCode) {
         Locale speechLanguage = getConfiguration().getSpeechLanguage();
 
-        int result = tts.isLanguageAvailable(speechLanguage);
+        int result = TextToSpeech.ERROR;
+        if (tts != null)
+            result = tts.isLanguageAvailable(speechLanguage);
 
         shutdown();
         if (result == TextToSpeech.LANG_MISSING_DATA

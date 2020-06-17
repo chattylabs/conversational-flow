@@ -22,3 +22,7 @@
 
 -keepnames class chattylabs.conversations.AndroidSpeechRecognizer
 -keepnames class chattylabs.conversations.AndroidSpeechSynthesizer
+
+# No need to obfuscate
+# -keep class com.google.** { *; }
+-keep class io.grpc.** { *; }
