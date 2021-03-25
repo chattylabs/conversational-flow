@@ -13,6 +13,8 @@ import java.util.Set;
  */
 public interface SpeechSynthesizer {
 
+    int CHECK_TTS_REQUEST_CODE = 775;
+
     String EMPTY = "<EMPTY>";
 
     String VOICE_MALE = "#male";
@@ -22,7 +24,9 @@ public interface SpeechSynthesizer {
 
     void setDefaultVoice();
 
-    void checkStatus(SynthesizerListener.OnStatusChecked listener);
+    void checkStatus(Activity activity, SynthesizerListener.OnStatusChecked listener);
+
+    void testStatus(SynthesizerListener.OnStatusChecked listener);
 
     void loadInstallation(Activity activity, SynthesizerListener.OnStatusChecked listener);
 

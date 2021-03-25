@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.media.AudioManager;
+import android.speech.tts.TextToSpeech;
 
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
@@ -13,6 +14,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Locale;
 
 import chattylabs.android.commons.internal.ILogger;
+
+import static chattylabs.conversations.SynthesizerListener.Status.NOT_AVAILABLE_ERROR;
 
 final class ConversationalFlowImpl implements ConversationalFlow {
 
@@ -124,19 +127,31 @@ final class ConversationalFlowImpl implements ConversationalFlow {
     }
 
     @Override
-    public void checkSpeechSynthesizerStatus(Context context, SynthesizerListener.OnStatusChecked listener) {
-        final Application application = (Application) context.getApplicationContext();
+    public void checkSpeechSynthesizerStatus(Activity activity, SynthesizerListener.OnStatusChecked listener) {
+        final Application application = (Application) activity.getApplicationContext();
         initDependencies(application);
         createSpeechSynthesizerInstance(application);
-        speechSynthesizer.checkStatus(listener);
+        speechSynthesizer.checkStatus(activity, listener);
     }
 
     @Override
-    public void checkSpeechRecognizerStatus(Context context, RecognizerListener.OnStatusChecked listener) {
-        final Application application = (Application) context.getApplicationContext();
+    public void checkSpeechRecognizerStatus(Activity activity, RecognizerListener.OnStatusChecked listener) {
+        final Application application = (Application) activity.getApplicationContext();
         initDependencies(application);
         createSpeechRecognizerInstance(application);
         speechRecognizer.checkStatus(listener);
+    }
+
+    @Override public boolean isCheckingSpeech(int requestCode) {
+        return requestCode == SpeechSynthesizer.CHECK_TTS_REQUEST_CODE;
+    }
+
+    @Override public void checkSpeech(int resultCode, SynthesizerListener.OnStatusChecked listener) {
+        if (resultCode == TextToSpeech.Engine.CHECK_VOICE_DATA_PASS) {
+            speechSynthesizer.testStatus(listener);
+        } else {
+            listener.execute(NOT_AVAILABLE_ERROR);
+        }
     }
 
     private void createSpeechSynthesizerInstance(Context context) {

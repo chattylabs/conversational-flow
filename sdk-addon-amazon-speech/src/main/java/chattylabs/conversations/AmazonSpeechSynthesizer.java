@@ -183,7 +183,8 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
     }
 
     @Override
-    public void checkStatus(SynthesizerListener.OnStatusChecked listener) {
+    public void checkStatus(Activity activity, SynthesizerListener.OnStatusChecked listener) {
+        logger.i(TAG, "check AmazonSpeech status");
         prepare(synthesizerStatus -> {
             final DescribeVoicesResult voicesResult = mAmazonSpeechClient.describeVoices(new DescribeVoicesRequest()
                     .withLanguageCode(mLanguageCode));
@@ -194,6 +195,10 @@ public final class AmazonSpeechSynthesizer extends BaseSpeechSynthesizer {
                 listener.execute(SynthesizerListener.Status.LANGUAGE_NOT_SUPPORTED_ERROR);
             }
         });
+    }
+
+    @Override
+    public void testStatus(SynthesizerListener.OnStatusChecked listener) {
     }
 
     @Override public void loadInstallation(Activity activity, SynthesizerListener.OnStatusChecked listener) {
