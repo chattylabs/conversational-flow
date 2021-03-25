@@ -81,8 +81,8 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
 
     @WorkerThread
     @Override
-    public void checkStatus(SynthesizerListener.OnStatusChecked listener) {
-        logger.i(TAG, "checkStatus and check language");
+    public void checkStatus(Activity activity, SynthesizerListener.OnStatusChecked listener) {
+        logger.i(TAG, "check GoogleSpeech status and language");
         // At this stage, we only want to check whether the api works and the language is available
         try (TextToSpeechClient ttsClient = generateFromRawFile(
                 application, getConfiguration().getGoogleCredentialsResourceFile())) {
@@ -98,6 +98,10 @@ public final class GoogleSpeechSynthesizer extends BaseSpeechSynthesizer {
             shutdown();
             listener.execute(SynthesizerListener.Status.NOT_AVAILABLE_ERROR);
         }
+    }
+
+    @Override
+    public void testStatus(SynthesizerListener.OnStatusChecked listener) {
     }
 
     @Override public void loadInstallation(Activity activity, SynthesizerListener.OnStatusChecked listener) {

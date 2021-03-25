@@ -28,7 +28,7 @@ public interface ConversationalFlow extends RequiredPermissions {
      * @see SynthesizerListener.OnStatusChecked
      * @see SynthesizerListener.Status
      */
-    void checkSpeechSynthesizerStatus(Context context, SynthesizerListener.OnStatusChecked listener);
+    void checkSpeechSynthesizerStatus(Activity activity, SynthesizerListener.OnStatusChecked listener);
 
     /**
      * Checks whether the Recognizer is available and returns a {@link RecognizerListener.Status}
@@ -45,7 +45,11 @@ public interface ConversationalFlow extends RequiredPermissions {
      * @see RecognizerListener.OnStatusChecked
      * @see RecognizerListener.Status
      */
-    void checkSpeechRecognizerStatus(Context context, RecognizerListener.OnStatusChecked listener);
+    void checkSpeechRecognizerStatus(Activity activity, RecognizerListener.OnStatusChecked listener);
+
+    boolean isCheckingSpeech(int requestCode);
+
+    void checkSpeech(int resultCode, SynthesizerListener.OnStatusChecked listener);
 
     /**
      * Reuses the already set {@link ComponentConfig} allowing you to update only specific parts

@@ -104,7 +104,6 @@ abstract class BaseSpeechSynthesizer implements SpeechSynthesizer {
         this.logger = logger;
     }
 
-
     abstract void executeOnEngineReady(String utteranceId, String text);
 
     abstract void playSilence(String utteranceId, long durationInMillis);

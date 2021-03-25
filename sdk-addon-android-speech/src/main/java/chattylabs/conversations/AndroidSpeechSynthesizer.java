@@ -57,8 +57,22 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
     }
 
     @Override
-    public void checkStatus(SynthesizerListener.OnStatusChecked listener) {
+    public void checkStatus(Activity activity, SynthesizerListener.OnStatusChecked listener) {
         logger.i(TAG, "check TTS status");
+
+        Intent checkData = new Intent(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
+
+        boolean checkDataExists = checkData.resolveActivityInfo(activity.getPackageManager(), 0) != null;
+
+        if (checkDataExists) {
+            activity.startActivityForResult(checkData, CHECK_TTS_REQUEST_CODE);
+        } else {
+            listener.execute(NOT_AVAILABLE_ERROR);
+        }
+    }
+
+    @Override
+    public void testStatus(SynthesizerListener.OnStatusChecked listener) {
         try {
             prepare(status -> checkTTS(listener));
         } catch (Exception e) {
@@ -111,9 +125,12 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
         final Locale speechLanguage = getConfiguration().getSpeechLanguage();
         final TextToSpeech[] _tts = { null };
         TextToSpeech.OnInitListener ttsListener = status -> {
-                int result = _tts[0].isLanguageAvailable(speechLanguage);
-                _tts[0].shutdown();
-                _tts[0] = null;
+                TextToSpeech _currentTts = _tts[0];
+                if (_currentTts == null) {
+                    _currentTts = new TextToSpeech(application, status1 -> {});
+                }
+                int result = _currentTts.isLanguageAvailable(speechLanguage);
+                _currentTts.shutdown();
                 if (ArraysKt.contains(new int[] {TextToSpeech.LANG_AVAILABLE,
                                                  TextToSpeech.LANG_COUNTRY_AVAILABLE,
                                                  TextToSpeech.LANG_COUNTRY_VAR_AVAILABLE}, result)) {
@@ -133,14 +150,10 @@ public final class AndroidSpeechSynthesizer extends BaseSpeechSynthesizer {
                 _tts[0] = new TextToSpeech(application, ttsListener);
             }
         });
-        Intent checkData = new Intent(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
-        boolean checkDataExists = checkData.resolveActivityInfo(activity.getPackageManager(), 0) != null;
-        if (checkDataExists)
-            activity.startActivity(checkData);
         Intent installData = new Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA);
         boolean installDataExists = installData.resolveActivityInfo(activity.getPackageManager(), 0) != null;
         if (installDataExists)
-            activity.startActivity(checkData);
+            activity.startActivity(installData);
         else {
             shutdown();
             logger.e(TAG, "NOT_AVAILABLE_ERROR");
